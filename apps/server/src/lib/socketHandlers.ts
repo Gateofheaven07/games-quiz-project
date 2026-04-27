@@ -1,6 +1,8 @@
 import { Socket } from 'socket.io';
 import { verifyToken } from './auth';
 import { GameManager } from './gameManager';
+import { submitAnswerHandler } from '../websocket/events/submitAnswer';
+import { startGameHandler } from '../websocket/events/startGame';
 
 export interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -113,54 +115,11 @@ export function setupSocketHandlers(io: any) {
     });
 
     socket.on('game:submit_answer', async (data) => {
-      try {
-        if (!socket.userId) {
-          socket.emit('error', 'User not authenticated');
-          return;
-        }
+      await submitAnswerHandler(socket, io, data);
+    });
 
-        const { answer, questionIndex } = data;
-        const roomId = GameManager.getUserRoom(socket.userId);
-
-        if (!roomId) {
-          socket.emit('error', 'User not in a room');
-          return;
-        }
-
-        GameManager.submitAnswer(roomId, socket.userId, answer);
-        const room = GameManager.getRoom(roomId);
-        const questions = GameManager.getRoomQuestions(roomId);
-
-        // Notify room of answer submission
-        io.to(roomId).emit('game:answer_received', {
-          playerIndex: room?.player1 === socket.userId ? 0 : 1,
-        });
-
-        // Check if we should move to next question
-        const nextIndex = questionIndex + 1;
-        if (nextIndex < questions.length) {
-          setTimeout(() => {
-            io.to(roomId).emit('game:question', {
-              question: {
-                ...questions[nextIndex],
-                correctAnswer: undefined,
-              },
-              index: nextIndex,
-              total: questions.length,
-            });
-          }, 2000);
-        }
-
-        console.log('[Socket] Answer submitted:', {
-          roomId,
-          userId: socket.userId,
-          questionIndex,
-          answer,
-        });
-      } catch (error) {
-        console.error('[Socket] Error submitting answer:', error);
-        socket.emit('error', 'Failed to submit answer');
-      }
+    socket.on('game:start', async (data) => {
+      await startGameHandler(socket, io, data);
     });
 
     socket.on('game:finish', async (data) => {
