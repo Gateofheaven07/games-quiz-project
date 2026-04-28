@@ -1,56 +1,77 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../hooks/useAuth';
-import { Button } from '../components/ui/button';
 import { Zap, Trophy, Users } from 'lucide-react';
 
 export default function HomePage() {
-  const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
-
-  useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.push('/dashboard');
-    }
-  }, [isAuthenticated, isLoading, router]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#090f12]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-[#00d1ff] mx-auto mb-4"></div>
-          <p className="text-[#bbc9cf] font-bold tracking-widest text-xs uppercase">Initializing...</p>
-        </div>
-      </div>
-    );
-  }
+  // We read auth state only to adapt the UI (navbar buttons), NOT to redirect
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   return (
     <div className="relative min-h-screen bg-[#090f12] text-[#dde3e7] font-sans selection:bg-[#00d1ff]/30 overflow-hidden">
       {/* Background Decorative Elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#00d1ff]/10 blur-[120px] rounded-full pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#cf5cff]/10 blur-[120px] rounded-full pointer-events-none"></div>
-      <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAlRcgUxa3ii_NiSemyYTATZdxkY8hVsG8tYrDMI-5f4i-OSMvdwmNeArzA8YTnYMiHAcRoU2AvtawIzxNKCVUykPvDuvxZlEzvzqBEu3YbgZb0Xiueilikt8q-Bjvoa0Iet5LbSrzPITyl4YVx0VqD95aQbJKyqLOAtUUnYhhhAGoUGwI-U3rr4VXVCiM4BFSepr9RGcf73oqEyvQoaDUFeroqwbm36JiIdqgdB4dP-gX7GjAYLw1C-j09glY27HGwFHqSp7TTghY')" }}></div>
+      <div
+        className="absolute inset-0 opacity-20 pointer-events-none"
+        style={{
+          backgroundImage:
+            "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAlRcgUxa3ii_NiSemyYTATZdxkY8hVsG8tYrDMI-5f4i-OSMvdwmNeArzA8YTnYMiHAcRoU2AvtawIzxNKCVUykPvDuvxZlEzvzqBEu3YbgZb0Xiueilikt8q-Bjvoa0Iet5LbSrzPITyl4YVx0VqD95aQbJKyqLOAtUUnYhhhAGoUGwI-U3rr4VXVCiM4BFSepr9RGcf73oqEyvQoaDUFeroqwbm36JiIdqgdB4dP-gX7GjAYLw1C-j09glY27HGwFHqSp7TTghY')",
+        }}
+      ></div>
 
       {/* Navigation */}
       <nav className="relative z-20 glass-panel border-b border-[#3c494e]/30">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-[#00d1ff] to-[#cf5cff] rounded-lg flex items-center justify-center neon-glow-primary icon-box">
-              <span className="material-symbols-outlined text-[#0e1417] text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
+              <span
+                className="material-symbols-outlined text-[#0e1417] text-2xl"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                swords
+              </span>
             </div>
             <h1 className="text-3xl font-bold text-[#a4e6ff] italic tracking-tighter">QuizBattle</h1>
           </div>
-          <div className="flex gap-4">
-            <Link href="/auth/login" className="px-6 py-2 rounded-lg font-bold text-xs tracking-widest text-[#a4e6ff] border border-[#00d1ff]/30 hover:bg-[#00d1ff]/10 transition-all uppercase flex items-center justify-center">
-              Sign In
-            </Link>
-            <Link href="/auth/register" className="px-6 py-2 rounded-lg font-bold text-xs tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all flex items-center justify-center">
-              Register
-            </Link>
+
+          {/* Adaptive navbar buttons based on auth state */}
+          <div className="flex gap-4 items-center">
+            {isLoading ? (
+              /* Show a subtle placeholder while checking auth */
+              <div className="h-9 w-32 rounded-lg bg-[#1a2227] animate-pulse" />
+            ) : isAuthenticated ? (
+              /* User is logged in → show their name + go to dashboard */
+              <>
+                <span className="font-bold text-[10px] tracking-widest text-[#859399] uppercase hidden sm:block">
+                  {user?.username}
+                </span>
+                <Link
+                  href="/dashboard"
+                  className="px-6 py-2 rounded-lg font-bold text-xs tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-base">dashboard</span>
+                  Go to Dashboard
+                </Link>
+              </>
+            ) : (
+              /* User is not logged in → show Sign In + Register */
+              <>
+                <Link
+                  href="/auth/login"
+                  className="px-6 py-2 rounded-lg font-bold text-xs tracking-widest text-[#a4e6ff] border border-[#00d1ff]/30 hover:bg-[#00d1ff]/10 transition-all uppercase flex items-center justify-center"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/register"
+                  className="px-6 py-2 rounded-lg font-bold text-xs tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all flex items-center justify-center"
+                >
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -65,11 +86,15 @@ export default function HomePage() {
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00d1ff] to-[#cf5cff]">ARENA.</span>
         </h2>
         <p className="text-lg md:text-xl text-[#bbc9cf] mb-12 max-w-2xl mx-auto">
-          Join the ultimate tactical knowledge exchange. Rank up, dominate leaderboards, and prove your cognitive superiority.
+          Join the ultimate tactical knowledge exchange. Rank up, dominate leaderboards, and prove your cognitive
+          superiority.
         </p>
-        <Link href="/auth/register" className="px-10 py-5 rounded-lg font-bold text-sm tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all flex items-center justify-center gap-4">
-          <span>Get Started Now</span>
-          <span className="material-symbols-outlined text-2xl">rocket_launch</span>
+        <Link
+          href={isAuthenticated ? '/dashboard' : '/auth/register'}
+          className="px-10 py-5 rounded-lg font-bold text-sm tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all flex items-center justify-center gap-4"
+        >
+          <span>{isAuthenticated ? 'Enter the Arena' : 'Get Started Now'}</span>
+          <span className="material-symbols-outlined text-2xl">{isAuthenticated ? 'swords' : 'rocket_launch'}</span>
         </Link>
       </section>
 
@@ -119,8 +144,11 @@ export default function HomePage() {
           <p className="text-xl text-[#bbc9cf] mb-10">
             Sign up now and start competing with operators from around the world.
           </p>
-          <Link href="/auth/register" className="px-12 py-5 inline-block rounded-lg font-bold text-sm tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all">
-            INITIALIZE YOUR OPERATOR
+          <Link
+            href={isAuthenticated ? '/dashboard' : '/auth/register'}
+            className="px-12 py-5 inline-block rounded-lg font-bold text-sm tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all"
+          >
+            {isAuthenticated ? 'ENTER THE ARENA' : 'INITIALIZE YOUR OPERATOR'}
           </Link>
         </div>
       </section>
@@ -132,9 +160,15 @@ export default function HomePage() {
             © 2024 QUIZBATTLE TACTICAL SYSTEMS
           </div>
           <div className="flex gap-8">
-            <span className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#00d1ff] transition-colors cursor-pointer uppercase">STATUS: ONLINE</span>
-            <span className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#00d1ff] transition-colors cursor-pointer uppercase">PRIVACY PROTOCOL</span>
-            <span className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#00d1ff] transition-colors cursor-pointer uppercase">SUPPORT HUB</span>
+            <span className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#00d1ff] transition-colors cursor-pointer uppercase">
+              STATUS: ONLINE
+            </span>
+            <span className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#00d1ff] transition-colors cursor-pointer uppercase">
+              PRIVACY PROTOCOL
+            </span>
+            <span className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#00d1ff] transition-colors cursor-pointer uppercase">
+              SUPPORT HUB
+            </span>
           </div>
         </div>
       </footer>

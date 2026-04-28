@@ -67,6 +67,7 @@ function Sidebar() {
     { icon:'dashboard',      label:'Dashboard',    href:'/dashboard' },
     { icon:'swords',         label:'Battle Arena', href:'/game' },
     { icon:'sports_esports', label:'Arcade',       href:'/game/crossword' },
+    { icon:'group',          label:'Friends',      href:'/friends' },
     { icon:'leaderboard',    label:'Rankings',     href:'/leaderboard' },
     { icon:'person',         label:'Profile',      href:'/profile' },
   ]
