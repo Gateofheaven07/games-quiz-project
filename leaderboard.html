@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-error": "#690005",
+                    "tertiary": "#ffd59c",
+                    "tertiary-fixed": "#ffddb1",
+                    "on-tertiary-fixed-variant": "#624000",
+                    "error": "#ffb4ab",
+                    "secondary-fixed-dim": "#ecb2ff",
+                    "on-primary-fixed": "#001f28",
+                    "tertiary-fixed-dim": "#ffba49",
+                    "on-tertiary-container": "#6b4700",
+                    "on-error-container": "#ffdad6",
+                    "outline": "#859399",
+                    "tertiary-container": "#feb127",
+                    "on-surface-variant": "#bbc9cf",
+                    "on-background": "#dde3e7",
+                    "on-secondary-fixed": "#320047",
+                    "on-secondary": "#520071",
+                    "inverse-surface": "#dde3e7",
+                    "on-primary-container": "#00566a",
+                    "secondary": "#ecb2ff",
+                    "surface": "#0e1417",
+                    "secondary-container": "#cf5cff",
+                    "background": "#0e1417",
+                    "primary-fixed": "#b7eaff",
+                    "surface-container": "#1a2123",
+                    "on-primary": "#003543",
+                    "on-surface": "#dde3e7",
+                    "on-tertiary-fixed": "#291800",
+                    "surface-tint": "#4cd6ff",
+                    "primary": "#a4e6ff",
+                    "on-secondary-container": "#480063",
+                    "surface-container-highest": "#2f3639",
+                    "on-primary-fixed-variant": "#004e60",
+                    "primary-container": "#00d1ff",
+                    "outline-variant": "#3c494e",
+                    "surface-dim": "#0e1417",
+                    "surface-container-lowest": "#090f12",
+                    "error-container": "#93000a",
+                    "inverse-on-surface": "#2b3134",
+                    "on-secondary-fixed-variant": "#74009f",
+                    "on-tertiary": "#442b00",
+                    "surface-container-low": "#161d1f",
+                    "surface-container-high": "#242b2e",
+                    "secondary-fixed": "#f8d8ff",
+                    "surface-bright": "#333a3d",
+                    "primary-fixed-dim": "#4cd6ff",
+                    "surface-variant": "#2f3639",
+                    "inverse-primary": "#00677f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sm": "12px",
+                    "container-max": "1280px",
+                    "lg": "48px",
+                    "md": "24px",
+                    "base": "8px",
+                    "xl": "80px",
+                    "xs": "4px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "h2": ["Space Grotesk"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "h1": ["Space Grotesk"],
+                    "h3": ["Space Grotesk"],
+                    "label-caps": ["Space Grotesk"]
+            },
+            "fontSize": {
+                    "h2": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "h1": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "h3": ["24px", {"lineHeight": "1.3", "letterSpacing": "0", "fontWeight": "600"}],
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .neon-glow-primary {
+            box-shadow: 0 0 20px rgba(0, 209, 255, 0.3);
+        }
+        .neon-glow-gold {
+            box-shadow: 0 0 25px rgba(254, 177, 39, 0.4);
+        }
+        .neon-glow-silver {
+            box-shadow: 0 0 20px rgba(187, 201, 207, 0.3);
+        }
+        .neon-glow-bronze {
+            box-shadow: 0 0 15px rgba(98, 64, 0, 0.3);
+        }
+        .progress-shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            background-size: 200% 100%;
+        }
+        body {
+            background-color: #0e1417;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(0, 209, 255, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(207, 92, 255, 0.05) 0%, transparent 40%);
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-background min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-slate-950/80 backdrop-blur-xl border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black italic tracking-tighter text-cyan-400 drop-shadow-[0_0_10px_rgba(0,209,255,0.5)] font-['Space_Grotesk']">QuizBattle</span>
+<div class="hidden md:flex gap-6">
+<a class="font-['Space_Grotesk'] tracking-tight text-slate-400 hover:text-white hover:bg-white/5 transition-all px-3 py-1 rounded" href="#">Dashboard</a>
+<a class="font-['Space_Grotesk'] tracking-tight text-slate-400 hover:text-white hover:bg-white/5 transition-all px-3 py-1 rounded" href="#">Arena</a>
+<a class="font-['Space_Grotesk'] tracking-tight text-cyan-400 border-b-2 border-cyan-400 pb-1" href="#">Rankings</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+<input class="bg-surface-container-lowest border border-white/10 rounded-full py-1.5 pl-10 pr-4 text-xs focus:border-primary-container focus:ring-0 w-48" placeholder="Search Players..." type="text"/>
+</div>
+<button class="material-symbols-outlined text-slate-400 hover:text-white transition-all scale-105 active:scale-95">notifications</button>
+<button class="material-symbols-outlined text-slate-400 hover:text-white transition-all scale-105 active:scale-95">settings</button>
+<div class="h-8 w-8 rounded-full border border-cyan-400/50 p-0.5">
+<img alt="User Rank Avatar" class="h-full w-full rounded-full object-cover" data-alt="High-tech futuristic soldier profile avatar with neon glowing visor and tactical gear portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmITae5uMZ4-y5As5nHgnC_U4sVAJmlfHESTGKCUQiG6tgFK9-fEYo54vpLyJ5LkbDww7AuX0wxfTmo71HZcwtG2oDQgrv0oewwhhTDPct8KLRwiKQ7sxQEmLxHvd8tizOAGqkZQ-us1DdzGqk4KmNblgCt1nrV567Itqznlr6LEeProwJjvsCJcQIeEP7af644Tl1-C9phRwVLBxsL7X7uSOujHnG3YW-yCtPbwOeT3axqQ6UT1jVVx_piPXmbFw0UmH2A5TLzIc"/>
+</div>
+</div>
+</nav>
+<!-- SideNavBar (Hidden on Mobile) -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] z-40 flex flex-col pt-8 bg-[#FFFFFF0D] backdrop-blur-2xl border-r border-white/20 shadow-[20px_0_40px_rgba(0,0,0,0.3)] w-64 hidden lg:flex">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="h-10 w-10 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+</div>
+<div>
+<p class="font-['Space_Grotesk'] uppercase text-xs font-bold text-cyan-400">OPERATOR_01</p>
+<p class="text-[10px] text-slate-400 tracking-widest font-bold">GOLD RANK</p>
+</div>
+</div>
+<nav class="flex-1">
+<a class="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="#">
+<span class="material-symbols-outlined">dashboard</span> Dashboard
+            </a>
+<a class="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="#">
+<span class="material-symbols-outlined">swords</span> Battle Arena
+            </a>
+<a class="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="#">
+<span class="material-symbols-outlined">sports_esports</span> Arcade
+            </a>
+<a class="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="#">
+<span class="material-symbols-outlined">group</span> Friends
+            </a><a class="bg-cyan-500/20 text-cyan-400 border-r-4 border-cyan-400 flex items-center gap-3 px-6 py-4 font-['Space_Grotesk'] uppercase text-xs font-bold" href="#">
+<span class="material-symbols-outlined">leaderboard</span> Rankings
+            </a>
+<a class="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="#">
+<span class="material-symbols-outlined">person</span> Profile
+            </a>
+</nav>
+<div class="p-6">
+<button class="w-full py-3 bg-gradient-to-r from-primary-container to-secondary-container rounded-lg font-['Space_Grotesk'] font-black text-white text-sm tracking-widest uppercase neon-glow-primary transition-all hover:scale-105 active:scale-95">
+                FIND MATCH
+            </button>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 mt-16 lg:ml-64 p-gutter max-w-7xl mx-auto w-full">
+<header class="mb-10 text-center lg:text-left">
+<div class="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1 mb-4">
+<span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+<span class="font-label-caps text-cyan-400">LIVE GLOBAL STATS</span>
+</div>
+<h1 class="font-h1 text-on-surface mb-2">Weekly Top Players</h1>
+<p class="font-body-lg text-on-surface-variant max-w-2xl">Battle for supremacy in the digital arena. Top players receive exclusive gear and Operator Credits every Monday.</p>
+</header>
+<!-- Podium Section (Bento Style) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+<!-- Rank 2 -->
+<div class="glass-card rounded-xl p-6 flex flex-col items-center justify-center order-2 md:order-1 border-white/10 neon-glow-silver">
+<div class="relative mb-4">
+<img alt="Silver Medal Player" class="h-20 w-20 rounded-full border-2 border-outline-variant" data-alt="Cyberpunk character portrait with silver robotic arm and neon visor in a rainy neon city setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpm6Pl2DG_AtUXePCS4pEjRj5p0XseMZa_Qw9LtXIZwNTXz6s3pzxFRDFOS__VQ3vZIdvVEdCWCUlPSL5WeDGPksothsshxwjjjIV1407RRNdVdrL6VPqPwBQVFBIiNYBOVLp9T6L1xlOaaonGGnXhlYU0DoeO3aShu0xAKWxLSupSuYaO1aCY_tK9ndnFSo9G2No5L6z0A-AbIsw5GBKnYTU1alTCWgdDcGIO1eRG9uzzfzYHCcuE1pHzxO1uDUQj_FsrAecj0yk"/>
+<div class="absolute -bottom-2 -right-2 bg-outline-variant h-8 w-8 rounded-full flex items-center justify-center border-2 border-surface font-black text-xs">2</div>
+</div>
+<h3 class="font-h3 text-on-surface">V_Ghost</h3>
+<p class="font-label-caps text-secondary-fixed-dim mb-4">ELITE STREAK</p>
+<div class="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-secondary-fixed-dim w-[85%]"></div>
+</div>
+<div class="flex justify-between w-full mt-2">
+<span class="text-[10px] font-bold text-slate-500">SCORE</span>
+<span class="text-[10px] font-bold text-on-surface">42,900</span>
+</div>
+</div>
+<!-- Rank 1 -->
+<div class="glass-card rounded-xl p-8 flex flex-col items-center justify-center order-1 md:order-2 border-cyan-400/30 scale-105 neon-glow-gold bg-gradient-to-b from-tertiary-container/10 to-transparent">
+<div class="relative mb-6">
+<div class="absolute inset-0 bg-tertiary-container blur-2xl opacity-20 animate-pulse"></div>
+<img alt="Gold Medal Player" class="relative h-28 w-28 rounded-full border-4 border-tertiary-container" data-alt="Heroic futuristic commander with gold armored detailing and glowing cybernetic eyes professional lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhim7NM9vaeBgI6s3vpK8UrYz3mCcLpqIAvK-SRX1X4aAKMDJRcsw6hsnfGmA8WrXg3CZNmkfYE6iPLoW1amKWtst5sC2_ZaVpV12-6HWlRYQsHwE_WnlqC7QtSwjWfIR2vYDKiw7H5i5k8EYpw9i0Fx89g9aO-1dGCj4TAJpmW1YtNkg_7U_0I9LAIoeHXs-ApB1e4UaQGCoR73bGGKesPS0oMSa7cWs55fsjZYmlaHBBPgQyjiN3L-Vz63askQYbpAEQtyrdv1g"/>
+<div class="absolute -bottom-3 -right-3 bg-tertiary-container h-10 w-10 rounded-full flex items-center justify-center border-4 border-surface font-black text-sm text-on-tertiary-container">1</div>
+</div>
+<h2 class="font-h2 text-tertiary-fixed mb-1">X_Terminator</h2>
+<p class="font-label-caps text-tertiary mb-6">UNSTOPPABLE</p>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-tertiary-container w-[98%] relative">
+<div class="absolute inset-0 progress-shimmer animate-shimmer"></div>
+</div>
+</div>
+<div class="flex justify-between w-full mt-3">
+<span class="text-xs font-bold text-tertiary/50">MATCH SCORE</span>
+<span class="text-xs font-bold text-tertiary-fixed">51,240</span>
+</div>
+</div>
+<!-- Rank 3 -->
+<div class="glass-card rounded-xl p-6 flex flex-col items-center justify-center order-3 md:order-3 border-white/10 neon-glow-bronze">
+<div class="relative mb-4">
+<img alt="Bronze Medal Player" class="h-20 w-20 rounded-full border-2 border-on-tertiary-fixed-variant" data-alt="Tactical specialist with bronze plating and glowing communication headset in a dark tech environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6IodHfZwI4Ht-nQtCcj4hQFEgwWxxTSwoh1SBhTqWUCldEO0Sb1yafPWq0kiCkogT-Q9bqNnU6ANDEc8jlrAD1aUK7V-aBIheDAMqcgmKFJZK94GzwkSq0B7fCuimgrQWNYP0Bs44ZiyLGnoK0blL-WC-Zgr875SyTJwnMo4SuRq224wxQJJUi4Lxgh2CBW2BIIBpX7z9637vl7H3XCtRhf8969Qm4S6Zefwg2GWWb5hynndZz6Hmpc6jhXV6WkC9bY6maglGdAI"/>
+<div class="absolute -bottom-2 -right-2 bg-on-tertiary-fixed-variant h-8 w-8 rounded-full flex items-center justify-center border-2 border-surface font-black text-xs">3</div>
+</div>
+<h3 class="font-h3 text-on-surface">Neon_Pulse</h3>
+<p class="font-label-caps text-on-tertiary-fixed mb-4">COMBAT VET</p>
+<div class="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-on-tertiary-fixed-variant w-[72%]"></div>
+</div>
+<div class="flex justify-between w-full mt-2">
+<span class="text-[10px] font-bold text-slate-500">SCORE</span>
+<span class="text-[10px] font-bold text-on-surface">38,150</span>
+</div>
+</div>
+</div>
+<!-- Leaderboard Table -->
+<section class="glass-card rounded-xl overflow-hidden mb-12">
+<div class="bg-white/5 px-8 py-4 flex justify-between items-center border-b border-white/10">
+<span class="font-label-caps text-slate-400">RANKINGS LIST (4-10)</span>
+<div class="flex gap-4">
+<button class="text-[10px] font-bold text-cyan-400 border-b border-cyan-400">GLOBAL</button>
+<button class="text-[10px] font-bold text-slate-500 hover:text-white transition-colors">FRIENDS</button>
+</div>
+</div>
+<div class="divide-y divide-white/5">
+<!-- Rank 4 -->
+<div class="px-8 py-5 flex items-center gap-6 hover:bg-white/5 transition-all group">
+<span class="w-8 font-h3 text-slate-500 group-hover:text-cyan-400 transition-colors">04</span>
+<img alt="Player Avatar" class="h-10 w-10 rounded-lg border border-white/10" data-alt="Minimalist digital avatar of a player with blue glowing accents and dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDw0AevwlPcO72TXS0p-zAC-8ogif_M18bH4wlAWdRoJjlUsWDPySLq1x-Q3zYhKXIj2k_nL8Cc8jEtfNX06RDIGNbryz_QBBWLeF_XgypCv_LYPrlRjkC4K0CmT_UdTrv18Nt0iHPyAZ_3soV-ytV7IdKHDumdpq7h30a0d0pZDwnYll5LXg9lKmEEKqatxpUWafsSSfTSj-23It8hx8_qTG0Myn-iWLfBbRVT8FNIShrvl4FNkLkFI0LJWsArdHGgcGgNuh_e6D4"/>
+<div class="flex-1">
+<p class="font-body-md font-bold text-on-surface">Cipher_Zero</p>
+<p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">MASTER RANK</p>
+</div>
+<div class="text-right">
+<p class="font-h3 text-on-surface text-lg">34,500</p>
+<p class="text-[10px] font-bold text-cyan-500/50">+1,200 today</p>
+</div>
+</div>
+<!-- Rank 5 -->
+<div class="px-8 py-5 flex items-center gap-6 hover:bg-white/5 transition-all group">
+<span class="w-8 font-h3 text-slate-500 group-hover:text-cyan-400 transition-colors">05</span>
+<img alt="Player Avatar" class="h-10 w-10 rounded-lg border border-white/10" data-alt="Minimalist digital avatar of a player with purple glowing accents and dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6aS_-E9ApNS-qbZTjIgTIP9ds5_N0yKKYtXcURtFeozakeAmxAAimtzpyoXG12dEvHYEjlY0Kh0hqEg4E4FmOYssuH8-OKFXiYlp1AurPYMJnwsCwzaPuNDZfFIkr3XMkLI79P4Rgv_F1MfYl6JTfF4-OoNZY7iWrKCSdXRTCyzxRaWzQSWKyFI1OU91RC4F5XPZErr7YPuGXr9Ay9r1n8T0Kz0Tv0dRVQkqbH2uSPHWwdyJJDf4iiyvDvpl1HMs-SYDeug2uxKI"/>
+<div class="flex-1">
+<p class="font-body-md font-bold text-on-surface">Void_Walker</p>
+<p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">DIAMOND II</p>
+</div>
+<div class="text-right">
+<p class="font-h3 text-on-surface text-lg">31,200</p>
+<p class="text-[10px] font-bold text-error/50">-450 today</p>
+</div>
+</div>
+<!-- Rank 6 -->
+<div class="px-8 py-5 flex items-center gap-6 hover:bg-white/5 transition-all group">
+<span class="w-8 font-h3 text-slate-500 group-hover:text-cyan-400 transition-colors">06</span>
+<img alt="Player Avatar" class="h-10 w-10 rounded-lg border border-white/10" data-alt="Minimalist digital avatar of a player with orange glowing accents and dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSCR3NM-4a_xu3e_cDjKuFqajdl9fdTB7Ne1AgCqv3xd7lSVDLuXAzXtmfBYkIqKf4qZTmY8_QFa6tZXFSzlx2LJUKN1h6G8KVhIi_FqW8K5scTCQpf5xeVDWsNLcdF9wEwY1QqLlGSslBmtUFI2G5gl2rswJQk7mKrqHY0Mf87A_n5VMnmrFadugLJMbZNZfmhScKZiAh9XjI8imBoOkXuHfznMaeIr48ohLuxHJUPSbRpfs4L6jE7E5kl0laNK28dKnie5M1Z0U"/>
+<div class="flex-1">
+<p class="font-body-md font-bold text-on-surface">Static_Shock</p>
+<p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">DIAMOND I</p>
+</div>
+<div class="text-right">
+<p class="font-h3 text-on-surface text-lg">29,880</p>
+<p class="text-[10px] font-bold text-cyan-500/50">+80 today</p>
+</div>
+</div>
+<!-- Rank 7 -->
+<div class="px-8 py-5 flex items-center gap-6 hover:bg-white/5 transition-all group">
+<span class="w-8 font-h3 text-slate-500 group-hover:text-cyan-400 transition-colors">07</span>
+<img alt="Player Avatar" class="h-10 w-10 rounded-lg border border-white/10" data-alt="Minimalist digital avatar of a player with green glowing accents and dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuaa37O98qEk5LR6Gh0LfrbP1tbItFAT6CYo0kuto_Cxq6CAH_LxCcio5I9ZfqKbuA3GqT_15L_89E957JpPrXlV5ULnIKXi03vIVJKdgSOA9hnBfcXu_7QT-n_MCjZE4fCeg_w3hssKc6dk534llWjuInH03MNLsWpn2fIIv-5HortG8128BhAbCTOV8e5GrkJpaSS-1RL5APh1YHNu1LFvPoMCe3Q_U6y_GcqB5pJkwHdvCK1wi4ZR53sRmG9vurMmtOmqp32T8"/>
+<div class="flex-1">
+<p class="font-body-md font-bold text-on-surface">Bit_Crusher</p>
+<p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">PLATINUM IV</p>
+</div>
+<div class="text-right">
+<p class="font-h3 text-on-surface text-lg">28,450</p>
+<p class="text-[10px] font-bold text-cyan-500/50">+3,400 today</p>
+</div>
+</div>
+</div>
+<div class="p-6 bg-white/5 text-center">
+<button class="font-label-caps text-cyan-400 hover:text-white transition-all">LOAD FULL LEADERBOARD</button>
+</div>
+</section>
+<!-- Personal Rank Floating Bar -->
+<div class="fixed bottom-12 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl glass-card rounded-2xl p-4 flex items-center gap-6 border-cyan-400/40 shadow-[0_0_50px_rgba(0,209,255,0.2)] z-30">
+<div class="bg-cyan-500/20 text-cyan-400 h-12 w-12 rounded-xl flex flex-col items-center justify-center">
+<span class="text-[10px] font-bold">POS</span>
+<span class="font-h3 text-lg leading-none">124</span>
+</div>
+<img alt="My Profile" class="h-10 w-10 rounded-lg border border-cyan-400" data-alt="Player profile avatar with glowing neon accents and high-tech gear" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrwFYmeH6QZx8l9u_oaCI6WfugA5mPu4LdTB6MptgSnUY_cqGkX4BtzvZI6awHpt9WNBFM_HeC_jhHsohnvJ0UknORZPFQp9vem0N6seXXskN_MLNFspkkbcIZC9xl5h39D1sKMWCS1e8jejh4hR9QEXAZ5U25Iq6fb1cXXm1n2TdKu5yIG143hFkdnC4rolBHy0SBSLJPf4WFoOrHT0184e1Nsw7xDSv2S1bhSM6g6EfkRg_Plsbjg-NKwa7GlXw6TaOFIrhL6Pk"/>
+<div class="flex-1">
+<p class="font-body-md font-bold text-on-surface">YOU (OPERATOR_01)</p>
+<div class="flex items-center gap-2">
+<div class="h-1.5 w-32 bg-white/10 rounded-full overflow-hidden">
+<div class="h-full bg-cyan-400 w-3/4"></div>
+</div>
+<span class="text-[10px] text-slate-400 font-bold">12,450 XP TO NEXT RANK</span>
+</div>
+</div>
+<div class="text-right px-4 border-l border-white/10 hidden sm:block">
+<p class="text-[10px] font-bold text-slate-500">CURRENT SCORE</p>
+<p class="font-h3 text-cyan-400">18,240</p>
+</div>
+<button class="h-12 w-12 bg-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all">
+<span class="material-symbols-outlined text-white">chevron_right</span>
+</button>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full flex justify-between px-10 items-center mt-auto full-width py-4 bg-slate-950 border-t border-white/5">
+<span class="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-cyan-500 uppercase">© 2024 QUIZBATTLE TACTICAL SYSTEMS</span>
+<div class="flex gap-6">
+<a class="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-slate-600 hover:text-cyan-400 transition-all uppercase" href="#">Status</a>
+<a class="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-slate-600 hover:text-cyan-400 transition-all uppercase" href="#">Privacy</a>
+<a class="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-slate-600 hover:text-cyan-400 transition-all uppercase" href="#">Support</a>
+</div>
+</footer>
+</body></html>

@@ -42,7 +42,7 @@ export default function RegisterPage() {
 
     const result = await register(formData.username, formData.email, formData.password);
     if (result.success) {
-      router.push('/dashboard');
+      router.push('/login');
     } else {
       setLocalError(result.error || 'Registration failed');
     }
@@ -59,11 +59,11 @@ export default function RegisterPage() {
       <div className="relative z-10 w-full max-w-[1100px] grid md:grid-cols-2 gap-12 items-center">
         {/* Branding/Value Prop Section */}
         <div className="hidden md:flex flex-col space-y-6">
-          <div className="flex items-center gap-1">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#cf5cff] to-[#00d1ff] rounded-lg flex items-center justify-center neon-glow-hover">
-              <span className="material-symbols-outlined text-[#0e1417] text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>person_add</span>
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 bg-gradient-to-br from-[#cf5cff] to-[#00d1ff] rounded-xl flex items-center justify-center neon-glow-hover icon-box">
+              <span className="material-symbols-outlined text-[#0e1417] text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>person_add</span>
             </div>
-            <span className="font-bold text-3xl text-[#ecb2ff] tracking-tighter italic">QuizBattle</span>
+            <span className="font-bold text-4xl text-[#ecb2ff] tracking-tighter italic">QuizBattle</span>
           </div>
           <h1 className="font-bold text-5xl text-[#dde3e7] leading-tight">
             BECOME AN <br />
@@ -101,14 +101,16 @@ export default function RegisterPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-1">
                 <label className="font-bold text-xs tracking-widest text-[#bbc9cf] ml-1">CALLSIGN (USERNAME)</label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-6 top-1/2 -translate-y-1/2 text-[#859399] text-lg">badge</span>
+                <div className="relative group">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#859399] group-focus-within:text-[#cf5cff] transition-colors icon-box">
+                    <span className="material-symbols-outlined text-xl">badge</span>
+                  </div>
                   <input 
                     name="username"
                     type="text"
                     value={formData.username}
                     onChange={handleChange}
-                    className="w-full bg-[#242b2e] border border-[#3c494e] rounded-lg py-3 pl-12 pr-6 text-[#dde3e7] focus:outline-none focus:border-[#cf5cff] transition-all" 
+                    className="w-full bg-[#1a2123]/50 border border-[#3c494e] rounded-lg py-4 pl-14 pr-6 text-[#dde3e7] focus:outline-none focus:border-[#cf5cff] focus:ring-1 focus:ring-[#cf5cff]/30 transition-all placeholder:text-[#859399]/50" 
                     placeholder="Ghost007" 
                   />
                 </div>
@@ -116,14 +118,16 @@ export default function RegisterPage() {
 
               <div className="space-y-1">
                 <label className="font-bold text-xs tracking-widest text-[#bbc9cf] ml-1">IDENTIFICATION (EMAIL)</label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-6 top-1/2 -translate-y-1/2 text-[#859399] text-lg">alternate_email</span>
+                <div className="relative group">
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#859399] group-focus-within:text-[#cf5cff] transition-colors icon-box">
+                    <span className="material-symbols-outlined text-xl">alternate_email</span>
+                  </div>
                   <input 
                     name="email"
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full bg-[#242b2e] border border-[#3c494e] rounded-lg py-3 pl-12 pr-6 text-[#dde3e7] focus:outline-none focus:border-[#cf5cff] transition-all" 
+                    className="w-full bg-[#1a2123]/50 border border-[#3c494e] rounded-lg py-4 pl-14 pr-6 text-[#dde3e7] focus:outline-none focus:border-[#cf5cff] focus:ring-1 focus:ring-[#cf5cff]/30 transition-all placeholder:text-[#859399]/50" 
                     placeholder="operator@battle.net" 
                   />
                 </div>
@@ -132,14 +136,16 @@ export default function RegisterPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1">
                   <label className="font-bold text-xs tracking-widest text-[#bbc9cf] ml-1">CYPHER (PASSWORD)</label>
-                  <div className="relative">
-                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#859399] text-lg">lock</span>
+                  <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#859399] group-focus-within:text-[#cf5cff] transition-colors icon-box">
+                      <span className="material-symbols-outlined text-xl">lock</span>
+                    </div>
                     <input 
                       name="password"
                       type="password"
                       value={formData.password}
                       onChange={handleChange}
-                      className="w-full bg-[#242b2e] border border-[#3c494e] rounded-lg py-3 pl-10 pr-4 text-[#dde3e7] focus:outline-none focus:border-[#cf5cff] transition-all" 
+                      className="w-full bg-[#1a2123]/50 border border-[#3c494e] rounded-lg py-4 pl-12 pr-4 text-[#dde3e7] focus:outline-none focus:border-[#cf5cff] focus:ring-1 focus:ring-[#cf5cff]/30 transition-all placeholder:text-[#859399]/50" 
                       placeholder="••••••••" 
                     />
                   </div>
@@ -147,14 +153,16 @@ export default function RegisterPage() {
 
                 <div className="space-y-1">
                   <label className="font-bold text-xs tracking-widest text-[#bbc9cf] ml-1">CONFIRM CYPHER</label>
-                  <div className="relative">
-                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#859399] text-lg">lock_reset</span>
+                  <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#859399] group-focus-within:text-[#cf5cff] transition-colors icon-box">
+                      <span className="material-symbols-outlined text-xl">lock_reset</span>
+                    </div>
                     <input 
                       name="confirmPassword"
                       type="password"
                       value={formData.confirmPassword}
                       onChange={handleChange}
-                      className="w-full bg-[#242b2e] border border-[#3c494e] rounded-lg py-3 pl-10 pr-4 text-[#dde3e7] focus:outline-none focus:border-[#cf5cff] transition-all" 
+                      className="w-full bg-[#1a2123]/50 border border-[#3c494e] rounded-lg py-4 pl-12 pr-4 text-[#dde3e7] focus:outline-none focus:border-[#cf5cff] focus:ring-1 focus:ring-[#cf5cff]/30 transition-all placeholder:text-[#859399]/50" 
                       placeholder="••••••••" 
                     />
                   </div>
@@ -171,10 +179,10 @@ export default function RegisterPage() {
                 <button 
                   type="submit" 
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-[#cf5cff] to-[#00d1ff] py-6 rounded-lg font-bold text-xs tracking-widest text-[#0e1417] uppercase neon-glow-hover active:scale-95 transition-all flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-[#cf5cff] to-[#00d1ff] py-5 rounded-lg font-bold text-xs tracking-widest text-[#0e1417] uppercase neon-glow-hover active:scale-95 transition-all flex items-center justify-center gap-3"
                 >
                   <span>{isLoading ? 'INITIALIZING...' : 'CREATE OPERATOR PROFILE'}</span>
-                  <span className="material-symbols-outlined text-lg">person_add</span>
+                  <span className="material-symbols-outlined text-xl">person_add</span>
                 </button>
                 <Link href="/auth/login" className="block text-center w-full border border-[#cf5cff]/30 hover:bg-[#cf5cff]/10 py-6 rounded-lg font-bold text-xs tracking-widest text-[#ecb2ff] transition-all uppercase">
                   RETURN TO LOGIN

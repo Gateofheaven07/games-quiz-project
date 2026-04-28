@@ -3,6 +3,12 @@ import { verifyToken } from './auth';
 import { GameManager } from './gameManager';
 import { submitAnswerHandler } from '../websocket/events/submitAnswer';
 import { startGameHandler } from '../websocket/events/startGame';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+// Track online users: userId → socketId
+const onlineUsers = new Map<string, string>();
 
 export interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -44,6 +50,74 @@ export function setupSocketHandlers(io: any) {
       username: socket.username,
     });
 
+    // ── Presence: Mark user online ──────────────────────────────────────────
+    if (socket.userId) {
+      onlineUsers.set(socket.userId, socket.id);
+      socket.join(`user:${socket.userId}`);
+      notifyFriendsPresence(socket.userId, true, io);
+    }
+
+    // ── Presence: Who is online? ─────────────────────────────────────────────
+    socket.on('presence:get_online', (friendIds: string[]) => {
+      const online = friendIds.filter((id) => onlineUsers.has(id));
+      socket.emit('presence:online_list', online);
+    });
+
+    // ── Direct Message via Socket ────────────────────────────────────────────
+    socket.on('chat:send', async (data: { receiverId: string; content: string }) => {
+      try {
+        if (!socket.userId) return;
+        const { receiverId, content } = data;
+        if (!content || !receiverId) return;
+
+        const friendship = await prisma.friendship.findFirst({
+          where: {
+            status: 'ACCEPTED',
+            OR: [
+              { senderId: socket.userId, receiverId },
+              { senderId: receiverId, receiverId: socket.userId },
+            ],
+          },
+        });
+
+        if (!friendship) {
+          socket.emit('error', 'You are not friends with this user');
+          return;
+        }
+
+        const message = await prisma.message.create({
+          data: { senderId: socket.userId, receiverId, content: content.trim() },
+          include: { sender: { select: { id: true, username: true } } },
+        });
+
+        const payload = {
+          id: message.id,
+          senderId: message.senderId,
+          receiverId: message.receiverId,
+          content: message.content,
+          createdAt: message.createdAt,
+          sender: message.sender,
+        };
+
+        io.to(`user:${receiverId}`).emit('chat:message', payload);
+        socket.emit('chat:message', payload);
+      } catch (error) {
+        console.error('[Socket] Chat send error:', error);
+        socket.emit('error', 'Failed to send message');
+      }
+    });
+
+    // ── Typing indicator ─────────────────────────────────────────────────────
+    socket.on('chat:typing', (data: { receiverId: string; isTyping: boolean }) => {
+      if (!socket.userId) return;
+      io.to(`user:${data.receiverId}`).emit('chat:typing', {
+        senderId: socket.userId,
+        username: socket.username,
+        isTyping: data.isTyping,
+      });
+    });
+
+    // ── Game Events ───────────────────────────────────────────────────────────
     socket.on('user:create_room', async (data) => {
       try {
         if (!socket.userId) {
@@ -85,17 +159,15 @@ export function setupSocketHandlers(io: any) {
 
         socket.join(roomId);
 
-        // Send questions to both players
         const questions = GameManager.getRoomQuestions(roomId);
         io.to(roomId).emit('room:ready', {
           roomId,
           questions: questions.map((q) => ({
             ...q,
-            correctAnswer: undefined, // Don't send correct answer
+            correctAnswer: undefined,
           })),
         });
 
-        // Send first question
         if (questions.length > 0) {
           io.to(roomId).emit('game:question', {
             question: {
@@ -137,7 +209,6 @@ export function setupSocketHandlers(io: any) {
 
         await GameManager.finishGame(roomId, socket.userId);
 
-        // Notify room that player finished
         io.to(roomId).emit('game:player_finished', {
           userId: socket.userId,
           username: socket.username,
@@ -153,6 +224,9 @@ export function setupSocketHandlers(io: any) {
     socket.on('disconnect', async () => {
       try {
         if (socket.userId) {
+          onlineUsers.delete(socket.userId);
+          notifyFriendsPresence(socket.userId, false, io);
+
           const roomId = GameManager.getUserRoom(socket.userId);
           if (roomId) {
             socket.leave(roomId);
@@ -172,6 +246,25 @@ export function setupSocketHandlers(io: any) {
       }
     });
   });
+}
+
+async function notifyFriendsPresence(userId: string, isOnline: boolean, io: any) {
+  try {
+    const friendships = await prisma.friendship.findMany({
+      where: {
+        status: 'ACCEPTED',
+        OR: [{ senderId: userId }, { receiverId: userId }],
+      },
+      select: { senderId: true, receiverId: true },
+    });
+
+    for (const f of friendships) {
+      const friendId = f.senderId === userId ? f.receiverId : f.senderId;
+      io.to(`user:${friendId}`).emit('presence:update', { userId, isOnline });
+    }
+  } catch (error) {
+    console.error('[Socket] Presence notify error:', error);
+  }
 }
 
 export default setupSocketHandlers;

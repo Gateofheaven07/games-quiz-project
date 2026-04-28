@@ -1,36 +1,21 @@
-import { AnswerPayload } from './game.types';
-/**
- * Tujuan File: game.service.ts (ORCHESTRATOR)
- * Berfungsi sebagai penghubung (middleman) antara WebSocket, Database (Prisma), dan Game Engine.
- *
- * Kenapa dipisah?
- * Sesuai prinsip Clean Architecture, logic bisnis (Engine) tidak boleh tahu soal Database.
- * File ini yang bertugas mengambil data, memanggil engine, dan menyimpan hasilnya kembali.
- *
- * Alur Kerja:
- * 1. Di-trigger oleh WebSocket event.
- * 2. Ambil data dari Database (Prisma).
- * 3. Proses data dengan GameEngine.
- * 4. Simpan hasil ke Database.
- * 5. Kembalikan data ke pemanggil (WebSocket) untuk di-broadcast.
- */
+import { AnswerPayload, AnswerResult, StartGameResult } from './game.types';
 export declare class GameService {
     /**
      * Proses submit jawaban dari player.
-     * @param payload Data jawaban dari client
+     * @param payload Data jawaban yang dikirim dari client via WebSocket
      */
-    static processAnswer(payload: AnswerPayload): Promise<{
-        isCorrect: boolean;
-        scoreEarned: number;
-        correctAnswer: string;
-    }>;
+    static processAnswer(payload: AnswerPayload): Promise<AnswerResult>;
     /**
-     * Mulai game baru di dalam room
+     * Mulai game baru di dalam room.
+     * Akan membuat record Game dan mengambil soal-soal secara random.
+     * @param roomId ID room yang akan di-start
      */
-    static startGame(roomId: string): Promise<{
-        gameId: string;
-        message: string;
-        questionCount: number;
-    }>;
+    static startGame(roomId: string): Promise<StartGameResult>;
+    /**
+     * Selesaikan game dan tentukan pemenang.
+     * Simpan GameResult ke database untuk semua player.
+     * @param gameId ID game yang selesai
+     */
+    static finishGame(gameId: string): Promise<void>;
 }
 //# sourceMappingURL=game.service.d.ts.map

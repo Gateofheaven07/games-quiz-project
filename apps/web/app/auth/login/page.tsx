@@ -1,15 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../../hooks/useAuth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isLoading, error } = useAuth();
+  const { login, isLoading, isAuthenticated, error } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [localError, setLocalError] = useState('');
+
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, isLoading, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -44,11 +51,11 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-[1100px] grid md:grid-cols-2 gap-12 items-center">
         {/* Branding/Value Prop Section */}
         <div className="hidden md:flex flex-col space-y-6">
-          <div className="flex items-center gap-1">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#00d1ff] to-[#cf5cff] rounded-lg flex items-center justify-center neon-glow-primary">
-              <span className="material-symbols-outlined text-[#0e1417] text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 bg-gradient-to-br from-[#00d1ff] to-[#cf5cff] rounded-xl flex items-center justify-center neon-glow-primary icon-box">
+              <span className="material-symbols-outlined text-[#0e1417] text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
             </div>
-            <span className="font-bold text-3xl text-[#a4e6ff] tracking-tighter italic">QuizBattle</span>
+            <span className="font-bold text-4xl text-[#a4e6ff] tracking-tighter italic">QuizBattle</span>
           </div>
           <h1 className="font-bold text-5xl text-[#dde3e7] leading-tight">
             ENTER THE <br />
@@ -98,14 +105,16 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-1">
                 <label className="font-bold text-xs tracking-widest text-[#bbc9cf] ml-1">IDENTIFICATION (EMAIL)</label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-6 top-1/2 -translate-y-1/2 text-[#859399] text-lg">alternate_email</span>
+                <div className="relative group">
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-[#859399] group-focus-within:text-[#00d1ff] transition-colors icon-box">
+                    <span className="material-symbols-outlined text-xl">alternate_email</span>
+                  </div>
                   <input 
                     name="email"
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full bg-[#242b2e] border border-[#3c494e] rounded-lg py-3 pl-12 pr-6 text-[#dde3e7] focus:outline-none focus:border-[#00d1ff] transition-all" 
+                    className="w-full bg-[#1a2123]/50 border border-[#3c494e] rounded-lg py-4 pl-16 pr-6 text-[#dde3e7] focus:outline-none focus:border-[#00d1ff] focus:ring-1 focus:ring-[#00d1ff]/30 transition-all placeholder:text-[#859399]/50" 
                     placeholder="operator@battle.net" 
                   />
                 </div>
@@ -115,14 +124,16 @@ export default function LoginPage() {
                   <label className="font-bold text-xs tracking-widest text-[#bbc9cf]">CYPHER (PASSWORD)</label>
                   <Link href="#" className="text-[10px] font-bold tracking-widest text-[#a4e6ff] hover:text-[#b7eaff] transition-colors">FORGOT?</Link>
                 </div>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-6 top-1/2 -translate-y-1/2 text-[#859399] text-lg">lock</span>
+                <div className="relative group">
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-[#859399] group-focus-within:text-[#00d1ff] transition-colors icon-box">
+                    <span className="material-symbols-outlined text-xl">lock</span>
+                  </div>
                   <input 
                     name="password"
                     type="password"
                     value={formData.password}
                     onChange={handleChange}
-                    className="w-full bg-[#242b2e] border border-[#3c494e] rounded-lg py-3 pl-12 pr-6 text-[#dde3e7] focus:outline-none focus:border-[#00d1ff] transition-all" 
+                    className="w-full bg-[#1a2123]/50 border border-[#3c494e] rounded-lg py-4 pl-16 pr-6 text-[#dde3e7] focus:outline-none focus:border-[#00d1ff] focus:ring-1 focus:ring-[#00d1ff]/30 transition-all placeholder:text-[#859399]/50" 
                     placeholder="••••••••" 
                   />
                 </div>
@@ -143,10 +154,10 @@ export default function LoginPage() {
                 <button 
                   type="submit" 
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] py-6 rounded-lg font-bold text-xs tracking-widest text-[#0e1417] uppercase neon-glow-primary neon-glow-hover active:scale-95 transition-all flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] py-5 rounded-lg font-bold text-xs tracking-widest text-[#0e1417] uppercase neon-glow-primary neon-glow-hover active:scale-95 transition-all flex items-center justify-center gap-3"
                 >
                   <span>{isLoading ? 'INITIALIZING...' : 'INITIALIZE SESSION'}</span>
-                  <span className="material-symbols-outlined text-lg">login</span>
+                  <span className="material-symbols-outlined text-xl">login</span>
                 </button>
                 <Link href="/auth/register" className="block text-center w-full border border-[#00d1ff]/30 hover:bg-[#00d1ff]/10 py-6 rounded-lg font-bold text-xs tracking-widest text-[#a4e6ff] transition-all uppercase">
                   CREATE NEW OPERATOR ACCOUNT

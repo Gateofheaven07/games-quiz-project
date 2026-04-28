@@ -8,6 +8,7 @@ import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
 import quizRoutes from './routes/quiz';
 import leaderboardRoutes from './routes/leaderboard';
+import friendsRoutes from './routes/friends';
 import { setupSocketHandlers } from './lib/socketHandlers';
 
 dotenv.config();
@@ -42,6 +43,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/friends', friendsRoutes);
 
 // Setup Socket.IO handlers
 setupSocketHandlers(io);

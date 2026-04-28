@@ -7,6 +7,7 @@ export interface User {
   id: string;
   username: string;
   email: string;
+  level?: number;
   createdAt?: string;
 }
 
@@ -37,27 +38,101 @@ export const useAuth = () => {
     error: null,
   });
 
-  // Initialize from localStorage
+  // Initialize from localStorage — validate token against server
   useEffect(() => {
-    const stored = localStorage.getItem('auth');
-    if (stored) {
+    const initAuth = async () => {
+      const stored = localStorage.getItem('auth');
+      if (!stored) {
+        setState((prev) => ({ ...prev, isLoading: false }));
+        return;
+      }
+
+      let parsed: { user: User; token: string; refreshToken: string } | null = null;
       try {
-        const { user, token, refreshToken } = JSON.parse(stored);
-        setState((prev) => ({
-          ...prev,
-          user,
-          token,
-          refreshToken,
-          isAuthenticated: !!token,
-          isLoading: false,
-        }));
-      } catch (err) {
+        parsed = JSON.parse(stored);
+      } catch {
         localStorage.removeItem('auth');
         setState((prev) => ({ ...prev, isLoading: false }));
+        return;
       }
-    } else {
-      setState((prev) => ({ ...prev, isLoading: false }));
-    }
+
+      if (!parsed?.token) {
+        localStorage.removeItem('auth');
+        setState((prev) => ({ ...prev, isLoading: false }));
+        return;
+      }
+
+      // Validate token against server
+      try {
+        const response = await axios.get(`${API_BASE_URL}/auth/me`, {
+          headers: { Authorization: `Bearer ${parsed.token}` },
+        });
+
+        const serverUser = response.data?.data?.user;
+        if (serverUser) {
+          // Token valid — update user data from server (fresher data)
+          const mergedUser: User = {
+            ...parsed.user,
+            ...serverUser,
+          };
+          const authData = { user: mergedUser, token: parsed.token, refreshToken: parsed.refreshToken };
+          localStorage.setItem('auth', JSON.stringify(authData));
+          setState({
+            user: mergedUser,
+            token: parsed.token,
+            refreshToken: parsed.refreshToken,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+          });
+          return;
+        }
+      } catch (err: any) {
+        // Token invalid or server error — try refresh
+        if (parsed.refreshToken) {
+          try {
+            const refreshResp = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+              refreshToken: parsed.refreshToken,
+            });
+            const { token: newToken, refreshToken: newRefreshToken } = refreshResp.data.data;
+
+            // Validate new token
+            const meResp = await axios.get(`${API_BASE_URL}/auth/me`, {
+              headers: { Authorization: `Bearer ${newToken}` },
+            });
+            const serverUser = meResp.data?.data?.user;
+            if (serverUser) {
+              const authData = { user: serverUser, token: newToken, refreshToken: newRefreshToken };
+              localStorage.setItem('auth', JSON.stringify(authData));
+              setState({
+                user: serverUser,
+                token: newToken,
+                refreshToken: newRefreshToken,
+                isAuthenticated: true,
+                isLoading: false,
+                error: null,
+              });
+              return;
+            }
+          } catch {
+            // Refresh also failed
+          }
+        }
+      }
+
+      // All validation failed — clear auth
+      localStorage.removeItem('auth');
+      setState({
+        user: null,
+        token: null,
+        refreshToken: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null,
+      });
+    };
+
+    initAuth();
   }, []);
 
   const saveAuth = useCallback((user: User, tokens: AuthTokens) => {

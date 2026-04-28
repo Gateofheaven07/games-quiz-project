@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-error": "#690005",
+                    "tertiary": "#ffd59c",
+                    "tertiary-fixed": "#ffddb1",
+                    "on-tertiary-fixed-variant": "#624000",
+                    "error": "#ffb4ab",
+                    "secondary-fixed-dim": "#ecb2ff",
+                    "on-primary-fixed": "#001f28",
+                    "tertiary-fixed-dim": "#ffba49",
+                    "on-tertiary-container": "#6b4700",
+                    "on-error-container": "#ffdad6",
+                    "outline": "#859399",
+                    "tertiary-container": "#feb127",
+                    "on-surface-variant": "#bbc9cf",
+                    "on-background": "#dde3e7",
+                    "on-secondary-fixed": "#320047",
+                    "on-secondary": "#520071",
+                    "inverse-surface": "#dde3e7",
+                    "on-primary-container": "#00566a",
+                    "secondary": "#ecb2ff",
+                    "surface": "#0e1417",
+                    "secondary-container": "#cf5cff",
+                    "background": "#0e1417",
+                    "primary-fixed": "#b7eaff",
+                    "surface-container": "#1a2123",
+                    "on-primary": "#003543",
+                    "on-surface": "#dde3e7",
+                    "on-tertiary-fixed": "#291800",
+                    "surface-tint": "#4cd6ff",
+                    "primary": "#a4e6ff",
+                    "on-secondary-container": "#480063",
+                    "surface-container-highest": "#2f3639",
+                    "on-primary-fixed-variant": "#004e60",
+                    "primary-container": "#00d1ff",
+                    "outline-variant": "#3c494e",
+                    "surface-dim": "#0e1417",
+                    "surface-container-lowest": "#090f12",
+                    "error-container": "#93000a",
+                    "inverse-on-surface": "#2b3134",
+                    "on-secondary-fixed-variant": "#74009f",
+                    "on-tertiary": "#442b00",
+                    "surface-container-low": "#161d1f",
+                    "surface-container-high": "#242b2e",
+                    "secondary-fixed": "#f8d8ff",
+                    "surface-bright": "#333a3d",
+                    "primary-fixed-dim": "#4cd6ff",
+                    "surface-variant": "#2f3639",
+                    "inverse-primary": "#00677f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sm": "12px",
+                    "container-max": "1280px",
+                    "lg": "48px",
+                    "md": "24px",
+                    "base": "8px",
+                    "xl": "80px",
+                    "xs": "4px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "h2": ["Space Grotesk"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "h1": ["Space Grotesk"],
+                    "h3": ["Space Grotesk"],
+                    "label-caps": ["Space Grotesk"]
+            },
+            "fontSize": {
+                    "h2": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "h1": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "h3": ["24px", {"lineHeight": "1.3", "letterSpacing": "0", "fontWeight": "600"}],
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #0b0e14;
+            color: #dde3e7;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .neon-glow-primary {
+            box-shadow: 0 0 15px rgba(0, 209, 255, 0.3);
+        }
+        .neon-border-cyan {
+            border: 1px solid rgba(0, 209, 255, 0.4);
+        }
+        .shimmer-bg {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            background-size: 200% 100%;
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-background selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-slate-950/80 backdrop-blur-xl border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black italic tracking-tighter text-cyan-400 drop-shadow-[0_0_10px_rgba(0,209,255,0.5)] font-['Space_Grotesk']">QuizBattle</span>
+<div class="hidden md:flex gap-6">
+<a class="text-slate-400 hover:text-white font-['Space_Grotesk'] tracking-tight hover:bg-white/5 transition-all px-3 py-1 rounded-lg" href="#">Beranda</a>
+<a class="text-slate-400 hover:text-white font-['Space_Grotesk'] tracking-tight hover:bg-white/5 transition-all px-3 py-1 rounded-lg" href="#">Arena</a>
+<a class="text-cyan-400 border-b-2 border-cyan-400 pb-1 font-['Space_Grotesk'] tracking-tight" href="#">Profil</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<input class="bg-surface-container-lowest border border-white/10 rounded-full px-4 py-1 text-xs focus:ring-1 focus:ring-cyan-400 outline-none w-48 transition-all" placeholder="Cari pertandingan..." type="text"/>
+<span class="material-symbols-outlined absolute right-3 top-1 text-slate-500 text-sm">search</span>
+</div>
+<button class="material-symbols-outlined text-slate-400 hover:text-white transition-all scale-105 active:scale-95 duration-200">notifications</button>
+<button class="material-symbols-outlined text-slate-400 hover:text-white transition-all scale-105 active:scale-95 duration-200">settings</button>
+<div class="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-400/50 flex items-center justify-center overflow-hidden">
+<img alt="Avatar Peringkat Pengguna" class="w-full h-full object-cover" data-alt="Stylized 3D avatar of a futuristic gamer with neon headphones and digital visor in blue and purple palette" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCfus1ehuZDn7lZmaBF5TpBsWYIUpmYxWr64aR1ElCZv3Z236wKi-QvTDDg3-LUOFVOxYqCGxE181qrtmWGUXWw2iDx3ahxPfkRyIFg7kgpk2OHOBy83aeDpCmyhftSFKBY_gfpyUteVpQVDWrv9sju2Kb6I3mkYHluE1pEewg7IuNkwNEyviU_bCEjYmhL3ojviB9zycSB8eX2YDBVzIKremBjxNXr0Wvtq9tj_uK5eYkmDul1HDD_5dNzBH-lOOV0zjKgMqgixJ8"/>
+</div>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] z-40 flex flex-col pt-8 bg-[#FFFFFF0D] backdrop-blur-2xl border-r border-white/20 shadow-[20px_0_40px_rgba(0,0,0,0.3)] w-64 hidden lg:flex">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-4 mb-4">
+<div class="w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-600 p-[1px]">
+<div class="w-full h-full bg-slate-900 rounded-[7px] flex items-center justify-center">
+<span class="material-symbols-outlined text-cyan-400">shield</span>
+</div>
+</div>
+<div>
+<h4 class="font-h3 text-xs uppercase tracking-widest text-white">OPERATOR_01</h4>
+<p class="text-[10px] text-cyan-400 font-bold tracking-tighter">PERINGKAT EMAS</p>
+</div>
+</div>
+</div>
+<nav class="flex flex-col gap-1">
+<a class="text-slate-500 flex items-center gap-3 px-6 py-4 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="#">
+<span class="material-symbols-outlined">dashboard</span> Dasbor
+            </a>
+<a class="text-slate-500 flex items-center gap-3 px-6 py-4 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="#">
+<span class="material-symbols-outlined">swords</span> Arena Pertempuran
+            </a>
+<a class="text-slate-500 flex items-center gap-3 px-6 py-4 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="#">
+<span class="material-symbols-outlined">sports_esports</span> Arkade
+            </a><a class="text-slate-500 flex items-center gap-3 px-6 py-4 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="#">
+<span class="material-symbols-outlined">group</span> Teman
+            </a>
+<a class="text-slate-500 flex items-center gap-3 px-6 py-4 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="#">
+<span class="material-symbols-outlined">leaderboard</span> Peringkat
+            </a>
+<a class="bg-cyan-500/20 text-cyan-400 border-r-4 border-cyan-400 flex items-center gap-3 px-6 py-4 font-['Space_Grotesk'] uppercase text-xs font-bold" href="#">
+<span class="material-symbols-outlined">person</span> Profil
+            </a>
+</nav>
+<div class="mt-auto p-6">
+<button class="w-full py-3 bg-gradient-to-r from-cyan-600 to-blue-700 text-white font-label-caps text-[10px] rounded-lg neon-glow-primary scale-100 hover:scale-105 active:scale-95 transition-all">
+                CARI PERTANDINGAN
+            </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="lg:ml-64 pt-24 px-6 pb-12 min-h-screen">
+<div class="max-w-6xl mx-auto">
+<!-- Hero Profile Section -->
+<header class="grid grid-cols-1 md:grid-cols-12 gap-gutter mb-10">
+<div class="md:col-span-8 glass-card rounded-xl p-8 relative overflow-hidden flex flex-col md:flex-row items-center gap-8">
+<div class="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 blur-[80px] rounded-full -mr-20 -mt-20"></div>
+<div class="relative">
+<div class="w-32 h-32 rounded-full border-4 border-cyan-400 p-1 neon-glow-primary">
+<img alt="Operator Pro" class="w-full h-full rounded-full object-cover bg-slate-800" data-alt="Close up of a high-tech digital user avatar with glowing blue circuitry patterns and a sleek carbon fiber helmet" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdWAItTp5awcfv8jNgRNSCxFQRFuxrPvvkqpBPBDx-kBCNjn_A9Ro29bnBcOf_ZFc8JKryQbikxbgKSOr7H8L6KtiRnjansyvSk-Gk1BShlR6TVbb0IPGFalWh4dZh4V_j-VvP-sPUcyR-Biq6N2miRhZ80js80jUhN1cNYU6Q8eQCnwPh5cxB-LDPDC89LjXgUs1MvqfVMV2K_2ZM370WXYZZ3Ua0mSmt-oHM6xGz8Tg7dOrxjphv1tQn6R00-bWlNK_C6FOV4Jw"/>
+</div>
+<div class="absolute bottom-1 right-1 bg-primary-container text-on-primary-container px-2 py-0.5 rounded-full text-[10px] font-bold border border-white/20">LVL 42</div>
+</div>
+<div class="flex-1 text-center md:text-left z-10">
+<h1 class="font-h1 text-white mb-1">OPERATOR_01</h1>
+<p class="text-cyan-400 font-label-caps text-sm tracking-[0.2em] mb-4">KOMANDAN TINGKAT ELIT</p>
+<div class="flex flex-wrap justify-center md:justify-start gap-4">
+<div class="bg-white/5 border border-white/10 px-4 py-2 rounded-lg">
+<p class="text-[10px] text-slate-500 font-bold uppercase">Peringkat Global</p>
+<p class="text-h3 text-white">#1,204</p>
+</div>
+<div class="bg-white/5 border border-white/10 px-4 py-2 rounded-lg">
+<p class="text-[10px] text-slate-500 font-bold uppercase">Tingkat Kemenangan</p>
+<p class="text-h3 text-secondary">68.4%</p>
+</div>
+<div class="bg-white/5 border border-white/10 px-4 py-2 rounded-lg">
+<p class="text-[10px] text-slate-500 font-bold uppercase">Waktu Bermain</p>
+<p class="text-h3 text-white">124H</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Next Reward Card -->
+<div class="md:col-span-4 glass-card rounded-xl p-6 flex flex-col justify-between border-primary/20">
+<div>
+<h4 class="font-label-caps text-[10px] text-slate-400 mb-4">PROGRES PASS MUSIM</h4>
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold text-white">LEVEL 14</span>
+<span class="text-xs text-slate-500">2.400 / 3.000 XP</span>
+</div>
+<div class="h-3 w-full bg-slate-950 rounded-full overflow-hidden relative">
+<div class="h-full bg-gradient-to-r from-cyan-400 to-secondary-container w-[80%] relative">
+<div class="absolute right-0 top-0 h-full w-1 bg-white shadow-[0_0_8px_white]"></div>
+</div>
+</div>
+</div>
+<div class="mt-6 flex items-center gap-4 p-3 bg-white/5 rounded-lg border border-white/5">
+<span class="material-symbols-outlined text-tertiary-container text-3xl">workspace_premium</span>
+<div>
+<p class="text-[10px] text-slate-400 uppercase font-bold">Buka Kunci Berikutnya</p>
+<p class="text-sm font-bold text-white">BINGKAI AVATAR NEON STRIKE</p>
+</div>
+</div>
+</div>
+</header>
+<!-- Stats & Bento Grid Section -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-10">
+<!-- Detailed Stats Card -->
+<div class="glass-card rounded-xl p-6">
+<h3 class="font-h3 text-white text-lg mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-cyan-400">analytics</span>
+                        Metrik Pertempuran
+                    </h3>
+<div class="space-y-6">
+<div class="flex justify-between items-end border-b border-white/5 pb-2">
+<div>
+<p class="text-[10px] text-slate-500 font-bold uppercase">Total Permainan</p>
+<p class="font-h3 text-white">842</p>
+</div>
+<span class="text-[10px] text-cyan-400 font-bold">+12 Hari Ini</span>
+</div>
+<div class="flex justify-between items-end border-b border-white/5 pb-2">
+<div>
+<p class="text-[10px] text-slate-500 font-bold uppercase">Total Kemenangan</p>
+<p class="font-h3 text-white">576</p>
+</div>
+<span class="text-[10px] text-secondary font-bold">+8 Hari Ini</span>
+</div>
+<div class="flex justify-between items-end border-b border-white/5 pb-2">
+<div>
+<p class="text-[10px] text-slate-500 font-bold uppercase">Akurasi</p>
+<p class="font-h3 text-white">92.4%</p>
+</div>
+<span class="text-[10px] text-tertiary font-bold">Top 1%</span>
+</div>
+</div>
+</div>
+<!-- Recent Match History -->
+<div class="md:col-span-2 glass-card rounded-xl p-6">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-h3 text-white text-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-cyan-400">history</span>
+                            Pertemuan Terakhir
+                        </h3>
+<button class="text-[10px] font-bold text-cyan-400 hover:underline uppercase tracking-widest">Lihat Semua Pertandingan</button>
+</div>
+<div class="space-y-3">
+<!-- Match Item 1 -->
+<div class="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10 hover:border-cyan-400/30 transition-all group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded bg-secondary/10 flex items-center justify-center border border-secondary/30">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">emoji_events</span>
+</div>
+<div>
+<p class="font-bold text-white group-hover:text-cyan-400 transition-colors">Menang - 1v1 Peringkat</p>
+<p class="text-[10px] text-slate-500 uppercase">Lawan: <span class="text-slate-300">ShadowStalker_99</span> • 2 menit yang lalu</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-h3 text-cyan-400 text-sm">+24 RP</p>
+<p class="text-[10px] text-slate-500">Bonus MVP Diterapkan</p>
+</div>
+</div>
+<!-- Match Item 2 -->
+<div class="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10 hover:border-white/20 transition-all group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded bg-slate-800 flex items-center justify-center border border-white/10">
+<span class="material-symbols-outlined text-slate-500">skull</span>
+</div>
+<div>
+<p class="font-bold text-white">Kalah - Arena Tim</p>
+<p class="text-[10px] text-slate-500 uppercase">Peta: <span class="text-slate-300">Neon Citadel</span> • 45 menit yang lalu</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-h3 text-error text-sm">-12 RP</p>
+<p class="text-[10px] text-slate-500">Perlindungan Underdog</p>
+</div>
+</div>
+<!-- Match Item 3 -->
+<div class="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10 hover:border-cyan-400/30 transition-all group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded bg-secondary/10 flex items-center justify-center border border-secondary/30">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">emoji_events</span>
+</div>
+<div>
+<p class="font-bold text-white group-hover:text-cyan-400 transition-colors">Menang - Tantangan Harian</p>
+<p class="text-[10px] text-slate-500 uppercase">Tipe: <span class="text-slate-300">Master Budaya Pop</span> • 2 jam yang lalu</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-h3 text-cyan-400 text-sm">+500 KREDIT</p>
+<p class="text-[10px] text-slate-500">Rentetan: 3 Kemenangan</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Achievement Grid -->
+<section class="glass-card rounded-xl p-8">
+<h3 class="font-h3 text-white text-lg mb-8 flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary-container">military_tech</span>
+                    Aula Kehormatan
+                </h3>
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6">
+<div class="flex flex-col items-center gap-3 opacity-100">
+<div class="w-16 h-16 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 flex items-center justify-center shadow-[0_0_20px_rgba(0,209,255,0.4)]">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<p class="text-[10px] font-bold text-white text-center uppercase tracking-tighter">Jari Tercepat</p>
+</div>
+<div class="flex flex-col items-center gap-3 opacity-100">
+<div class="w-16 h-16 rounded-full bg-gradient-to-tr from-purple-500 to-pink-600 flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.4)]">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<p class="text-[10px] font-bold text-white text-center uppercase tracking-tighter">Rentetan Kemenangan x10</p>
+</div>
+<div class="flex flex-col items-center gap-3 opacity-100">
+<div class="w-16 h-16 rounded-full bg-gradient-to-tr from-orange-400 to-yellow-600 flex items-center justify-center shadow-[0_0_20px_rgba(251,146,60,0.4)]">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">psychology</span>
+</div>
+<p class="text-[10px] font-bold text-white text-center uppercase tracking-tighter">Pakar Trivia</p>
+</div>
+<div class="flex flex-col items-center gap-3 opacity-40 grayscale">
+<div class="w-16 h-16 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-500 text-3xl">diamond</span>
+</div>
+<p class="text-[10px] font-bold text-slate-500 text-center uppercase tracking-tighter">Grandmaster</p>
+</div>
+<div class="flex flex-col items-center gap-3 opacity-40 grayscale">
+<div class="w-16 h-16 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-500 text-3xl">rocket_launch</span>
+</div>
+<p class="text-[10px] font-bold text-slate-500 text-center uppercase tracking-tighter">Pertama ke Mars</p>
+</div>
+<div class="flex flex-col items-center gap-3 opacity-40 grayscale">
+<div class="w-16 h-16 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-500 text-3xl">social_leaderboard</span>
+</div>
+<p class="text-[10px] font-bold text-slate-500 text-center uppercase tracking-tighter">Global #1</p>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full flex justify-between px-10 items-center py-4 bg-slate-950 border-t border-white/5 mt-auto">
+<p class="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-cyan-500">© 2024 QUIZBATTLE TACTICAL SYSTEMS</p>
+<div class="flex gap-6">
+<a class="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-slate-600 hover:text-cyan-400 transition-colors" href="#">Status</a>
+<a class="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-slate-600 hover:text-cyan-400 transition-colors" href="#">Privasi</a>
+<a class="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-slate-600 hover:text-cyan-400 transition-colors" href="#">Dukungan</a>
+</div>
+</footer>
+</body></html>

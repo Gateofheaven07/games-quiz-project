@@ -1,7 +1,9 @@
 import { Router } from 'express';
-import { query } from '../lib/db';
+import { PrismaClient } from '@prisma/client';
 import { hashPassword, verifyPassword, generateTokens, verifyRefreshToken } from '../lib/auth';
+import { authMiddleware } from '../middleware/auth';
 const router = Router();
+const prisma = new PrismaClient();
 // Register
 router.post('/register', async (req, res) => {
     try {
@@ -16,15 +18,31 @@ router.post('/register', async (req, res) => {
             return;
         }
         // Check if user exists
-        const checkResult = await query('SELECT id FROM users WHERE username = $1 OR email = $2', [username, email]);
-        if (checkResult.rows.length > 0) {
+        const existingUser = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { username },
+                    { email }
+                ]
+            }
+        });
+        if (existingUser) {
             res.status(409).json({ success: false, error: 'Username or email already exists' });
             return;
         }
         // Hash password and create user
         const passwordHash = await hashPassword(password);
-        const result = await query('INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email', [username, email, passwordHash]);
-        const user = result.rows[0];
+        const user = await prisma.user.create({
+            data: {
+                username,
+                email,
+                password: passwordHash,
+                level: 0,
+                totalScore: 0,
+                wins: 0,
+                losses: 0
+            }
+        });
         const tokens = generateTokens({
             userId: user.id,
             username: user.username,
@@ -57,14 +75,15 @@ router.post('/login', async (req, res) => {
             return;
         }
         // Find user
-        const result = await query('SELECT id, username, email, password_hash FROM users WHERE email = $1', [email]);
-        if (result.rows.length === 0) {
+        const user = await prisma.user.findUnique({
+            where: { email }
+        });
+        if (!user) {
             res.status(401).json({ success: false, error: 'Invalid email or password' });
             return;
         }
-        const user = result.rows[0];
         // Verify password
-        const isValid = await verifyPassword(password, user.password_hash);
+        const isValid = await verifyPassword(password, user.password);
         if (!isValid) {
             res.status(401).json({ success: false, error: 'Invalid email or password' });
             return;
@@ -106,12 +125,13 @@ router.post('/refresh', async (req, res) => {
             return;
         }
         // Verify user still exists
-        const result = await query('SELECT id, username, email FROM users WHERE id = $1', [payload.userId]);
-        if (result.rows.length === 0) {
+        const user = await prisma.user.findUnique({
+            where: { id: payload.userId }
+        });
+        if (!user) {
             res.status(404).json({ success: false, error: 'User not found' });
             return;
         }
-        const user = result.rows[0];
         const tokens = generateTokens({
             userId: user.id,
             username: user.username,
@@ -124,6 +144,39 @@ router.post('/refresh', async (req, res) => {
     }
     catch (error) {
         console.error('[Auth Routes] Refresh error:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+// Get current user (validate token)
+router.get('/me', authMiddleware, async (req, res) => {
+    try {
+        if (!req.user) {
+            res.status(401).json({ success: false, error: 'Unauthorized' });
+            return;
+        }
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.userId },
+            select: { id: true, username: true, email: true, level: true, createdAt: true }
+        });
+        if (!user) {
+            res.status(404).json({ success: false, error: 'User not found' });
+            return;
+        }
+        res.json({
+            success: true,
+            data: {
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    email: user.email,
+                    level: user.level,
+                    createdAt: user.createdAt,
+                }
+            }
+        });
+    }
+    catch (error) {
+        console.error('[Auth Routes] Me error:', error);
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });

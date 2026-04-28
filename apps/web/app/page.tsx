@@ -38,22 +38,18 @@ export default function HomePage() {
       {/* Navigation */}
       <nav className="relative z-20 glass-panel border-b border-[#3c494e]/30">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-[#00d1ff] to-[#cf5cff] rounded-lg flex items-center justify-center neon-glow-primary">
-              <span className="material-symbols-outlined text-[#0e1417] text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-[#00d1ff] to-[#cf5cff] rounded-lg flex items-center justify-center neon-glow-primary icon-box">
+              <span className="material-symbols-outlined text-[#0e1417] text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
             </div>
-            <h1 className="text-2xl font-bold text-[#a4e6ff] italic tracking-tighter">QuizBattle</h1>
+            <h1 className="text-3xl font-bold text-[#a4e6ff] italic tracking-tighter">QuizBattle</h1>
           </div>
           <div className="flex gap-4">
-            <Link href="/auth/login">
-              <button className="px-6 py-2 rounded-lg font-bold text-xs tracking-widest text-[#a4e6ff] border border-[#00d1ff]/30 hover:bg-[#00d1ff]/10 transition-all uppercase">
-                Sign In
-              </button>
+            <Link href="/auth/login" className="px-6 py-2 rounded-lg font-bold text-xs tracking-widest text-[#a4e6ff] border border-[#00d1ff]/30 hover:bg-[#00d1ff]/10 transition-all uppercase flex items-center justify-center">
+              Sign In
             </Link>
-            <Link href="/auth/register">
-              <button className="px-6 py-2 rounded-lg font-bold text-xs tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all">
-                Register
-              </button>
+            <Link href="/auth/register" className="px-6 py-2 rounded-lg font-bold text-xs tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all flex items-center justify-center">
+              Register
             </Link>
           </div>
         </div>
@@ -71,11 +67,9 @@ export default function HomePage() {
         <p className="text-lg md:text-xl text-[#bbc9cf] mb-12 max-w-2xl mx-auto">
           Join the ultimate tactical knowledge exchange. Rank up, dominate leaderboards, and prove your cognitive superiority.
         </p>
-        <Link href="/auth/register">
-          <button className="px-10 py-4 rounded-lg font-bold text-sm tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all flex items-center gap-3">
-            <span>Get Started Now</span>
-            <span className="material-symbols-outlined text-xl">rocket_launch</span>
-          </button>
+        <Link href="/auth/register" className="px-10 py-5 rounded-lg font-bold text-sm tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all flex items-center justify-center gap-4">
+          <span>Get Started Now</span>
+          <span className="material-symbols-outlined text-2xl">rocket_launch</span>
         </Link>
       </section>
 
@@ -125,10 +119,8 @@ export default function HomePage() {
           <p className="text-xl text-[#bbc9cf] mb-10">
             Sign up now and start competing with operators from around the world.
           </p>
-          <Link href="/auth/register">
-            <button className="px-12 py-5 rounded-lg font-bold text-sm tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all">
-              INITIALIZE YOUR OPERATOR
-            </button>
+          <Link href="/auth/register" className="px-12 py-5 inline-block rounded-lg font-bold text-sm tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all">
+            INITIALIZE YOUR OPERATOR
           </Link>
         </div>
       </section>

@@ -11,6 +11,10 @@ export interface UserPublic {
     username: string;
     email: string;
     createdAt: Date;
+    level?: number;
+    totalScore?: number;
+    wins?: number;
+    losses?: number;
 }
 export interface AuthToken {
     token: string;

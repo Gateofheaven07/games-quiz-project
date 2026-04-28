@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import { query } from '../lib/db';
+import { PrismaClient } from '@prisma/client';
 import { authMiddleware } from '../middleware/auth';
 const router = Router();
+const prisma = new PrismaClient();
 // Get user profile
 router.get('/profile', authMiddleware, async (req, res) => {
     try {
@@ -9,18 +10,25 @@ router.get('/profile', authMiddleware, async (req, res) => {
             res.status(401).json({ success: false, error: 'Unauthorized' });
             return;
         }
-        const result = await query('SELECT id, username, email, created_at FROM users WHERE id = $1', [req.user.userId]);
-        if (result.rows.length === 0) {
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.userId },
+            select: { id: true, username: true, email: true, createdAt: true, level: true, totalScore: true, wins: true, losses: true }
+        });
+        if (!user) {
             res.status(404).json({ success: false, error: 'User not found' });
             return;
         }
-        const user = {
-            id: result.rows[0].id,
-            username: result.rows[0].username,
-            email: result.rows[0].email,
-            createdAt: result.rows[0].created_at,
+        const userPublic = {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            createdAt: user.createdAt,
+            level: user.level,
+            totalScore: user.totalScore,
+            wins: user.wins,
+            losses: user.losses,
         };
-        res.json({ success: true, data: user });
+        res.json({ success: true, data: userPublic });
     }
     catch (error) {
         console.error('[User Routes] Error getting profile:', error);
@@ -31,18 +39,25 @@ router.get('/profile', authMiddleware, async (req, res) => {
 router.get('/:username', async (req, res) => {
     try {
         const { username } = req.params;
-        const result = await query('SELECT id, username, email, created_at FROM users WHERE username = $1', [username]);
-        if (result.rows.length === 0) {
+        const user = await prisma.user.findUnique({
+            where: { username },
+            select: { id: true, username: true, email: true, createdAt: true, level: true, totalScore: true, wins: true, losses: true }
+        });
+        if (!user) {
             res.status(404).json({ success: false, error: 'User not found' });
             return;
         }
-        const user = {
-            id: result.rows[0].id,
-            username: result.rows[0].username,
-            email: result.rows[0].email,
-            createdAt: result.rows[0].created_at,
+        const userPublic = {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            createdAt: user.createdAt,
+            level: user.level,
+            totalScore: user.totalScore,
+            wins: user.wins,
+            losses: user.losses,
         };
-        res.json({ success: true, data: user });
+        res.json({ success: true, data: userPublic });
     }
     catch (error) {
         console.error('[User Routes] Error getting user:', error);
@@ -61,18 +76,22 @@ router.put('/profile', authMiddleware, async (req, res) => {
             res.status(400).json({ success: false, error: 'Invalid email' });
             return;
         }
-        const result = await query('UPDATE users SET email = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, username, email, created_at', [email, req.user.userId]);
-        if (result.rows.length === 0) {
-            res.status(404).json({ success: false, error: 'User not found' });
-            return;
-        }
-        const user = {
-            id: result.rows[0].id,
-            username: result.rows[0].username,
-            email: result.rows[0].email,
-            createdAt: result.rows[0].created_at,
+        const user = await prisma.user.update({
+            where: { id: req.user.userId },
+            data: { email },
+            select: { id: true, username: true, email: true, createdAt: true, level: true, totalScore: true, wins: true, losses: true }
+        });
+        const userPublic = {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            createdAt: user.createdAt,
+            level: user.level,
+            totalScore: user.totalScore,
+            wins: user.wins,
+            losses: user.losses,
         };
-        res.json({ success: true, data: user });
+        res.json({ success: true, data: userPublic });
     }
     catch (error) {
         console.error('[User Routes] Error updating profile:', error);
