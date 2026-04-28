@@ -42,7 +42,7 @@ export default function RegisterPage() {
 
     const result = await register(formData.username, formData.email, formData.password);
     if (result.success) {
-      router.push('/login');
+      router.push('/auth/login');
     } else {
       setLocalError(result.error || 'Registration failed');
     }

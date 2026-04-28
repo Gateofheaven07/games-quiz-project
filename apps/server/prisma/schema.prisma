@@ -18,7 +18,8 @@ model User {
 
   role Role @default(USER) // 🔥 penting
 
-  level      Int @default(1)
+  level      Int @default(0)
+  avatar     String?
   totalScore Int @default(0)
   wins       Int @default(0)
   losses     Int @default(0)

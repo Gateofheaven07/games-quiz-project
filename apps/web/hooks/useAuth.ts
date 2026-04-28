@@ -9,6 +9,7 @@ export interface User {
   email: string;
   level?: number;
   createdAt?: string;
+  avatar?: string;
 }
 
 export interface AuthTokens {

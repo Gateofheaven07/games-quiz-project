@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest, authMiddleware } from '../middleware/auth';
+import { hashPassword, verifyPassword } from '../lib/auth';
 import { UserPublic } from '@quiz-battle/shared';
 
 const router = Router();
@@ -16,7 +17,7 @@ router.get('/profile', authMiddleware, async (req: AuthRequest, res: Response) =
 
     const user = await prisma.user.findUnique({
       where: { id: req.user.userId },
-      select: { id: true, username: true, email: true, createdAt: true, level: true, totalScore: true, wins: true, losses: true }
+      select: { id: true, username: true, email: true, createdAt: true, level: true, totalScore: true, wins: true, losses: true, avatar: true }
     });
 
     if (!user) {
@@ -24,7 +25,7 @@ router.get('/profile', authMiddleware, async (req: AuthRequest, res: Response) =
       return;
     }
 
-    const userPublic: UserPublic = {
+    const userPublic = {
       id: user.id,
       username: user.username,
       email: user.email,
@@ -33,7 +34,8 @@ router.get('/profile', authMiddleware, async (req: AuthRequest, res: Response) =
       totalScore: user.totalScore,
       wins: user.wins,
       losses: user.losses,
-    } as UserPublic;
+      avatar: user.avatar,
+    };
 
     res.json({ success: true, data: userPublic });
   } catch (error) {
@@ -49,7 +51,7 @@ router.get('/:username', async (req: AuthRequest, res: Response) => {
 
     const user = await prisma.user.findUnique({
       where: { username },
-      select: { id: true, username: true, email: true, createdAt: true, level: true, totalScore: true, wins: true, losses: true }
+      select: { id: true, username: true, email: true, createdAt: true, level: true, totalScore: true, wins: true, losses: true, avatar: true }
     });
 
     if (!user) {
@@ -57,7 +59,7 @@ router.get('/:username', async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    const userPublic: UserPublic = {
+    const userPublic = {
       id: user.id,
       username: user.username,
       email: user.email,
@@ -66,7 +68,8 @@ router.get('/:username', async (req: AuthRequest, res: Response) => {
       totalScore: user.totalScore,
       wins: user.wins,
       losses: user.losses,
-    } as UserPublic;
+      avatar: user.avatar,
+    };
 
     res.json({ success: true, data: userPublic });
   } catch (error) {
@@ -75,7 +78,7 @@ router.get('/:username', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Update user profile
+// Update user profile (username, email, avatar, password)
 router.put('/profile', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
@@ -83,20 +86,70 @@ router.put('/profile', authMiddleware, async (req: AuthRequest, res: Response) =
       return;
     }
 
-    const { email } = req.body;
+    const { username, email, avatar, currentPassword, newPassword } = req.body;
 
-    if (!email || typeof email !== 'string') {
-      res.status(400).json({ success: false, error: 'Invalid email' });
+    // Build update data
+    const updateData: Record<string, any> = {};
+
+    if (email && typeof email === 'string') {
+      // Check email not taken by another user
+      const existing = await prisma.user.findFirst({ where: { email, NOT: { id: req.user.userId } } });
+      if (existing) {
+        res.status(409).json({ success: false, error: 'Email already in use' });
+        return;
+      }
+      updateData.email = email;
+    }
+
+    if (username && typeof username === 'string') {
+      // Check username not taken by another user
+      const existing = await prisma.user.findFirst({ where: { username, NOT: { id: req.user.userId } } });
+      if (existing) {
+        res.status(409).json({ success: false, error: 'Username already taken' });
+        return;
+      }
+      updateData.username = username;
+    }
+
+    if (avatar !== undefined) {
+      updateData.avatar = avatar || null;
+    }
+
+    // Password change
+    if (newPassword) {
+      if (!currentPassword) {
+        res.status(400).json({ success: false, error: 'Current password is required to change password' });
+        return;
+      }
+      if (newPassword.length < 6) {
+        res.status(400).json({ success: false, error: 'New password must be at least 6 characters' });
+        return;
+      }
+      const userRecord = await prisma.user.findUnique({ where: { id: req.user.userId } });
+      if (!userRecord) {
+        res.status(404).json({ success: false, error: 'User not found' });
+        return;
+      }
+      const isValid = await verifyPassword(currentPassword, userRecord.password);
+      if (!isValid) {
+        res.status(401).json({ success: false, error: 'Current password is incorrect' });
+        return;
+      }
+      updateData.password = await hashPassword(newPassword);
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      res.status(400).json({ success: false, error: 'No fields to update' });
       return;
     }
 
     const user = await prisma.user.update({
       where: { id: req.user.userId },
-      data: { email },
-      select: { id: true, username: true, email: true, createdAt: true, level: true, totalScore: true, wins: true, losses: true }
+      data: updateData,
+      select: { id: true, username: true, email: true, createdAt: true, level: true, totalScore: true, wins: true, losses: true, avatar: true }
     });
 
-    const userPublic: UserPublic = {
+    const userPublic = {
       id: user.id,
       username: user.username,
       email: user.email,
@@ -105,7 +158,8 @@ router.put('/profile', authMiddleware, async (req: AuthRequest, res: Response) =
       totalScore: user.totalScore,
       wins: user.wins,
       losses: user.losses,
-    } as UserPublic;
+      avatar: user.avatar,
+    };
 
     res.json({ success: true, data: userPublic });
   } catch (error) {

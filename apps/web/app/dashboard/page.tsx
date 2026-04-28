@@ -5,8 +5,24 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../hooks/useAuth'
 
+interface UserStats {
+  totalScore: number;
+  wins: number;
+  losses: number;
+  gamesPlayed: number;
+  winRate: number;
+}
+
+function getRankLabel(score: number): string {
+  if (score >= 10000) return 'DIAMOND';
+  if (score >= 5000) return 'GOLD';
+  if (score >= 2000) return 'SILVER';
+  if (score >= 500) return 'BRONZE';
+  return 'RECRUIT';
+}
+
 // ── Sidebar Navigation ────────────────────────────────────────────────────────
-function Sidebar({ active }: { active: string }) {
+function Sidebar({ active, userStats }: { active: string; userStats?: UserStats | null }) {
   const router = useRouter()
   const { logout, user } = useAuth()
 
@@ -83,7 +99,7 @@ function Sidebar({ active }: { active: string }) {
           <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '0.875rem', color: 'var(--c-on-surface)' }}>
             {user?.username || 'OPERATOR_01'}
           </p>
-          <span className="badge badge-gold" style={{ marginTop: 2 }}>GOLD RANK</span>
+          <span className="badge badge-gold" style={{ marginTop: 2 }}>{getRankLabel(userStats?.totalScore ?? 0)} RANK</span>
         </div>
       </div>
 
@@ -287,14 +303,42 @@ const topPlayers = [
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const [battlePassHovered, setBattlePassHovered] = useState(false)
+  const [userStats, setUserStats] = useState<UserStats | null>(null)
   const router = useRouter()
-  const { isAuthenticated, isLoading, user } = useAuth()
+  const { isAuthenticated, isLoading, user, getAuthClient } = useAuth()
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/auth/login')
     }
   }, [isAuthenticated, isLoading, router])
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+    const fetchStats = async () => {
+      try {
+        const client = getAuthClient();
+        const res = await client.get('/users/profile');
+        const data = res.data?.data;
+        if (data) {
+          const wins = data.wins ?? 0;
+          const losses = data.losses ?? 0;
+          const gamesPlayed = wins + losses;
+          const winRate = gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 100) : 0;
+          setUserStats({
+            totalScore: data.totalScore ?? 0,
+            wins,
+            losses,
+            gamesPlayed,
+            winRate,
+          });
+        }
+      } catch {
+        setUserStats({ totalScore: 0, wins: 0, losses: 0, gamesPlayed: 0, winRate: 0 });
+      }
+    };
+    fetchStats();
+  }, [isAuthenticated, user, getAuthClient])
 
   if (isLoading || !isAuthenticated) return null
 
@@ -311,7 +355,7 @@ export default function DashboardPage() {
       <div className="bg-orb bg-orb-purple" style={{ bottom: 0, right: 100 }} />
 
       {/* Sidebar */}
-      <Sidebar active="Dashboard" />
+      <Sidebar active="Dashboard" userStats={userStats} />
 
       {/* Main content */}
       <main style={{ flex: 1, overflowY: 'auto', padding: 32, position: 'relative', zIndex: 1 }}>
@@ -350,19 +394,19 @@ export default function DashboardPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32 }}>
           <StatCard
             label="Battle Score"
-            value="12,450"
-            sub="750 XP to next rank"
+            value={userStats ? userStats.totalScore.toLocaleString() : '0'}
+            sub={userStats ? `Rank: ${getRankLabel(userStats.totalScore)}` : 'Loading...'}
             accent="#00d1ff"
           />
           <StatCard
             label="Win Rate"
-            value="68%"
-            sub="Elite Tier Status"
+            value={userStats ? `${userStats.winRate}%` : '0%'}
+            sub={userStats ? `${userStats.wins}W / ${userStats.losses}L` : 'Loading...'}
             accent="#cf5cff"
           />
           <StatCard
             label="Games Played"
-            value="384"
+            value={userStats ? String(userStats.gamesPlayed) : '0'}
             sub="This season"
             accent="#ffd59c"
           />

@@ -49,11 +49,6 @@ export default function LeaderboardPage() {
 <nav className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-slate-950/80 backdrop-blur-xl border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
 <div className="flex items-center gap-8">
 <span className="text-2xl font-black italic tracking-tighter text-cyan-400 drop-shadow-[0_0_10px_rgba(0,209,255,0.5)] font-['Space_Grotesk']">QuizBattle</span>
-<div className="hidden md:flex gap-6">
-<a className="font-['Space_Grotesk'] tracking-tight text-slate-400 hover:text-white hover:bg-white/5 transition-all px-3 py-1 rounded" href="#">Dashboard</a>
-<a className="font-['Space_Grotesk'] tracking-tight text-slate-400 hover:text-white hover:bg-white/5 transition-all px-3 py-1 rounded" href="#">Arena</a>
-<a className="font-['Space_Grotesk'] tracking-tight text-cyan-400 border-b-2 border-cyan-400 pb-1" href="#">Rankings</a>
-</div>
 </div>
 <div className="flex items-center gap-4">
 <div className="relative hidden sm:block">
@@ -61,10 +56,13 @@ export default function LeaderboardPage() {
 <input className="bg-surface-container-lowest border border-white/10 rounded-full py-1.5 pl-10 pr-4 text-xs focus:border-primary-container focus:ring-0 w-48" placeholder="Search Players..." type="text"/>
 </div>
 <button className="material-symbols-outlined text-slate-400 hover:text-white transition-all scale-105 active:scale-95">notifications</button>
-<button className="material-symbols-outlined text-slate-400 hover:text-white transition-all scale-105 active:scale-95">settings</button>
-<div className="h-8 w-8 rounded-full border border-cyan-400/50 p-0.5">
-<img alt="User Rank Avatar" className="h-full w-full rounded-full object-cover" data-alt="High-tech futuristic soldier profile avatar with neon glowing visor and tactical gear portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmITae5uMZ4-y5As5nHgnC_U4sVAJmlfHESTGKCUQiG6tgFK9-fEYo54vpLyJ5LkbDww7AuX0wxfTmo71HZcwtG2oDQgrv0oewwhhTDPct8KLRwiKQ7sxQEmLxHvd8tizOAGqkZQ-us1DdzGqk4KmNblgCt1nrV567Itqznlr6LEeProwJjvsCJcQIeEP7af644Tl1-C9phRwVLBxsL7X7uSOujHnG3YW-yCtPbwOeT3axqQ6UT1jVVx_piPXmbFw0UmH2A5TLzIc"/>
-</div>
+{user?.avatar ? (
+  <img src={user.avatar} alt="Profile" className="h-8 w-8 rounded-full border border-cyan-400/50 object-cover" />
+) : (
+  <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-400/50 flex items-center justify-center text-cyan-400 font-bold text-sm">
+    {user?.username?.charAt(0).toUpperCase() || 'O'}
+  </div>
+)}
 </div>
 </nav>
 
@@ -74,28 +72,28 @@ export default function LeaderboardPage() {
 <span className="material-symbols-outlined text-white" style={{"fontVariationSettings": "\'FILL\' 1"}}>military_tech</span>
 </div>
 <div>
-<p className="font-['Space_Grotesk'] uppercase text-xs font-bold text-cyan-400">OPERATOR_01</p>
-<p className="text-[10px] text-slate-400 tracking-widest font-bold">GOLD RANK</p>
+<p className="font-['Space_Grotesk'] uppercase text-xs font-bold text-cyan-400">{user?.username || 'OPERATOR_01'}</p>
+<p className="text-[10px] text-slate-400 tracking-widest font-bold">LVL {user?.level || 0}</p>
 </div>
 </div>
 <nav className="flex-1">
-<a className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="#">
+<Link className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/dashboard">
 <span className="material-symbols-outlined">dashboard</span> Dashboard
-            </a>
-<a className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="#">
+            </Link>
+<Link className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/game">
 <span className="material-symbols-outlined">swords</span> Battle Arena
-            </a>
-<a className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="#">
+            </Link>
+<Link className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/game/crossword">
 <span className="material-symbols-outlined">sports_esports</span> Arcade
-            </a>
-<a className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="#">
+            </Link>
+<Link className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/friends">
 <span className="material-symbols-outlined">group</span> Friends
-            </a><a className="bg-cyan-500/20 text-cyan-400 border-r-4 border-cyan-400 flex items-center gap-3 px-6 py-4 font-['Space_Grotesk'] uppercase text-xs font-bold" href="#">
+            </Link><Link className="bg-cyan-500/20 text-cyan-400 border-r-4 border-cyan-400 flex items-center gap-3 px-6 py-4 font-['Space_Grotesk'] uppercase text-xs font-bold" href="/leaderboard">
 <span className="material-symbols-outlined">leaderboard</span> Rankings
-            </a>
-<a className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="#">
+            </Link>
+<Link className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/profile">
 <span className="material-symbols-outlined">person</span> Profile
-            </a>
+            </Link>
 </nav>
 <div className="p-6 flex flex-col gap-3">
 <button className="w-full py-3 bg-gradient-to-r from-primary-container to-secondary-container rounded-lg font-['Space_Grotesk'] font-black text-white text-sm tracking-widest uppercase neon-glow-primary transition-all hover:scale-105 active:scale-95">
@@ -107,7 +105,7 @@ export default function LeaderboardPage() {
 </div>
 </aside>
 
-<main className="flex-1 mt-16 lg:ml-64 p-gutter max-w-7xl mx-auto w-full">
+<main className="flex-1 mt-16 lg:ml-64 p-6 md:p-8 max-w-7xl mx-auto w-full pb-32">
 <header className="mb-10 text-center lg:text-left">
 <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1 mb-4">
 <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
@@ -238,28 +236,34 @@ export default function LeaderboardPage() {
 </div>
 </section>
 
-<div className="fixed bottom-12 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl glass-card rounded-2xl p-4 flex items-center gap-6 border-cyan-400/40 shadow-[0_0_50px_rgba(0,209,255,0.2)] z-30">
+<div className="fixed bottom-12 left-1/2 -translate-x-1/2 lg:left-[calc(50%+128px)] w-[90%] max-w-4xl glass-card rounded-2xl p-4 flex items-center gap-6 border-cyan-400/40 shadow-[0_0_50px_rgba(0,209,255,0.2)] z-30">
 <div className="bg-cyan-500/20 text-cyan-400 h-12 w-12 rounded-xl flex flex-col items-center justify-center">
-<span className="text-[10px] font-bold">POS</span>
-<span className="font-h3 text-lg leading-none">124</span>
+<span className="text-[10px] font-bold">LVL</span>
+<span className="font-h3 text-lg leading-none">{user?.level || 0}</span>
 </div>
-<img alt="My Profile" className="h-10 w-10 rounded-lg border border-cyan-400" data-alt="Player profile avatar with glowing neon accents and high-tech gear" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrwFYmeH6QZx8l9u_oaCI6WfugA5mPu4LdTB6MptgSnUY_cqGkX4BtzvZI6awHpt9WNBFM_HeC_jhHsohnvJ0UknORZPFQp9vem0N6seXXskN_MLNFspkkbcIZC9xl5h39D1sKMWCS1e8jejh4hR9QEXAZ5U25Iq6fb1cXXm1n2TdKu5yIG143hFkdnC4rolBHy0SBSLJPf4WFoOrHT0184e1Nsw7xDSv2S1bhSM6g6EfkRg_Plsbjg-NKwa7GlXw6TaOFIrhL6Pk"/>
+{user?.avatar ? (
+  <img src={user.avatar} alt="My Profile" className="h-10 w-10 rounded-lg border border-cyan-400 object-cover" />
+) : (
+  <div className="h-10 w-10 rounded-lg border border-cyan-400 bg-slate-800 flex items-center justify-center text-cyan-400 font-bold">
+    {user?.username?.charAt(0).toUpperCase() || 'O'}
+  </div>
+)}
 <div className="flex-1">
-<p className="font-body-md font-bold text-on-surface">YOU (OPERATOR_01)</p>
+<p className="font-body-md font-bold text-on-surface uppercase">{user?.username || 'OPERATOR'}</p>
 <div className="flex items-center gap-2">
 <div className="h-1.5 w-32 bg-white/10 rounded-full overflow-hidden">
-<div className="h-full bg-cyan-400 w-3/4"></div>
+<div className="h-full bg-cyan-400" style={{ width: `${Math.min(100, ((user?.totalScore || 0) % 1000) / 10)}%` }}></div>
 </div>
-<span className="text-[10px] text-slate-400 font-bold">12,450 XP TO NEXT RANK</span>
+<span className="text-[10px] text-slate-400 font-bold">{1000 - ((user?.totalScore || 0) % 1000)} XP TO NEXT RANK</span>
 </div>
 </div>
 <div className="text-right px-4 border-l border-white/10 hidden sm:block">
 <p className="text-[10px] font-bold text-slate-500">CURRENT SCORE</p>
-<p className="font-h3 text-cyan-400">18,240</p>
+<p className="font-h3 text-cyan-400">{user?.totalScore || 0}</p>
 </div>
-<button className="h-12 w-12 bg-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all">
+<Link href="/profile" className="h-12 w-12 bg-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all">
 <span className="material-symbols-outlined text-white">chevron_right</span>
-</button>
+</Link>
 </div>
 </main>
 

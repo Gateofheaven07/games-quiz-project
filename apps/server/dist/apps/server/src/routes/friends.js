@@ -8,15 +8,20 @@ router.use(authMiddleware);
 // ─── SEARCH USER BY USERNAME ───────────────────────────────────────────────────
 router.get('/search', async (req, res) => {
     try {
-        const { username } = req.query;
-        if (!username || username.trim().length < 2) {
+        const userId = req.user?.userId;
+        if (!userId) {
+            res.status(401).json({ success: false, error: 'Unauthorized' });
+            return;
+        }
+        const username = req.query.username;
+        if (typeof username !== 'string' || username.trim().length < 2) {
             res.status(400).json({ success: false, error: 'Username must be at least 2 characters' });
             return;
         }
         const users = await prisma.user.findMany({
             where: {
                 username: { contains: username, mode: 'insensitive' },
-                id: { not: req.user.userId }, // exclude self
+                id: { not: userId }, // exclude self
             },
             select: { id: true, username: true, level: true, totalScore: true, wins: true },
             take: 10,
@@ -31,7 +36,11 @@ router.get('/search', async (req, res) => {
 // ─── GET MY FRIENDS LIST ──────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
     try {
-        const userId = req.user.userId;
+        const userId = req.user?.userId;
+        if (!userId) {
+            res.status(401).json({ success: false, error: 'Unauthorized' });
+            return;
+        }
         const friendships = await prisma.friendship.findMany({
             where: {
                 OR: [
@@ -58,7 +67,11 @@ router.get('/', async (req, res) => {
 // ─── GET PENDING REQUESTS (received) ─────────────────────────────────────────
 router.get('/requests', async (req, res) => {
     try {
-        const userId = req.user.userId;
+        const userId = req.user?.userId;
+        if (!userId) {
+            res.status(401).json({ success: false, error: 'Unauthorized' });
+            return;
+        }
         const requests = await prisma.friendship.findMany({
             where: { receiverId: userId, status: 'PENDING' },
             include: {
@@ -66,9 +79,9 @@ router.get('/requests', async (req, res) => {
             },
             orderBy: { createdAt: 'desc' },
         });
+        const myFriendIds = await getAcceptedFriendIds(userId);
         // Count mutual friends for each request
         const enriched = await Promise.all(requests.map(async (req_) => {
-            const myFriendIds = await getAcceptedFriendIds(userId);
             const theirFriendIds = await getAcceptedFriendIds(req_.senderId);
             const mutual = myFriendIds.filter((id) => theirFriendIds.includes(id)).length;
             return {

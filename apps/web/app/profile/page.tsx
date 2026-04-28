@@ -152,9 +152,13 @@ export default function ProfilePage() {
             <span className="material-symbols-outlined text-sm">logout</span>
             Log Out
           </button>
-          <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-400/50 flex items-center justify-center text-cyan-400 font-bold text-sm">
-            {user.username?.charAt(0).toUpperCase()}
-          </div>
+          {user?.avatar ? (
+            <img src={user.avatar} alt="Profile" className="w-8 h-8 rounded-full border border-cyan-400/50 object-cover" />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-400/50 flex items-center justify-center text-cyan-400 font-bold text-sm">
+              {user?.username?.charAt(0).toUpperCase() || 'O'}
+            </div>
+          )}
         </div>
       </nav>
 
@@ -219,17 +223,27 @@ export default function ProfilePage() {
             <div className="md:col-span-8 glass-card rounded-xl p-8 relative overflow-hidden flex flex-col md:flex-row items-center gap-8">
               <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 blur-[80px] rounded-full -mr-20 -mt-20"></div>
               <div className="relative">
-                <div className="w-32 h-32 rounded-full border-4 border-cyan-400 p-1 neon-glow-primary bg-slate-800 flex items-center justify-center">
-                  <span className="text-5xl font-black text-cyan-400">
-                    {user.username?.charAt(0).toUpperCase()}
-                  </span>
-                </div>
+                {user?.avatar ? (
+                  <img src={user.avatar} alt="Profile" className="w-32 h-32 rounded-full border-4 border-cyan-400 p-1 object-cover bg-slate-800" />
+                ) : (
+                  <div className="w-32 h-32 rounded-full border-4 border-cyan-400 p-1 neon-glow-primary bg-slate-800 flex items-center justify-center">
+                    <span className="text-5xl font-black text-cyan-400">
+                      {user?.username?.charAt(0).toUpperCase() || 'O'}
+                    </span>
+                  </div>
+                )}
                 <div className="absolute bottom-1 right-1 bg-primary-container text-on-primary-container px-2 py-0.5 rounded-full text-[10px] font-bold border border-white/20">
                   LVL {user?.level || 0}
                 </div>
               </div>
               <div className="flex-1 text-center md:text-left z-10">
-                <h1 className="font-h1 text-white mb-1 uppercase text-2xl font-bold">{user?.username || 'OPERATOR'}</h1>
+                <div className="flex flex-col md:flex-row items-center md:items-start gap-4 mb-1">
+                  <h1 className="font-h1 text-white uppercase text-2xl font-bold">{user?.username || 'OPERATOR'}</h1>
+                  <Link href="/profile/settings" className="px-4 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-xs font-bold text-white transition-colors flex items-center gap-2 uppercase tracking-widest mt-1 md:mt-0">
+                    <span className="material-symbols-outlined text-sm">settings</span>
+                    Edit Profile
+                  </Link>
+                </div>
                 <p className="text-cyan-400 font-bold text-sm tracking-[0.2em] mb-4 uppercase">Pemain Utama</p>
                 <div className="flex flex-wrap justify-center md:justify-start gap-4">
                   <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-lg">
