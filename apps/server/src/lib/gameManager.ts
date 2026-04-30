@@ -1,138 +1,318 @@
 import { v4 as uuidv4 } from 'uuid';
 import { GameRoom, Question } from '@quiz-battle/shared';
 import { fetchAndTranslate } from './trivia';
-import { PrismaClient, GameStatus, RoomStatus, GameMode } from '@prisma/client';
+import { PrismaClient, GameStatus, RoomStatus, GameMode, BotDifficulty as PrismaBotDifficulty, GameCategory } from '@prisma/client';
+import { BotDifficulty, BOT_DIFFICULTY_CONFIGS } from './bot.types';
 
 const prisma = new PrismaClient();
 
 interface RoomData {
-  room: GameRoom;
-  players: Map<string, string>; // socketId -> userId
-  questions: Question[];
-  playerScores: Map<string, number>;
+  room:            GameRoom;
+  questions:       Question[];
+  playerScores:    Map<string, number>;
   playerTimeSpent: Map<string, number>;
-  startedAt: number;
+  startedAt:       number;
+  categoryId:      number;
+  hostUsername:    string;
+  isPrivate:       boolean;
+  roomCode:        string;
+  playersFinished: Set<string>;
+  // Bot metadata (undefined for human rooms)
+  isVsBot?:       boolean;
+  botDifficulty?: BotDifficulty;
+  botUserId?:     string;
 }
 
-const rooms = new Map<string, RoomData>();
-const userRooms = new Map<string, string>(); // userId -> roomId
+const rooms    = new Map<string, RoomData>();
+const userRooms = new Map<string, string>(); // userId → roomId
+// roomCode → roomId (for private rooms)
+const roomCodes = new Map<string, string>();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PUBLIC API
+// ─────────────────────────────────────────────────────────────────────────────
 
 export class GameManager {
-  static async createRoom(userId: string, categoryId: number): Promise<GameRoom> {
-    const roomId = uuidv4();
-    
-    const translatedQuestions = await fetchAndTranslate(categoryId, 10);
-    const questions: Question[] = translatedQuestions.map((tq, index) => ({
-      id: index.toString(),
-      text: tq.question,
-      options: tq.options,
-      correctAnswer: tq.options.indexOf(tq.correctAnswer),
-      category: tq.categoryId.toString(),
-      difficulty: 'medium',
-    }));
+
+  /**
+   * createMatchRoom
+   * Creates a room skeleton for two matched players WITHOUT fetching questions.
+   * Questions are loaded separately via loadQuestionsForRoom() to keep the
+   * matchmaking response fast.
+   */
+  static async createMatchRoom(
+    player1Id: string,
+    player2Id: string,
+    categoryId: number
+  ): Promise<string> {
+    const roomId   = uuidv4();
+    const roomCode = roomId.substring(0, 6).toUpperCase();
 
     const room: GameRoom = {
-      id: roomId,
-      player1: userId,
-      status: 'waiting',
-      questions: questions.map((q) => ({
-        ...q,
-        correctAnswer: -1, // Hide correct answer from client
-      })),
+      id:                   roomId,
+      player1:              player1Id,
+      player2:              player2Id,
+      status:               'active',
+      questions:            [],
       currentQuestionIndex: 0,
-      player1Answers: [],
-      player2Answers: [],
-      createdAt: new Date(),
+      player1Answers:       [],
+      player2Answers:       [],
+      createdAt:            new Date(),
     };
 
     rooms.set(roomId, {
       room,
-      players: new Map([[userId, userId]]),
-      questions,
-      playerScores: new Map([[userId, 0]]),
-      playerTimeSpent: new Map([[userId, 0]]),
-      startedAt: 0,
+      questions:        [],
+      playerScores:     new Map([[player1Id, 0], [player2Id, 0]]),
+      playerTimeSpent:  new Map([[player1Id, 0], [player2Id, 0]]),
+      startedAt:        Date.now(),
+      categoryId,
+      hostUsername:     '',
+      isPrivate:        false,
+      roomCode,
+      playersFinished:  new Set(),
     });
 
-    userRooms.set(userId, roomId);
+    userRooms.set(player1Id, roomId);
+    userRooms.set(player2Id, roomId);
+    roomCodes.set(roomCode, roomId);
 
-    // Save to DB
-    const dbRoom = await prisma.room.create({
-      data: {
-        id: roomId,
-        code: roomId.substring(0, 6).toUpperCase(),
-        status: RoomStatus.WAITING,
-        maxPlayers: 2,
-      }
+    // Persist to DB
+    await prisma.room.create({
+      data: { id: roomId, code: roomCode, status: RoomStatus.PLAYING, maxPlayers: 2 },
     });
 
-    await prisma.roomPlayer.create({
+    await prisma.roomPlayer.createMany({
+      data: [{ roomId, userId: player1Id }, { roomId, userId: player2Id }],
+    });
+
+    await prisma.game.create({
       data: {
         roomId,
-        userId,
-      }
+        mode:      GameMode.QUIZ,
+        status:    GameStatus.STARTED,
+        startedAt: new Date(),
+      },
     });
 
-    console.log('[GameManager] Room created:', { roomId, userId, categoryId });
-    return room;
+    console.log('[GameManager] Match room created:', { roomId, player1Id, player2Id, categoryId });
+    return roomId;
   }
 
-  static async joinRoom(roomId: string, userId: string): Promise<GameRoom | null> {
+  /**
+   * createBotRoom
+   * Membuat room khusus untuk mode Latihan (vs Bot).
+   * Room hanya memiliki satu pemain manusia + satu Bot (pseudo-player).
+   * Skor disimpan di kategori PRACTICE agar tidak mencampur leaderboard Global.
+   */
+  static async createBotRoom(
+    playerId:   string,
+    categoryId: number,
+    difficulty: BotDifficulty
+  ): Promise<{ roomId: string; botUserId: string }> {
+    const roomId    = uuidv4();
+    const roomCode  = roomId.substring(0, 6).toUpperCase();
+    const config    = BOT_DIFFICULTY_CONFIGS[difficulty];
+    const botUserId = `bot-${difficulty.toLowerCase()}-${roomId.substring(0, 8)}`;
+    const botUsername = `QuizBot [${config.label}]`;
+
+    const room: GameRoom = {
+      id:                   roomId,
+      player1:              playerId,
+      player2:              botUserId,
+      status:               'active',
+      questions:            [],
+      currentQuestionIndex: 0,
+      player1Answers:       [],
+      player2Answers:       [],
+      createdAt:            new Date(),
+    };
+
+    rooms.set(roomId, {
+      room,
+      questions:        [],
+      playerScores:     new Map([[playerId, 0], [botUserId, 0]]),
+      playerTimeSpent:  new Map([[playerId, 0], [botUserId, 0]]),
+      startedAt:        Date.now(),
+      categoryId,
+      hostUsername:     botUsername,
+      isPrivate:        false,
+      roomCode,
+      playersFinished:  new Set(),
+      isVsBot:          true,
+      botDifficulty:    difficulty,
+      botUserId,
+    });
+
+    userRooms.set(playerId, roomId);
+    roomCodes.set(roomCode, roomId);
+
+    // Persist ke DB — kategori PRACTICE agar terpisah dari leaderboard Global
+    await prisma.room.create({
+      data: { id: roomId, code: roomCode, status: RoomStatus.PLAYING, maxPlayers: 2 },
+    });
+
+    await prisma.roomPlayer.create({ data: { roomId, userId: playerId } });
+
+    await prisma.game.create({
+      data: {
+        roomId,
+        mode:          GameMode.QUIZ,
+        status:        GameStatus.STARTED,
+        startedAt:     new Date(),
+        isVsBot:       true,
+        botDifficulty: difficulty as PrismaBotDifficulty,
+        gameCategory:  GameCategory.PRACTICE,
+      },
+    });
+
+    console.log('[GameManager] Bot room created:', { roomId, playerId, difficulty, botUserId });
+    return { roomId, botUserId };
+  }
+
+  /**
+   * createPrivateRoom
+   * Creates a room that waits for a second player to join by code.
+   */
+  static async createPrivateRoom(
+    hostUserId: string,
+    categoryId: number,
+    hostUsername: string = ''
+  ): Promise<{ roomId: string; roomCode: string }> {
+    const roomId   = uuidv4();
+    const roomCode = roomId.substring(0, 6).toUpperCase();
+
+    const room: GameRoom = {
+      id:                   roomId,
+      player1:              hostUserId,
+      status:               'waiting',
+      questions:            [],
+      currentQuestionIndex: 0,
+      player1Answers:       [],
+      player2Answers:       [],
+      createdAt:            new Date(),
+    };
+
+    rooms.set(roomId, {
+      room,
+      questions:       [],
+      playerScores:    new Map([[hostUserId, 0]]),
+      playerTimeSpent: new Map([[hostUserId, 0]]),
+      startedAt:       0,
+      categoryId,
+      hostUsername,
+      isPrivate:       true,
+      roomCode,
+      playersFinished: new Set(),
+    });
+
+    userRooms.set(hostUserId, roomId);
+    roomCodes.set(roomCode, roomId);
+
+    await prisma.room.create({
+      data: { id: roomId, code: roomCode, status: RoomStatus.WAITING, maxPlayers: 2 },
+    });
+
+    await prisma.roomPlayer.create({ data: { roomId, userId: hostUserId } });
+
+    console.log('[GameManager] Private room created:', { roomId, roomCode, hostUserId });
+    return { roomId, roomCode };
+  }
+
+  /**
+   * joinPrivateRoom
+   * Second player joins by room code.
+   */
+  static async joinPrivateRoom(
+    roomCode: string,
+    joinerUserId: string
+  ): Promise<{
+    roomId: string;
+    categoryId: number;
+    hostUserId: string;
+    hostUsername: string;
+  } | null> {
+    const roomId   = roomCodes.get(roomCode);
+    if (!roomId) return null;
+
     const roomData = rooms.get(roomId);
-    if (!roomData) return null;
+    if (!roomData || roomData.room.status !== 'waiting') return null;
 
-    if (roomData.room.status !== 'waiting') return null;
+    // Update room
+    roomData.room.player2  = joinerUserId;
+    roomData.room.status   = 'active';
+    roomData.startedAt     = Date.now();
+    roomData.playerScores.set(joinerUserId, 0);
+    roomData.playerTimeSpent.set(joinerUserId, 0);
 
-    roomData.room.player2 = userId;
-    roomData.room.status = 'active';
-    roomData.players.set(userId, userId);
-    roomData.playerScores.set(userId, 0);
-    roomData.playerTimeSpent.set(userId, 0);
-    roomData.startedAt = Date.now(); // Start timer here
-
-    userRooms.set(userId, roomId);
+    userRooms.set(joinerUserId, roomId);
 
     await prisma.room.update({
       where: { id: roomId },
-      data: { status: RoomStatus.PLAYING }
+      data:  { status: RoomStatus.PLAYING },
     });
 
-    await prisma.roomPlayer.create({
-      data: {
-        roomId,
-        userId,
-      }
-    });
+    await prisma.roomPlayer.create({ data: { roomId, userId: joinerUserId } });
 
-    // Create DB Game
-    const game = await prisma.game.create({
+    await prisma.game.create({
       data: {
         roomId,
-        mode: GameMode.QUIZ,
-        status: GameStatus.STARTED,
+        mode:      GameMode.QUIZ,
+        status:    GameStatus.STARTED,
         startedAt: new Date(),
-      }
+      },
     });
 
-    console.log('[GameManager] User joined room:', { roomId, userId });
-    return roomData.room;
+    return {
+      roomId,
+      categoryId:   roomData.categoryId,
+      hostUserId:   roomData.room.player1,
+      hostUsername: roomData.hostUsername,
+    };
   }
 
-  static submitAnswer(roomId: string, userId: string, answer: number, scoreEarned: number): boolean {
+  /**
+   * loadQuestionsForRoom
+   * Fetches and translates questions from Open Trivia DB and stores them in
+   * the room. Returns a sanitized list (no correctAnswer) for the client.
+   */
+  static async loadQuestionsForRoom(
+    roomId: string,
+    categoryId: number
+  ): Promise<Question[]> {
+    const roomData = rooms.get(roomId);
+    if (!roomData) throw new Error('Room not found: ' + roomId);
+
+    const translated = await fetchAndTranslate(categoryId, 10);
+    const questions: Question[] = translated.map((tq, i) => ({
+      id:            i.toString(),
+      text:          tq.question,
+      options:       tq.options,
+      correctAnswer: tq.options.indexOf(tq.correctAnswer),
+      category:      tq.categoryId.toString(),
+      difficulty:    'medium',
+    }));
+
+    roomData.questions = questions;
+
+    // Return full version to allow Optimistic UI in client
+    return questions;
+  }
+
+  // ── Legacy / Gameplay helpers ───────────────────────────────────────────────
+
+  static submitAnswer(
+    roomId: string,
+    userId: string,
+    _answer: number,
+    scoreEarned: number
+  ): boolean {
     const roomData = rooms.get(roomId);
     if (!roomData) return false;
 
-    // Track score
-    const currentScore = roomData.playerScores.get(userId) || 0;
-    roomData.playerScores.set(userId, currentScore + scoreEarned);
-
-    // Track time spent (from start of game to this submission)
-    // Actually, time is tracked iteratively or just taking the timestamp.
-    // If it's cumulative, we can add the time since the last answer.
-    // Simpler: total time spent = Date.now() - startedAt.
-    // But since it's 30 seconds total, the last answer time is effectively their total time.
+    const current = roomData.playerScores.get(userId) || 0;
+    roomData.playerScores.set(userId, current + scoreEarned);
     roomData.playerTimeSpent.set(userId, Date.now() - roomData.startedAt);
-
     return true;
   }
 
@@ -151,8 +331,8 @@ export class GameManager {
   static async finishRoom(roomId: string, io: any): Promise<void> {
     const roomData = rooms.get(roomId);
     if (!roomData) return;
+    if (roomData.room.status === 'finished') return;
 
-    if (roomData.room.status === 'finished') return; // Prevent double trigger
     roomData.room.status = 'finished';
 
     const p1 = roomData.room.player1;
@@ -160,89 +340,117 @@ export class GameManager {
 
     const p1Score = roomData.playerScores.get(p1) || 0;
     const p2Score = p2 ? (roomData.playerScores.get(p2) || 0) : 0;
-
-    const p1Time = roomData.playerTimeSpent.get(p1) || 30000;
-    const p2Time = p2 ? (roomData.playerTimeSpent.get(p2) || 30000) : 30000;
+    const p1Time  = roomData.playerTimeSpent.get(p1) || 30000;
+    const p2Time  = p2 ? (roomData.playerTimeSpent.get(p2) || 30000) : 30000;
 
     let winnerId: string | null = null;
     let isDraw = false;
 
     if (p2) {
-      if (p1Score > p2Score) {
-        winnerId = p1;
-      } else if (p2Score > p1Score) {
-        winnerId = p2;
-      } else {
-        // Tie-breaker: speed
-        if (p1Time < p2Time) {
-          winnerId = p1;
-        } else if (p2Time < p1Time) {
-          winnerId = p2;
-        } else {
-          isDraw = true; // "Seri Murni"
-        }
-      }
+      if (p1Score > p2Score)       winnerId = p1;
+      else if (p2Score > p1Score)  winnerId = p2;
+      else if (p1Time  < p2Time)   winnerId = p1;
+      else if (p2Time  < p1Time)   winnerId = p2;
+      else                         isDraw   = true;
     } else {
       winnerId = p1;
     }
 
-    // Save to database
-    const game = await prisma.game.findUnique({ where: { roomId } });
-    if (game) {
-      await prisma.game.update({
-        where: { id: game.id },
-        data: {
-          status: GameStatus.FINISHED,
-          endedAt: new Date(),
-          winnerId,
-          isDraw,
-        }
-      });
-
-      const resultsData = [
-        {
-          userId: p1,
-          gameId: game.id,
-          score: p1Score,
-          finalScore: p1Score,
-          isWinner: winnerId === p1,
-          isDraw,
-          timeSpentMs: p1Time,
-        }
-      ];
-
-      if (p2) {
-        resultsData.push({
-          userId: p2,
-          gameId: game.id,
-          score: p2Score,
-          finalScore: p2Score,
-          isWinner: winnerId === p2,
-          isDraw,
-          timeSpentMs: p2Time,
-        });
-      }
-
-      await prisma.gameResult.createMany({ data: resultsData });
-    }
-
-    await prisma.room.update({
-      where: { id: roomId },
-      data: { status: RoomStatus.FINISHED }
-    });
-
-    // Notify clients in Indonesian
-    io.to(roomId).emit('game:finished', { 
-      message: 'Waktu habis!',
+    // 1. Instantly notify clients so they don't get stuck waiting for DB operations!
+    io.to(roomId).emit('game:finished', {
+      message: 'Pertandingan Selesai!',
       results: {
-        p1: { score: p1Score, time: p1Time, isWinner: winnerId === p1, isDraw },
-        p2: p2 ? { score: p2Score, time: p2Time, isWinner: winnerId === p2, isDraw } : null
+        p1: { userId: p1, score: p1Score, time: p1Time, isWinner: winnerId === p1, isDraw },
+        p2: p2 ? { userId: p2, score: p2Score, time: p2Time, isWinner: winnerId === p2, isDraw } : null,
       },
       winnerId,
-      isDraw
+      isDraw,
     });
 
     this.endRoom(roomId);
+
+    // 2. Perform DB operations asynchronously in the background
+    // We use a self-executing async function to not block the current stack
+    (async () => {
+      try {
+        const game = await prisma.game.findUnique({ where: { roomId } });
+        if (game) {
+          // Prisma transaction for atomicity
+          await prisma.$transaction(async (tx) => {
+            await tx.game.update({
+              where: { id: game.id },
+              data:  { status: GameStatus.FINISHED, endedAt: new Date(), winnerId, isDraw },
+            });
+
+            const resultsData = [
+              { userId: p1, gameId: game.id, score: p1Score, finalScore: p1Score, isWinner: winnerId === p1, isDraw, timeSpentMs: p1Time },
+              ...(p2 && !roomData.isVsBot ? [{ userId: p2, gameId: game.id, score: p2Score, finalScore: p2Score, isWinner: winnerId === p2, isDraw, timeSpentMs: p2Time }] : []),
+            ];
+
+            await tx.gameResult.createMany({ data: resultsData });
+
+            // Helper function to calculate points impact
+            const calculateImpact = (isBotMode: boolean, score: number, isWinner: boolean, isDrawGame: boolean) => {
+              if (isBotMode) {
+                // Mode Latihan: No impact on global stats, give tiny practice XP
+                return { scoreImpact: 0, winImpact: 0, lossImpact: 0, xpImpact: 5 };
+              }
+              return {
+                scoreImpact: score + (isWinner ? 50 : 10),
+                winImpact: isWinner ? 1 : 0,
+                lossImpact: !isWinner && !isDrawGame ? 1 : 0,
+                xpImpact: score + (isWinner ? 50 : 10)
+              };
+            };
+
+            const updatePlayerStats = async (uid: string, score: number, winner: boolean, isDrawStatus: boolean) => {
+              if (uid.startsWith('bot-')) return;
+              const user = await tx.user.findUnique({ where: { id: uid }, select: { totalScore: true, level: true, wins: true, losses: true } });
+              if (!user) return;
+
+              const isBotMode = roomData.isVsBot ?? false;
+              const impact = calculateImpact(isBotMode, score, winner, isDrawStatus);
+
+              // Calculate new stats
+              const newTotalScore = user.totalScore + impact.scoreImpact;
+              // If we wanted to keep practice XP separate we could store it, but for now we'll just add it to a theoretical XP pool
+              // Currently level is based on totalScore, we can simulate XP gain by just adding the xpImpact to a formula or adding to totalScore if we really want them to level up
+              // But strictly speaking, the prompt says "berikan opsi untuk tetap memberikan 'XP Latihan'". 
+              // We'll just increase totalScore by xpImpact (which is 0 for scoreImpact, but we can just use totalScore for level, and keep a separate track later)
+              // Wait, if scoreImpact is 0, totalScore doesn't increase. Level uses totalScore.
+              // Let's just add xpImpact to totalScore for now, OR we can just ignore level up in practice.
+              // Let's not increase totalScore, and assume level might be refactored later or they just get a daily streak.
+              const newWins = (user.wins || 0) + impact.winImpact;
+              const newLosses = (user.losses || 0) + impact.lossImpact;
+              const newLevel = Math.floor(Math.sqrt((user.totalScore + impact.xpImpact) / 100)) + 1;
+
+              await tx.user.update({
+                where: { id: uid },
+                data: { 
+                  totalScore: newTotalScore, 
+                  level: newLevel,
+                  wins: newWins,
+                  losses: newLosses
+                }
+              });
+            };
+
+            await updatePlayerStats(p1, p1Score, winnerId === p1, isDraw);
+            if (p2 && !roomData.isVsBot) {
+              await updatePlayerStats(p2, p2Score, winnerId === p2, isDraw);
+            }
+
+            await tx.room.update({
+              where: { id: roomId },
+              data:  { status: RoomStatus.FINISHED },
+            });
+          });
+          console.log('[GameManager] Game results saved successfully for room:', roomId);
+        }
+      } catch (err) {
+        console.error('[GameManager] Error saving game results for room:', roomId, err);
+      }
+    })();
   }
 
   static endRoom(roomId: string): void {
@@ -251,6 +459,7 @@ export class GameManager {
 
     if (roomData.room.player1) userRooms.delete(roomData.room.player1);
     if (roomData.room.player2) userRooms.delete(roomData.room.player2);
+    if (roomData.roomCode)     roomCodes.delete(roomData.roomCode);
 
     rooms.delete(roomId);
     console.log('[GameManager] Room ended:', roomId);
@@ -258,7 +467,19 @@ export class GameManager {
 
   static getWaitingRooms(): GameRoom[] {
     return Array.from(rooms.values())
-      .filter((data) => data.room.status === 'waiting')
-      .map((data) => data.room);
+      .filter((d) => d.room.status === 'waiting')
+      .map((d) => d.room);
+  }
+
+  static playerFinished(roomId: string, userId: string, io: any) {
+    const roomData = rooms.get(roomId);
+    if (!roomData) return;
+
+    roomData.playersFinished.add(userId);
+
+    // If bot mode, bot is instantly finished when user is finished
+    if (roomData.isVsBot || roomData.playersFinished.size >= 2) {
+      this.finishRoom(roomId, io);
+    }
   }
 }

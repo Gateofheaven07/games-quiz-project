@@ -114,6 +114,12 @@ model Game {
   mode   GameMode
   status GameStatus @default(WAITING)
 
+  // 🤖 Bot mode fields
+  isVsBot       Boolean        @default(false)
+  botDifficulty BotDifficulty?
+  // 📊 Kategori skor: PRACTICE (vs bot) tidak masuk leaderboard global
+  gameCategory  GameCategory   @default(GLOBAL)
+
   startedAt DateTime?
   endedAt   DateTime?
   winnerId  String?
@@ -217,6 +223,19 @@ enum GameMode {
   QUIZ
   CROSSWORD
   TETRIS
+}
+
+enum BotDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+// PRACTICE = vs Bot (tidak masuk leaderboard global)
+// GLOBAL   = vs Human (masuk leaderboard)
+enum GameCategory {
+  GLOBAL
+  PRACTICE
 }
 
 enum FriendshipStatus {

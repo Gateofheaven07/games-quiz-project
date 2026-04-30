@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import axios, { AxiosInstance } from 'axios';
+import { destroySocket } from '../lib/socketSingleton';
 
 export interface User {
   id: string;
@@ -198,6 +199,8 @@ export const useAuth = () => {
   );
 
   const logout = useCallback(() => {
+    // Putus socket HANYA saat logout — bukan saat navigasi
+    destroySocket();
     localStorage.removeItem('auth');
     setState({
       user: null,

@@ -33,7 +33,7 @@ function Sidebar({ active, userStats }: { active: string; userStats?: UserStats 
 
   const navItems = [
     { icon: 'dashboard',      label: 'Dashboard',     href: '/dashboard' },
-    { icon: 'swords',         label: 'Arena Pertempuran',  href: '/game' },
+    { icon: 'swords',         label: 'Arena Pertempuran',  href: '/game/lobby' },
     { icon: 'sports_esports', label: 'Arkade',        href: '/game/crossword' },
     { icon: 'group',          label: 'Teman',       href: '/friends' },
     { icon: 'leaderboard',    label: 'Peringkat',      href: '/leaderboard' },
@@ -256,7 +256,7 @@ function GameModeCard({
 }
 
 // ── Stat Card ─────────────────────────────────────────────────────────────────
-function StatCard({ label, value, sub, accent }: { label: string; value: string; sub: string; accent: string }) {
+function StatCard({ label, value, sub, accent, extraBadge }: { label: string; value: string; sub: string; accent: string; extraBadge?: string }) {
   return (
     <div
       className="glass-panel"
@@ -274,7 +274,14 @@ function StatCard({ label, value, sub, accent }: { label: string; value: string;
           pointerEvents: 'none',
         }}
       />
-      <p className="label-caps" style={{ color: 'var(--c-on-surface-variant)', marginBottom: 8 }}>{label}</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <p className="label-caps" style={{ color: 'var(--c-on-surface-variant)', margin: 0 }}>{label}</p>
+        {extraBadge && (
+          <span style={{ fontSize: '0.55rem', background: `${accent}20`, color: accent, padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            {extraBadge}
+          </span>
+        )}
+      </div>
       <p
         style={{
           fontFamily: "'Space Grotesk', sans-serif",
@@ -397,6 +404,7 @@ export default function DashboardPage() {
             value={userStats ? userStats.totalScore.toLocaleString() : '0'}
             sub={userStats ? `Peringkat: ${getRankLabel(userStats.totalScore)}` : 'Memuat...'}
             accent="#00d1ff"
+            extraBadge="Hanya Statistik Pertarungan Real"
           />
           <StatCard
             label="Tingkat Kemenangan"
@@ -433,7 +441,7 @@ export default function DashboardPage() {
               icon="swords"
               title="Kuis Pertempuran"
               description="Pertempuran trivia taktis 1 lawan 1 secara langsung. Hancurkan inti lawanmu dengan pengetahuan."
-              href="/game"
+              href="/game/lobby"
               badge="LIVE"
               accent="#00d1ff"
             />

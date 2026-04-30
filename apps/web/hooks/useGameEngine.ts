@@ -1,134 +1,313 @@
-import { useState, useEffect, useCallback } from 'react';
+/**
+ * useGameEngine.ts  —  Optimized for 60fps & Predictable State
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * State Partitioning & Logic Separation
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ *  FAST STATE  (Timer)
+ *  — Stored in useRef, pushed to DOM via RAF (Zero React re-renders per tick)
+ *
+ *  MEDIUM & SLOW STATE (Reducer)
+ *  — Managed via useReducer for predictable logic separation (Visual vs Data).
+ *
+ *  Optimistic UI:
+ *  — When user clicks an answer, state updates instantly (color + score).
+ */
+
+import { useEffect, useCallback, useRef, useReducer } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSocket } from './useSocket';
 
 interface UseGameEngineProps {
-  userId?: string;
-  gameRoom: any; // GameRoom type
-  submitAnswer: (answer: number, questionIndex: number) => void;
-  on: (event: string, callback: (...args: any[]) => void) => void;
-  off: (event: string, callback: (...args: any[]) => void) => void;
+  userId?:        string;
+  gameRoom:       any;
+  submitAnswer:   (answer: number, questionIndex: number) => void;
+  finishGame:     () => void;
+  on:             (event: string, callback: (...args: any[]) => void) => void;
+  off:            (event: string, callback: (...args: any[]) => void) => void;
   totalDuration?: number;
+  isVsBot?:       boolean;
+  timerDisplayRef?: React.RefObject<HTMLElement | null>;
+  timerArcRef?:     React.RefObject<SVGCircleElement | null>;
 }
+
+export interface GameEngineReturn {
+  currentQ:        number;
+  round:           number;
+  totalRounds:     number;
+  currentQuestion: any;
+  timeLeft:        number; // initial render only
+  selectedAnswer:  number | null;
+  answerState:     'idle' | 'selected' | 'benar' | 'salah';
+  playerScore:     number;
+  opponentScore:   number;
+  gameEnded:       boolean;
+  gameResults:     any | null;
+  revealedCorrect: number;
+  handleAnswer:    (idx: number) => void;
+}
+
+// ── Reducer Setup ────────────────────────────────────────────────────────────
+
+type GameState = {
+  currentQ: number;
+  selectedAnswer: number | null;
+  answerState: 'idle' | 'selected' | 'benar' | 'salah';
+  playerScore: number;
+  opponentScore: number;
+  gameEnded: boolean;
+  gameResults: any | null;
+  revealedCorrect: number;
+};
+
+type Action =
+  | { type: 'ANSWER_SUBMITTED'; payload: { answer: number; isCorrect: boolean; correctAnswer: number; scoreEarned: number } }
+  | { type: 'OPPONENT_ANSWERED'; payload: { scoreEarned: number } }
+  | { type: 'NEXT_QUESTION'; payload: { totalRounds: number } }
+  | { type: 'GAME_OVER'; payload?: any };
+
+function gameReducer(state: GameState, action: Action): GameState {
+  switch (action.type) {
+    case 'ANSWER_SUBMITTED':
+      // Optimistic UI: Update both Visual (colors) and Data (score) instantly
+      return {
+        ...state,
+        selectedAnswer: action.payload.answer,
+        answerState: action.payload.isCorrect ? 'benar' : 'salah',
+        revealedCorrect: action.payload.correctAnswer,
+        playerScore: state.playerScore + action.payload.scoreEarned,
+      };
+
+    case 'OPPONENT_ANSWERED':
+      return {
+        ...state,
+        opponentScore: state.opponentScore + action.payload.scoreEarned,
+      };
+
+    case 'NEXT_QUESTION':
+      return {
+        ...state,
+        currentQ: Math.min(state.currentQ + 1, action.payload.totalRounds - 1),
+        selectedAnswer: null,
+        answerState: 'idle',
+        revealedCorrect: -1,
+      };
+
+    case 'GAME_OVER':
+      return {
+        ...state,
+        gameEnded: true,
+        gameResults: action.payload || state.gameResults, // Set if provided, otherwise keep existing
+      };
+
+    default:
+      return state;
+  }
+}
+
+const initialState: GameState = {
+  currentQ: 0,
+  selectedAnswer: null,
+  answerState: 'idle',
+  playerScore: 0,
+  opponentScore: 0,
+  gameEnded: false,
+  gameResults: null,
+  revealedCorrect: -1,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function useGameEngine({
   userId,
   gameRoom,
   submitAnswer,
+  finishGame,
   on,
   off,
-  totalDuration = 30,
-}: UseGameEngineProps) {
+  totalDuration   = 30,
+  isVsBot         = false,
+  timerDisplayRef,
+  timerArcRef,
+}: UseGameEngineProps): GameEngineReturn {
   const router = useRouter();
 
-  const [currentQ, setCurrentQ] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(totalDuration);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [answerState, setAnswerState] = useState<'idle' | 'selected' | 'benar' | 'salah'>('idle');
-  const [playerScore, setPlayerScore] = useState(0);
-  const [opponentScore, setOpponentScore] = useState(0);
-  const [gameEnded, setGameEnded] = useState(false);
+  // UseReducer manages all core game state predictively
+  const [state, dispatch] = useReducer(gameReducer, initialState);
 
-  const totalRounds = gameRoom?.questions?.length || 10;
-  const round = Math.min(currentQ + 1, totalRounds);
-  const currentQuestion = gameRoom?.questions?.[currentQ];
+  // Fast state — timer stored in useRef
+  const timeLeftRef = useRef(totalDuration);
+  const gameEndedRef = useRef(false);
 
-  // Socket event listeners
+  // Throttle ref for opponent answers
+  const opponentAnswerPendingRef = useRef(false);
+
+  const totalRounds     = gameRoom?.questions?.length || 10;
+  const round           = Math.min(state.currentQ + 1, totalRounds);
+  const currentQuestion = gameRoom?.questions?.[state.currentQ];
+
+  // ── DOM mutation helper (bypasses React reconciler) ────────────────────────
+  const updateTimerDOM = useCallback((seconds: number) => {
+    if (timerDisplayRef?.current) {
+      timerDisplayRef.current.textContent = String(seconds);
+      const color = seconds <= 5 ? '#ff4545' : 'var(--c-on-surface)';
+      (timerDisplayRef.current as HTMLElement).style.color = color;
+    }
+    if (timerArcRef?.current) {
+      const radius        = 40;
+      const circumference = 2 * Math.PI * radius;
+      const progress      = (seconds / totalDuration) * circumference;
+      timerArcRef.current.setAttribute('stroke-dasharray', `${progress} ${circumference}`);
+
+      const arcColor = seconds > totalDuration * 0.5 ? '#00d1ff'
+                     : seconds > totalDuration * 0.25 ? '#feb127'
+                     : '#ff4545';
+      timerArcRef.current.setAttribute('stroke', arcColor);
+      timerArcRef.current.style.filter = `drop-shadow(0 0 6px ${arcColor})`;
+    }
+  }, [timerDisplayRef, timerArcRef, totalDuration]);
+
+  // ── Timer: RAF-based countdown (zero React re-renders) ─────────────────────
   useEffect(() => {
-    const handleAnswerResult = (data: any) => {
-      if (data.isCorrect) {
-        setAnswerState('benar');
-        setPlayerScore((prev) => prev + data.scoreEarned);
-      } else {
-        setAnswerState('salah');
-      }
+    if (gameRoom?.status !== 'active' || gameEndedRef.current) return;
 
-      // Auto transition to next question after 1.5s
-      setTimeout(() => {
-        setCurrentQ((q) => Math.min(q + 1, totalRounds - 1));
-        setSelectedAnswer(null);
-        setAnswerState('idle');
-      }, 1500);
+    let rafId:       number;
+    let lastTick:    number = performance.now();
+
+    const tick = (now: number) => {
+      if (gameEndedRef.current) return;
+
+      const elapsed = now - lastTick;
+      if (elapsed >= 1000) {
+        lastTick = now - (elapsed % 1000);
+        timeLeftRef.current = Math.max(0, timeLeftRef.current - 1);
+        updateTimerDOM(timeLeftRef.current);
+
+        if (timeLeftRef.current <= 0) {
+          gameEndedRef.current = true;
+          dispatch({ type: 'GAME_OVER' });
+          finishGame();
+          return;
+        }
+      }
+      rafId = requestAnimationFrame(tick);
     };
 
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [gameRoom?.status, updateTimerDOM]);
+
+  // ── Socket event listeners ─────────────────────────────────────────────────
+  useEffect(() => {
     const handlePlayerAnswered = (data: any) => {
-      if (data.userId !== userId) {
-        setOpponentScore((prev) => prev + data.scoreEarned);
-      }
+      if (data.userId === userId) return; // Ignored: own event
+      if (opponentAnswerPendingRef.current) return;
+      
+      opponentAnswerPendingRef.current = true;
+      requestAnimationFrame(() => {
+        dispatch({ type: 'OPPONENT_ANSWERED', payload: { scoreEarned: data.scoreEarned || 0 } });
+        opponentAnswerPendingRef.current = false;
+      });
     };
 
     const handleGameFinished = (data: any) => {
-      setGameEnded(true);
-
-      let message = 'Pertandingan Selesai!';
-      if (data.isDraw) {
-        message = 'Hasil Seri Murni!';
-      } else if (data.winnerId === userId) {
-        message = 'Kamu Menang!';
-        const p1 = data.results?.p1;
-        const p2 = data.results?.p2;
-        if (p1 && p2 && p1.score === p2.score && p1.score > 0) {
-          message += '\n(Menang karena lebih cepat!)';
-        }
-      } else if (data.winnerId) {
-        message = 'Kamu Kalah!';
-        const p1 = data.results?.p1;
-        const p2 = data.results?.p2;
-        if (p1 && p2 && p1.score === p2.score && p1.score > 0) {
-          message += '\n(Kalah karena lebih lambat!)';
-        }
-      }
-
-      setTimeout(() => {
-        alert(`${message}\n\nSkor Anda: ${playerScore}`);
-        router.push('/dashboard');
-      }, 2000);
+      gameEndedRef.current = true;
+      dispatch({ type: 'GAME_OVER', payload: data });
     };
 
-    on('game:answer_result', handleAnswerResult);
+    // Note: We ignore game:answer_result here because Optimistic UI handles it instantly!
     on('game:player_answered', handlePlayerAnswered);
-    on('game:finished', handleGameFinished);
+    on('game:finished',        handleGameFinished);
 
     return () => {
-      off('game:answer_result', handleAnswerResult);
       off('game:player_answered', handlePlayerAnswered);
-      off('game:finished', handleGameFinished);
+      off('game:finished',        handleGameFinished);
     };
-  }, [on, off, totalRounds, userId, playerScore, router]);
+  }, [on, off, userId, router, isVsBot]);
 
+  // ── Graceful Fallback for Results (Offline-first) ─────────────────────────
+  useEffect(() => {
+    if (state.gameEnded && !state.gameResults) {
+      const fallbackTimer = setTimeout(() => {
+        console.warn('[GameEngine] Server timeout. Using local fallback for game results.');
+        
+        let winnerId: string | null = null;
+        let isDraw = false;
+
+        if (state.playerScore > state.opponentScore) winnerId = userId || null;
+        else if (state.opponentScore > state.playerScore) winnerId = 'opponent';
+        else isDraw = true;
+
+        const fallbackData = {
+          message: 'Skor Lokal (Server Terputus)',
+          results: {
+            p1: { userId, score: state.playerScore, isWinner: winnerId === userId, isDraw },
+            p2: { score: state.opponentScore, isWinner: winnerId === 'opponent', isDraw },
+          },
+          winnerId,
+          isDraw,
+        };
+        dispatch({ type: 'GAME_OVER', payload: fallbackData });
+      }, 5000);
+
+      return () => clearTimeout(fallbackTimer);
+    }
+  }, [state.gameEnded, state.gameResults, state.playerScore, state.opponentScore, userId]);
+
+  // ── Answer handler (Optimistic UI) ─────────────────────────────────────────
   const handleAnswer = useCallback(
     (idx: number) => {
-      if (answerState !== 'idle' || !gameRoom) return;
-      setSelectedAnswer(idx);
-      setAnswerState('selected');
-      submitAnswer(idx, currentQ);
+      if (state.answerState !== 'idle' || !gameRoom) return;
+
+      const question = gameRoom.questions[state.currentQ];
+      const isCorrect = question.correctAnswer === idx;
+      const scoreEarned = isCorrect ? 10 : 0;
+
+      // 1. Instantly update UI (Optimistic UI)
+      dispatch({
+        type: 'ANSWER_SUBMITTED',
+        payload: { answer: idx, isCorrect, correctAnswer: question.correctAnswer, scoreEarned }
+      });
+
+      // 2. Send to server (Fire and forget, server will broadcast to opponent)
+      submitAnswer(idx, state.currentQ);
+
+      // 3. Setup transition to next question after visual delay
+      setTimeout(() => {
+        if (gameEndedRef.current) return;
+        
+        if (state.currentQ === totalRounds - 1) {
+          // Last question answered! Stop timer and tell server we are done.
+          gameEndedRef.current = true;
+          dispatch({ type: 'GAME_OVER' });
+          finishGame();
+          return;
+        }
+
+        // Reset timer
+        timeLeftRef.current = totalDuration;
+        updateTimerDOM(totalDuration);
+
+        // Move to next question and cleanup UI state
+        dispatch({ type: 'NEXT_QUESTION', payload: { totalRounds } });
+      }, 1500);
     },
-    [answerState, gameRoom, submitAnswer, currentQ]
+    [state.answerState, state.currentQ, gameRoom, submitAnswer, finishGame, totalRounds, totalDuration, updateTimerDOM]
   );
 
-  // Global Timer logic
-  useEffect(() => {
-    if (gameRoom?.status !== 'active' || gameEnded) return;
-
-    if (timeLeft <= 0) {
-      setGameEnded(true);
-      return;
-    }
-    const id = setInterval(() => setTimeLeft((t) => t - 1), 1000);
-    return () => clearInterval(id);
-  }, [timeLeft, gameRoom?.status, gameEnded]);
-
   return {
-    currentQ,
+    currentQ: state.currentQ,
     round,
     totalRounds,
     currentQuestion,
-    timeLeft,
-    selectedAnswer,
-    answerState,
-    playerScore,
-    opponentScore,
-    gameEnded,
+    timeLeft: timeLeftRef.current, // Returns the current ref value for initial render
+    selectedAnswer: state.selectedAnswer,
+    answerState: state.answerState,
+    playerScore: state.playerScore,
+    opponentScore: state.opponentScore,
+    gameEnded: state.gameEnded,
+    gameResults: state.gameResults,
+    revealedCorrect: state.revealedCorrect,
     handleAnswer,
   };
 }

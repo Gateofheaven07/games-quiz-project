@@ -17,7 +17,8 @@ const app: Express = express();
 const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: process.env.CLIENT_URL || ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    methods: ['GET', 'POST'],
     credentials: true,
   },
 });
@@ -27,14 +28,22 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Middleware
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: process.env.CLIENT_URL
+    ? process.env.CLIENT_URL.split(',')
+    : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Root route — confirms server is alive (WebSocket traffic uses /socket.io/ path separately)
+app.get('/', (_req, res) => {
+  res.json({ status: 'Server is running', message: 'WebSocket available at /socket.io/', timestamp: new Date().toISOString() });
+});
+
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 

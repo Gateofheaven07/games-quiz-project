@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
 import './globals.css'
+import { GameProvider } from '../context/GameContext'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -30,7 +31,13 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
       </head>
       <body className="font-sans antialiased" style={{ backgroundColor: '#0e1417', color: '#dde3e7' }}>
-        {children}
+        {/*
+          GameProvider membungkus seluruh app agar socket singleton berjalan
+          persisten — tidak terputus saat perpindahan rute (router.push).
+        */}
+        <GameProvider>
+          {children}
+        </GameProvider>
       </body>
     </html>
   )
