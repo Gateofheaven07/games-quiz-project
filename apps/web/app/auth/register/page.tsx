@@ -26,17 +26,17 @@ export default function RegisterPage() {
     setLocalError('');
 
     if (!formData.username || !formData.email || !formData.password) {
-      setLocalError('Please fill in all fields');
+      setLocalError('Harap isi semua kolom');
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setLocalError('Passwords do not match');
+      setLocalError('Kata sandi tidak cocok');
       return;
     }
 
     if (formData.password.length < 6) {
-      setLocalError('Password must be at least 6 characters');
+      setLocalError('Kata sandi minimal 6 karakter');
       return;
     }
 
@@ -44,7 +44,7 @@ export default function RegisterPage() {
     if (result.success) {
       router.push('/auth/login');
     } else {
-      setLocalError(result.error || 'Registration failed');
+      setLocalError(result.error || 'Pendaftaran gagal');
     }
   };
 
@@ -66,20 +66,20 @@ export default function RegisterPage() {
             <span className="font-bold text-4xl text-[#ecb2ff] tracking-tighter italic">QuizBattle</span>
           </div>
           <h1 className="font-bold text-5xl text-[#dde3e7] leading-tight">
-            BECOME AN <br />
+            JADI SEORANG <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#cf5cff] to-[#00d1ff]">OPERATOR.</span>
           </h1>
           <p className="text-lg text-[#bbc9cf] max-w-md">
-            Initialize your profile to join the tactical knowledge exchange. Rank up, dominate leaderboards, and prove your cognitive superiority.
+            Inisialisasi profil Anda untuk bergabung dalam pertukaran pengetahuan taktis. Tingkatkan peringkat, kuasai leaderboard, dan buktikan keunggulan kognitif Anda.
           </p>
           <div className="pt-12 grid grid-cols-2 gap-6">
             <div className="glass-panel p-6 rounded-xl">
-              <div className="text-[#a4e6ff] font-bold text-xs uppercase tracking-widest mb-1">NEW RECRUITS</div>
-              <div className="font-semibold text-2xl">450+ Today</div>
+              <div className="text-[#a4e6ff] font-bold text-xs uppercase tracking-widest mb-1">REKRUTAN BARU</div>
+              <div className="font-semibold text-2xl">450+ Hari Ini</div>
             </div>
             <div className="glass-panel p-6 rounded-xl">
-              <div className="text-[#ecb2ff] font-bold text-xs uppercase tracking-widest mb-1">GLOBAL RANKING</div>
-              <div className="font-semibold text-2xl">Awaits You</div>
+              <div className="text-[#ecb2ff] font-bold text-xs uppercase tracking-widest mb-1">PERINGKAT GLOBAL</div>
+              <div className="font-semibold text-2xl">Menantimu</div>
             </div>
           </div>
         </div>
@@ -90,11 +90,11 @@ export default function RegisterPage() {
             {/* Subtle Header for Mobile */}
             <div className="md:hidden flex flex-col items-center mb-12">
               <span className="font-bold text-3xl text-[#ecb2ff] tracking-tighter italic mb-2">QuizBattle</span>
-              <h2 className="font-semibold text-2xl text-[#dde3e7]">Operator Registration</h2>
+              <h2 className="font-semibold text-2xl text-[#dde3e7]">Pendaftaran Operator</h2>
             </div>
             <div className="mb-12 hidden md:block">
-              <h2 className="font-bold text-3xl text-[#dde3e7]">Operator Registration</h2>
-              <p className="text-[#bbc9cf]">Initialize your new profile to enter combat.</p>
+              <h2 className="font-bold text-3xl text-[#dde3e7]">Pendaftaran Operator</h2>
+              <p className="text-[#bbc9cf]">Inisialisasi profil baru Anda untuk masuk ke pertempuran.</p>
             </div>
 
             {/* Auth Form */}
@@ -117,7 +117,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-xs tracking-widest text-[#bbc9cf] ml-1">IDENTIFICATION (EMAIL)</label>
+                <label className="font-bold text-xs tracking-widest text-[#bbc9cf] ml-1">IDENTIFIKASI (EMAIL)</label>
                 <div className="relative group">
                   <div className="absolute left-5 top-1/2 -translate-y-1/2 text-[#859399] group-focus-within:text-[#cf5cff] transition-colors icon-box">
                     <span className="material-symbols-outlined text-xl">alternate_email</span>
@@ -135,7 +135,7 @@ export default function RegisterPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1">
-                  <label className="font-bold text-xs tracking-widest text-[#bbc9cf] ml-1">CYPHER (PASSWORD)</label>
+                  <label className="font-bold text-xs tracking-widest text-[#bbc9cf] ml-1">CIPHER (KATA SANDI)</label>
                   <div className="relative group">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#859399] group-focus-within:text-[#cf5cff] transition-colors icon-box">
                       <span className="material-symbols-outlined text-xl">lock</span>
@@ -152,7 +152,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-xs tracking-widest text-[#bbc9cf] ml-1">CONFIRM CYPHER</label>
+                  <label className="font-bold text-xs tracking-widest text-[#bbc9cf] ml-1">KONFIRMASI CIPHER</label>
                   <div className="relative group">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#859399] group-focus-within:text-[#cf5cff] transition-colors icon-box">
                       <span className="material-symbols-outlined text-xl">lock_reset</span>
@@ -181,11 +181,11 @@ export default function RegisterPage() {
                   disabled={isLoading}
                   className="w-full bg-gradient-to-r from-[#cf5cff] to-[#00d1ff] py-5 rounded-lg font-bold text-xs tracking-widest text-[#0e1417] uppercase neon-glow-hover active:scale-95 transition-all flex items-center justify-center gap-3"
                 >
-                  <span>{isLoading ? 'INITIALIZING...' : 'CREATE OPERATOR PROFILE'}</span>
+                  <span>{isLoading ? 'MENGINISIALISASI...' : 'BUAT PROFIL OPERATOR'}</span>
                   <span className="material-symbols-outlined text-xl">person_add</span>
                 </button>
                 <Link href="/auth/login" className="block text-center w-full border border-[#cf5cff]/30 hover:bg-[#cf5cff]/10 py-6 rounded-lg font-bold text-xs tracking-widest text-[#ecb2ff] transition-all uppercase">
-                  RETURN TO LOGIN
+                  KEMBALI KE LOGIN
                 </Link>
               </div>
             </form>
@@ -197,15 +197,15 @@ export default function RegisterPage() {
                 <div className="w-2 h-2 bg-[#cf5cff]/50 rounded-full"></div>
                 <div className="w-2 h-2 bg-[#cf5cff]/20 rounded-full"></div>
               </div>
-              <span className="font-bold text-[10px] tracking-widest uppercase text-[#ecb2ff]">Encryption Active: AES-256</span>
+              <span className="font-bold text-[10px] tracking-widest uppercase text-[#ecb2ff]">Enkripsi Aktif: AES-256</span>
             </div>
           </div>
 
           {/* Footer Links */}
           <div className="mt-6 flex justify-center gap-12">
-            <Link href="#" className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#dde3e7] transition-colors uppercase">STATUS: ONLINE</Link>
-            <Link href="#" className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#dde3e7] transition-colors uppercase">PRIVACY PROTOCOL</Link>
-            <Link href="#" className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#dde3e7] transition-colors uppercase">SUPPORT HUB</Link>
+            <Link href="#" className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#dde3e7] transition-colors uppercase">STATUS: AKTIF</Link>
+            <Link href="#" className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#dde3e7] transition-colors uppercase">PROTOKOL PRIVASI</Link>
+            <Link href="#" className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#dde3e7] transition-colors uppercase">PUSAT BANTUAN</Link>
           </div>
         </div>
       </div>

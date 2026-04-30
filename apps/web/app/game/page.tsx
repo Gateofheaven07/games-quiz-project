@@ -4,13 +4,14 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../hooks/useAuth'
+import { useSocket } from '../../hooks/useSocket'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface Player {
   name: string
   avatar: string
   score: number
-  status: 'thinking' | 'answered' | 'correct' | 'wrong'
+  status: 'berpikir' | 'menjawab' | 'benar' | 'salah'
   rank: string
   level: number
 }
@@ -80,9 +81,9 @@ function PlayerPanel({
   isUser: boolean
 }) {
   const statusColor =
-    player.status === 'correct' ? '#4aff91' :
-    player.status === 'wrong'   ? '#ff4545' :
-    player.status === 'answered'? '#00d1ff' :
+    player.status === 'benar'   ? '#4aff91' :
+    player.status === 'salah'   ? '#ff4545' :
+    player.status === 'menjawab'? '#00d1ff' :
     'var(--c-on-surface-variant)'
 
   return (
@@ -153,7 +154,7 @@ function PlayerPanel({
         >
           {player.score.toLocaleString()}
         </p>
-        <p className="label-caps" style={{ color: 'var(--c-outline)', fontSize: '0.6rem', marginTop: 2 }}>pts</p>
+        <p className="label-caps" style={{ color: 'var(--c-outline)', fontSize: '0.6rem', marginTop: 2 }}>poin</p>
       </div>
 
       {/* Status indicator */}
@@ -172,7 +173,7 @@ function PlayerPanel({
             borderRadius: '50%',
             backgroundColor: statusColor,
             boxShadow: `0 0 8px ${statusColor}`,
-            animation: player.status === 'thinking' ? 'pulse-live 1s infinite' : 'none',
+            animation: player.status === 'berpikir' ? 'pulse-live 1s infinite' : 'none',
           }}
         />
         <span className="label-caps" style={{ color: statusColor, fontSize: '0.6rem' }}>
@@ -192,13 +193,13 @@ function AnswerOption({
 }: {
   label: string
   text: string
-  state: 'idle' | 'selected' | 'correct' | 'wrong'
+  state: 'idle' | 'selected' | 'benar' | 'salah'
   onClick: () => void
 }) {
   const stateClass =
     state === 'selected' ? 'selected' :
-    state === 'correct'  ? 'correct' :
-    state === 'wrong'    ? 'wrong' :
+    state === 'benar'  ? 'correct' :
+    state === 'salah'    ? 'wrong' :
     ''
 
   return (
@@ -230,12 +231,25 @@ function AnswerOption({
   )
 }
 
+import { useGameEngine } from '../../hooks/useGameEngine'
+
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────────
 export default function QuizBattleRoomPage() {
   const TIMER_DURATION = 30
   
   const router = useRouter()
   const { isAuthenticated, isLoading, user } = useAuth()
+  const { gameRoom, createRoom, submitAnswer, on, off } = useSocket()
+  
+  // Create room if not playing
+  useEffect(() => {
+    if (isAuthenticated && !gameRoom) {
+      // Allowed categories: General Knowledge(9), Math(19), Computers(18), Geography(22), History(23), Science & Nature(17)
+      const allowedCategories = ['9', '19', '18', '22', '23', '17'];
+      const randomCategory = allowedCategories[Math.floor(Math.random() * allowedCategories.length)];
+      createRoom(randomCategory);
+    }
+  }, [isAuthenticated, gameRoom, createRoom]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -243,63 +257,48 @@ export default function QuizBattleRoomPage() {
     }
   }, [isAuthenticated, isLoading, router])
 
-  const [currentQ, setCurrentQ] = useState(0)
-  const [round, setRound] = useState(7)
-  const [timeLeft, setTimeLeft] = useState(TIMER_DURATION)
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
-  const [answerState, setAnswerState] = useState<'idle' | 'selected' | 'correct' | 'wrong'>('idle')
-  
+  const {
+    currentQ,
+    round,
+    totalRounds,
+    currentQuestion: question,
+    timeLeft,
+    selectedAnswer,
+    answerState,
+    playerScore,
+    opponentScore,
+    gameEnded,
+    handleAnswer,
+  } = useGameEngine({
+    userId: user?.id,
+    gameRoom,
+    submitAnswer,
+    on,
+    off,
+    totalDuration: TIMER_DURATION,
+  });
+
   const userPlayer = useMemo<Player>(() => ({
-    name: user?.username || 'OPERATOR_01',
-    avatar: user?.username ? user.username[0].toUpperCase() : 'O1',
-    score: 1240,
-    status: 'thinking',
-    rank: 'TACTICIAN',
-    level: user?.level || 42,
-  }), [user])
-  const [opponent] = useState<Player>({
-    name: 'VOID_WALKER',
-    avatar: 'VW',
-    score: 980,
-    status: 'thinking',
-    rank: 'HUNTER',
-    level: 38,
-  })
-
-  const question = QUESTIONS[currentQ % QUESTIONS.length]
-
-  const handleAnswer = useCallback((idx: number) => {
-    if (answerState !== 'idle') return
-    setSelectedAnswer(idx)
-    if (idx === question.correct) {
-      setAnswerState('correct')
-    } else {
-      setAnswerState('wrong')
-    }
-    // advance after short delay
-    setTimeout(() => {
-      setCurrentQ((q) => q + 1)
-      setRound((r) => Math.min(r + 1, TOTAL_ROUNDS))
-      setTimeLeft(TIMER_DURATION)
-      setSelectedAnswer(null)
-      setAnswerState('idle')
-    }, 1800)
-  }, [answerState, question.correct])
-
-  // countdown
-  useEffect(() => {
-    if (answerState !== 'idle') return
-    if (timeLeft <= 0) {
-      handleAnswer(-1)
-      return
-    }
-    const id = setInterval(() => setTimeLeft((t) => t - 1), 1000)
-    return () => clearInterval(id)
-  }, [timeLeft, answerState, handleAnswer])
+    name: user?.username || 'PLAYER',
+    avatar: user?.username ? user.username[0].toUpperCase() : 'P',
+    score: playerScore,
+    status: answerState === 'idle' ? 'berpikir' : answerState === 'selected' ? 'menjawab' : answerState,
+    rank: 'CHALLENGER',
+    level: user?.level || 1,
+  }), [user, playerScore, answerState])
+  
+  const opponent = useMemo<Player>(() => ({
+    name: 'OPPONENT',
+    avatar: 'O',
+    score: opponentScore,
+    status: 'berpikir', // Simplified, opponent status can be synced too if needed
+    rank: 'CHALLENGER',
+    level: 1,
+  }), [opponentScore])
 
   const optionLabels = ['A', 'B', 'C', 'D']
 
-  if (isLoading || !isAuthenticated) return null
+  if (isLoading || !isAuthenticated || !question) return null
 
   return (
     <div
@@ -355,17 +354,17 @@ export default function QuizBattleRoomPage() {
         </Link>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <span className="badge badge-live">LIVE MATCH</span>
+          <span className="badge badge-live">PERTANDINGAN LANGSUNG</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span className="material-symbols-rounded" style={{ color: 'var(--c-outline)', fontSize: '1rem' }}>bolt</span>
             <span className="label-caps" style={{ color: 'var(--c-on-surface-variant)', fontSize: '0.6875rem' }}>
-              ROUND {round} / {TOTAL_ROUNDS}
+              RONDE {round} / {totalRounds}
             </span>
           </div>
         </div>
 
         <button className="btn-danger" style={{ padding: '0.5rem 1rem' }}>
-          Surrender
+          Menyerah
         </button>
       </nav>
 
@@ -375,11 +374,11 @@ export default function QuizBattleRoomPage() {
         {/* Round progress */}
         <div style={{ marginBottom: 24 }}>
           <div className="progress-track" style={{ height: 4 }}>
-            <div className="progress-fill" style={{ width: `${(round / TOTAL_ROUNDS) * 100}%` }} />
+            <div className="progress-fill" style={{ width: `${(round / totalRounds) * 100}%` }} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-            <span className="label-caps" style={{ color: 'var(--c-outline)', fontSize: '0.625rem' }}>ROUND 1</span>
-            <span className="label-caps" style={{ color: 'var(--c-outline)', fontSize: '0.625rem' }}>ROUND {TOTAL_ROUNDS}</span>
+            <span className="label-caps" style={{ color: 'var(--c-outline)', fontSize: '0.625rem' }}>RONDE 1</span>
+            <span className="label-caps" style={{ color: 'var(--c-outline)', fontSize: '0.625rem' }}>RONDE {totalRounds}</span>
           </div>
         </div>
 
@@ -412,7 +411,7 @@ export default function QuizBattleRoomPage() {
                 >
                   {timeLeft}
                 </span>
-                <span className="label-caps" style={{ fontSize: '0.5rem', color: 'var(--c-outline)' }}>SEC</span>
+                <span className="label-caps" style={{ fontSize: '0.5rem', color: 'var(--c-outline)' }}>DETIK</span>
               </div>
             </div>
             <span
@@ -455,7 +454,7 @@ export default function QuizBattleRoomPage() {
               lineHeight: 1.4,
             }}
           >
-            {question.question}
+            {question.text || (question as any).question}
           </h2>
 
           {/* Decorative lines */}
@@ -475,10 +474,10 @@ export default function QuizBattleRoomPage() {
         {/* Answer options */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {question.options.map((option, idx) => {
-            let state: 'idle' | 'selected' | 'correct' | 'wrong' = 'idle'
+            let state: 'idle' | 'selected' | 'benar' | 'salah' = 'idle'
             if (selectedAnswer !== null) {
-              if (idx === question.correct && answerState !== 'idle') state = 'correct'
-              else if (idx === selectedAnswer && answerState === 'wrong') state = 'wrong'
+              if (idx === question.correct && answerState !== 'idle') state = 'benar'
+              else if (idx === selectedAnswer && answerState === 'salah') state = 'salah'
             }
             return (
               <AnswerOption
@@ -501,7 +500,7 @@ export default function QuizBattleRoomPage() {
             color: 'var(--c-outline)',
           }}
         >
-          Answer quickly for bonus points · Streak boosts your multiplier
+          Jawab cepat untuk poin bonus · Streak meningkatkan pengganda Anda
         </p>
       </main>
 
@@ -516,10 +515,10 @@ export default function QuizBattleRoomPage() {
         }}
       >
         <span className="label-caps" style={{ color: 'var(--c-outline)', fontSize: '0.625rem' }}>
-          © 2024 QuizBattle Tactical Systems
+          © 2024 Sistem Taktis QuizBattle
         </span>
         <div style={{ display: 'flex', gap: 16 }}>
-          {['Status', 'Privacy', 'Support'].map((link) => (
+          {['Status', 'Privasi', 'Dukungan'].map((link) => (
             <a
               key={link}
               href="#"

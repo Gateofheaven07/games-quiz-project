@@ -15,8 +15,8 @@ const spaceGrotesk = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
-  title: 'QuizBattle — Tactical Game Arena',
-  description: 'Challenge yourself with tactical quiz battles, crossword puzzles, and Tetris. Compete with players worldwide in our cyber-themed arena.',
+  title: 'QuizBattle — Arena Permainan Taktis',
+  description: 'Uji kemampuanmu dengan pertempuran kuis taktis, teka-teki silang, dan Tetris. Bersaing dengan pemain di seluruh dunia di arena bertema siber kami.',
 }
 
 export default function RootLayout({

@@ -11,6 +11,8 @@ export interface GameRoom {
   player1: string;
   player2?: string;
   status: 'waiting' | 'active' | 'finished';
+  questions?: Question[];
+  createdAt?: Date;
 }
 
 export interface Question {
@@ -64,7 +66,7 @@ export const useSocket = () => {
 
     socket.on('room:ready', (data) => {
       console.log('[Socket] Room ready:', data);
-      setGameRoom((prev) => (prev ? { ...prev, status: 'active' } : null));
+      setGameRoom((prev) => (prev ? { ...prev, status: 'active', questions: data.questions } : null));
     });
 
     socket.on('game:question', (data) => {

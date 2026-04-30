@@ -52,7 +52,7 @@ export default function HomePage() {
                   className="px-6 py-2 rounded-lg font-bold text-xs tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
                   <span className="material-symbols-outlined text-base">dashboard</span>
-                  Go to Dashboard
+                  Masuk ke Dashboard
                 </Link>
               </>
             ) : (
@@ -62,13 +62,13 @@ export default function HomePage() {
                   href="/auth/login"
                   className="px-6 py-2 rounded-lg font-bold text-xs tracking-widest text-[#a4e6ff] border border-[#00d1ff]/30 hover:bg-[#00d1ff]/10 transition-all uppercase flex items-center justify-center"
                 >
-                  Sign In
+                  Masuk
                 </Link>
                 <Link
                   href="/auth/register"
                   className="px-6 py-2 rounded-lg font-bold text-xs tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all flex items-center justify-center"
                 >
-                  Register
+                  Daftar
                 </Link>
               </>
             )}
@@ -82,18 +82,17 @@ export default function HomePage() {
           <span className="font-bold text-[10px] tracking-widest text-[#00d1ff] uppercase">V.2.0.4-STABLE ONLINE</span>
         </div>
         <h2 className="text-5xl md:text-7xl font-bold text-[#dde3e7] mb-6 leading-tight">
-          ENTER THE <br className="md:hidden" />
+          MASUK KE <br className="md:hidden" />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00d1ff] to-[#cf5cff]">ARENA.</span>
         </h2>
         <p className="text-lg md:text-xl text-[#bbc9cf] mb-12 max-w-2xl mx-auto">
-          Join the ultimate tactical knowledge exchange. Rank up, dominate leaderboards, and prove your cognitive
-          superiority.
+          Bergabunglah dalam pertukaran pengetahuan taktis terbaik. Tingkatkan peringkat, kuasai leaderboard, dan buktikan keunggulan kognitifmu.
         </p>
         <Link
           href={isAuthenticated ? '/dashboard' : '/auth/register'}
           className="px-10 py-5 rounded-lg font-bold text-sm tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all flex items-center justify-center gap-4"
         >
-          <span>{isAuthenticated ? 'Enter the Arena' : 'Get Started Now'}</span>
+          <span>{isAuthenticated ? 'Masuk ke Arena' : 'Mulai Sekarang'}</span>
           <span className="material-symbols-outlined text-2xl">{isAuthenticated ? 'swords' : 'rocket_launch'}</span>
         </Link>
       </section>
@@ -101,7 +100,7 @@ export default function HomePage() {
       {/* Features Section */}
       <section className="relative z-10 max-w-6xl mx-auto px-6 py-20">
         <div className="flex flex-col items-center mb-16">
-          <h3 className="text-3xl md:text-4xl font-bold text-[#dde3e7] mb-4">TACTICAL ADVANTAGE</h3>
+          <h3 className="text-3xl md:text-4xl font-bold text-[#dde3e7] mb-4">KEUNGGULAN TAKTIS</h3>
           <div className="h-1 w-24 bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] rounded-full"></div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -109,9 +108,9 @@ export default function HomePage() {
             <div className="w-14 h-14 bg-[#161d1f] rounded-xl flex items-center justify-center mb-6 border border-[#3c494e] group-hover:border-[#00d1ff] transition-colors">
               <Zap className="w-6 h-6 text-[#00d1ff]" />
             </div>
-            <h4 className="text-xl font-bold text-[#dde3e7] mb-3">Lightning Fast</h4>
+            <h4 className="text-xl font-bold text-[#dde3e7] mb-3">Sangat Cepat</h4>
             <p className="text-[#bbc9cf] leading-relaxed">
-              Quick questions with a 30-second timer. Test your knowledge and reflexes in high-pressure scenarios.
+              Pertanyaan cepat dengan pengatur waktu 30 detik. Uji pengetahuan dan refleksmu dalam skenario bertekanan tinggi.
             </p>
           </div>
 
@@ -119,9 +118,9 @@ export default function HomePage() {
             <div className="w-14 h-14 bg-[#161d1f] rounded-xl flex items-center justify-center mb-6 border border-[#3c494e] group-hover:border-[#cf5cff] transition-colors">
               <Trophy className="w-6 h-6 text-[#cf5cff]" />
             </div>
-            <h4 className="text-xl font-bold text-[#dde3e7] mb-3">Compete & Rank</h4>
+            <h4 className="text-xl font-bold text-[#dde3e7] mb-3">Bersaing & Peringkat</h4>
             <p className="text-[#bbc9cf] leading-relaxed">
-              Battle with friends, earn points, and see your rank on the global leaderboard. Become the elite operator.
+              Bertarung dengan teman, kumpulkan poin, dan lihat peringkatmu di leaderboard global. Jadilah operator elit.
             </p>
           </div>
 
@@ -129,9 +128,9 @@ export default function HomePage() {
             <div className="w-14 h-14 bg-[#161d1f] rounded-xl flex items-center justify-center mb-6 border border-[#3c494e] group-hover:border-[#a4e6ff] transition-colors">
               <Users className="w-6 h-6 text-[#a4e6ff]" />
             </div>
-            <h4 className="text-xl font-bold text-[#dde3e7] mb-3">Community</h4>
+            <h4 className="text-xl font-bold text-[#dde3e7] mb-3">Komunitas</h4>
             <p className="text-[#bbc9cf] leading-relaxed">
-              Join thousands of players, form alliances, and share your tactical achievements.
+              Bergabunglah dengan ribuan pemain, bentuk aliansi, dan bagikan pencapaian taktismu.
             </p>
           </div>
         </div>
@@ -140,15 +139,15 @@ export default function HomePage() {
       {/* CTA Section */}
       <section className="relative z-10 border-y border-[#3c494e]/50 py-24 mt-12 bg-gradient-to-r from-[#00d1ff]/5 to-[#cf5cff]/5">
         <div className="max-w-4xl mx-auto text-center px-6">
-          <h3 className="text-4xl font-bold text-[#dde3e7] mb-6">READY TO BATTLE?</h3>
+          <h3 className="text-4xl font-bold text-[#dde3e7] mb-6">SIAP BERTARUNG?</h3>
           <p className="text-xl text-[#bbc9cf] mb-10">
-            Sign up now and start competing with operators from around the world.
+            Daftar sekarang dan mulailah bersaing dengan operator dari seluruh dunia.
           </p>
           <Link
             href={isAuthenticated ? '/dashboard' : '/auth/register'}
             className="px-12 py-5 inline-block rounded-lg font-bold text-sm tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all"
           >
-            {isAuthenticated ? 'ENTER THE ARENA' : 'INITIALIZE YOUR OPERATOR'}
+            {isAuthenticated ? 'MASUK KE ARENA' : 'INISIALISASI OPERATOR ANDA'}
           </Link>
         </div>
       </section>
@@ -157,17 +156,17 @@ export default function HomePage() {
       <footer className="relative z-10 glass-panel border-t border-[#3c494e]/30 py-8">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="font-bold text-[10px] tracking-widest text-[#859399] uppercase">
-            © 2024 QUIZBATTLE TACTICAL SYSTEMS
+            © 2024 QUIZBATTLE SISTEM TAKTIS
           </div>
           <div className="flex gap-8">
             <span className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#00d1ff] transition-colors cursor-pointer uppercase">
-              STATUS: ONLINE
+              STATUS: AKTIF
             </span>
             <span className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#00d1ff] transition-colors cursor-pointer uppercase">
-              PRIVACY PROTOCOL
+              PROTOKOL PRIVASI
             </span>
             <span className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#00d1ff] transition-colors cursor-pointer uppercase">
-              SUPPORT HUB
+              PUSAT BANTUAN
             </span>
           </div>
         </div>

@@ -14,14 +14,18 @@ export async function startGameHandler(socket: AuthenticatedSocket, io: any, dat
       return;
     }
 
-    const { roomId } = data;
+    const { roomId, categoryId } = data;
     if (!roomId) {
       socket.emit('error', 'Room ID is required');
       return;
     }
+    if (!categoryId) {
+      socket.emit('error', 'Category ID is required');
+      return;
+    }
 
     // Panggil Orchestrator
-    const result = await GameService.startGame(roomId);
+    const result = await GameService.startGame(roomId, categoryId);
 
     // Beritahu semua orang di room bahwa game dimulai
     io.to(roomId).emit('game:started', {

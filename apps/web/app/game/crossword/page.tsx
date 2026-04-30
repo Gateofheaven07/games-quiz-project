@@ -26,17 +26,17 @@ const CLUE_NUMS: Record<string,number> = {
 
 const CLUES = {
   across: [
-    { n:1, text:'Central processing unit of a competitive machine.' },
-    { n:2, text:'A rapid series of electronic questions.' },
-    { n:3, text:'A collection of related data points.' },
-    { n:4, text:'The digital infrastructure of the world.' },
-    { n:5, text:'Hardware component for high-fidelity graphics.' },
-    { n:6, text:'A temporary storage unit for active memory.' },
+    { n:1, text:'Unit pemrosesan pusat dari mesin kompetitif.' },
+    { n:2, text:'Serangkaian pertanyaan elektronik yang cepat.' },
+    { n:3, text:'Kumpulan titik data yang saling terkait.' },
+    { n:4, text:'Infrastruktur digital dunia.' },
+    { n:5, text:'Komponen perangkat keras untuk grafis fidelitas tinggi.' },
+    { n:6, text:'Unit penyimpanan sementara untuk memori aktif.' },
   ],
   down: [
-    { n:1, text:'To write intricate instructions for a computer.' },
-    { n:2, text:'Measurement of tactical speed.' },
-    { n:5, text:'Visual representation of an operator\'s identity.' },
+    { n:1, text:'Menulis instruksi rumit untuk komputer.' },
+    { n:2, text:'Pengukuran kecepatan taktis.' },
+    { n:5, text:'Representasi visual dari identitas operator.' },
   ],
 }
 
@@ -65,11 +65,11 @@ function Sidebar() {
 
   const items = [
     { icon:'dashboard',      label:'Dashboard',    href:'/dashboard' },
-    { icon:'swords',         label:'Battle Arena', href:'/game' },
-    { icon:'sports_esports', label:'Arcade',       href:'/game/crossword' },
-    { icon:'group',          label:'Friends',      href:'/friends' },
-    { icon:'leaderboard',    label:'Rankings',     href:'/leaderboard' },
-    { icon:'person',         label:'Profile',      href:'/profile' },
+    { icon:'swords',         label:'Arena Pertempuran', href:'/game' },
+    { icon:'sports_esports', label:'Arkade',       href:'/game/crossword' },
+    { icon:'group',          label:'Teman',      href:'/friends' },
+    { icon:'leaderboard',    label:'Peringkat',     href:'/leaderboard' },
+    { icon:'person',         label:'Profil',      href:'/profile' },
   ]
   return (
     <aside style={{ width:200, minWidth:200, backgroundColor:'var(--c-surface-low)', borderRight:'1px solid var(--c-outline-variant)', display:'flex', flexDirection:'column', padding:'16px 12px', gap:4 }}>
@@ -100,7 +100,7 @@ function Sidebar() {
         }}
       >
         <span className="material-symbols-rounded" style={{ fontSize:'1.125rem' }}>logout</span>
-        Log Out
+        Keluar
       </button>
     </aside>
   )
@@ -193,12 +193,12 @@ export default function CrosswordPage() {
         {/* Header */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
           <div>
-            <p className="label-caps" style={{ color:'var(--c-secondary-container)', marginBottom:4 }}>ARCADE MODE</p>
-            <h2 style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:'1.5rem', fontWeight:700, color:'var(--c-on-surface)' }}>Daily Decryptor</h2>
+            <p className="label-caps" style={{ color:'var(--c-secondary-container)', marginBottom:4 }}>MODE ARKADE</p>
+            <h2 style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:'1.5rem', fontWeight:700, color:'var(--c-on-surface)' }}>Dekriptor Harian</h2>
           </div>
           <div style={{ display:'flex', gap:12 }}>
-            {[{icon:'timer',label:'TIME',val:fmt(timeLeft),col:timeLeft<60?'#ff4545':'var(--c-on-surface)',accent:'#feb127'},
-              {icon:'star', label:'SCORE',val:score.toLocaleString(),col:'var(--c-on-surface)',accent:'#00d1ff'}].map(s=>(
+            {[{icon:'timer',label:'WAKTU',val:fmt(timeLeft),col:timeLeft<60?'#ff4545':'var(--c-on-surface)',accent:'#feb127'},
+              {icon:'star', label:'SKOR',val:score.toLocaleString(),col:'var(--c-on-surface)',accent:'#00d1ff'}].map(s=>(
               <div key={s.label} className="glass-panel" style={{ padding:'10px 20px', display:'flex', alignItems:'center', gap:10 }}>
                 <span className="material-symbols-rounded" style={{ color:s.accent, fontSize:'1.25rem' }}>{s.icon}</span>
                 <div>
@@ -245,7 +245,7 @@ export default function CrosswordPage() {
               {(['across','down'] as Dir[]).map(d=>(
                 <button key={d} className={dir===d?'btn-primary':'btn-ghost'} style={{ padding:'0.5rem 1rem', fontSize:'0.75rem' }} onClick={()=>setDir(d)}>
                   <span className="material-symbols-rounded" style={{ fontSize:'1rem' }}>{d==='across'?'align_horizontal_left':'align_vertical_bottom'}</span>
-                  {d.charAt(0).toUpperCase()+d.slice(1)}
+                  {d === 'across' ? 'Mendatar' : 'Menurun'}
                 </button>
               ))}
             </div>
@@ -257,7 +257,7 @@ export default function CrosswordPage() {
               <div key={d} className="glass-panel" style={{ padding:20, maxHeight:280, overflowY:'auto' }}>
                 <h4 style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'0.875rem', color:d==='across'?'var(--c-primary-container)':'var(--c-secondary-container)', marginBottom:12, display:'flex', alignItems:'center', gap:6 }}>
                   <span className="material-symbols-rounded" style={{ fontSize:'1rem' }}>{d==='across'?'align_horizontal_left':'align_vertical_bottom'}</span>
-                  {d.charAt(0).toUpperCase()+d.slice(1)}
+                  {d === 'across' ? 'Mendatar' : 'Menurun'}
                 </h4>
                 {CLUES[d].map(clue=>(
                   <div key={clue.n} style={{ padding:'8px 12px', borderRadius:'0.5rem', background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', marginBottom:6, cursor:'pointer' }}>

@@ -1,24 +1,20 @@
 import { v4 as uuidv4 } from 'uuid';
-import { query } from './db';
+import { fetchAndTranslate } from './trivia';
+import { PrismaClient, GameStatus, RoomStatus, GameMode } from '@prisma/client';
+const prisma = new PrismaClient();
 const rooms = new Map();
 const userRooms = new Map(); // userId -> roomId
-const playerAnswers = new Map(); // roomId_userId -> answers
 export class GameManager {
-    static async createRoom(userId, difficulty) {
+    static async createRoom(userId, categoryId) {
         const roomId = uuidv4();
-        // Fetch questions
-        const questionsResult = await query(`SELECT id, text, options, correct_answer, category, difficulty
-       FROM questions
-       WHERE difficulty = $1
-       ORDER BY RANDOM()
-       LIMIT 10`, [difficulty]);
-        const questions = questionsResult.rows.map((row) => ({
-            id: row.id,
-            text: row.text,
-            options: typeof row.options === 'string' ? JSON.parse(row.options) : row.options,
-            correctAnswer: row.correct_answer,
-            category: row.category,
-            difficulty: row.difficulty,
+        const translatedQuestions = await fetchAndTranslate(categoryId, 10);
+        const questions = translatedQuestions.map((tq, index) => ({
+            id: index.toString(),
+            text: tq.question,
+            options: tq.options,
+            correctAnswer: tq.options.indexOf(tq.correctAnswer),
+            category: tq.categoryId.toString(),
+            difficulty: 'medium',
         }));
         const room = {
             id: roomId,
@@ -37,39 +33,77 @@ export class GameManager {
             room,
             players: new Map([[userId, userId]]),
             questions,
+            playerScores: new Map([[userId, 0]]),
+            playerTimeSpent: new Map([[userId, 0]]),
+            startedAt: 0,
         });
         userRooms.set(userId, roomId);
-        playerAnswers.set(`${roomId}_${userId}`, []);
-        console.log('[GameManager] Room created:', { roomId, userId, difficulty });
+        // Save to DB
+        const dbRoom = await prisma.room.create({
+            data: {
+                id: roomId,
+                code: roomId.substring(0, 6).toUpperCase(),
+                status: RoomStatus.WAITING,
+                maxPlayers: 2,
+            }
+        });
+        await prisma.roomPlayer.create({
+            data: {
+                roomId,
+                userId,
+            }
+        });
+        console.log('[GameManager] Room created:', { roomId, userId, categoryId });
         return room;
     }
     static async joinRoom(roomId, userId) {
         const roomData = rooms.get(roomId);
-        if (!roomData) {
-            console.error('[GameManager] Room not found:', roomId);
+        if (!roomData)
             return null;
-        }
-        if (roomData.room.status !== 'waiting') {
-            console.error('[GameManager] Room not available for joining:', roomId);
+        if (roomData.room.status !== 'waiting')
             return null;
-        }
         roomData.room.player2 = userId;
         roomData.room.status = 'active';
         roomData.players.set(userId, userId);
+        roomData.playerScores.set(userId, 0);
+        roomData.playerTimeSpent.set(userId, 0);
+        roomData.startedAt = Date.now(); // Start timer here
         userRooms.set(userId, roomId);
-        playerAnswers.set(`${roomId}_${userId}`, []);
+        await prisma.room.update({
+            where: { id: roomId },
+            data: { status: RoomStatus.PLAYING }
+        });
+        await prisma.roomPlayer.create({
+            data: {
+                roomId,
+                userId,
+            }
+        });
+        // Create DB Game
+        const game = await prisma.game.create({
+            data: {
+                roomId,
+                mode: GameMode.QUIZ,
+                status: GameStatus.STARTED,
+                startedAt: new Date(),
+            }
+        });
         console.log('[GameManager] User joined room:', { roomId, userId });
         return roomData.room;
     }
-    static submitAnswer(roomId, userId, answer) {
+    static submitAnswer(roomId, userId, answer, scoreEarned) {
         const roomData = rooms.get(roomId);
         if (!roomData)
             return false;
-        const key = `${roomId}_${userId}`;
-        const answers = playerAnswers.get(key) || [];
-        answers.push(answer);
-        playerAnswers.set(key, answers);
-        console.log('[GameManager] Answer submitted:', { roomId, userId, answer });
+        // Track score
+        const currentScore = roomData.playerScores.get(userId) || 0;
+        roomData.playerScores.set(userId, currentScore + scoreEarned);
+        // Track time spent (from start of game to this submission)
+        // Actually, time is tracked iteratively or just taking the timestamp.
+        // If it's cumulative, we can add the time since the last answer.
+        // Simpler: total time spent = Date.now() - startedAt.
+        // But since it's 30 seconds total, the last answer time is effectively their total time.
+        roomData.playerTimeSpent.set(userId, Date.now() - roomData.startedAt);
         return true;
     }
     static getRoom(roomId) {
@@ -78,49 +112,109 @@ export class GameManager {
     static getRoomQuestions(roomId) {
         return rooms.get(roomId)?.questions || [];
     }
-    static getPlayerAnswers(roomId, userId) {
-        return playerAnswers.get(`${roomId}_${userId}`) || [];
-    }
     static getUserRoom(userId) {
         return userRooms.get(userId) || null;
     }
-    static async finishGame(roomId, userId) {
+    static async finishRoom(roomId, io) {
         const roomData = rooms.get(roomId);
         if (!roomData)
             return;
-        const answers = playerAnswers.get(`${roomId}_${userId}`) || [];
-        const questions = roomData.questions;
-        // Calculate score
-        let correctCount = 0;
-        answers.forEach((answer, index) => {
-            if (answer === questions[index]?.correctAnswer) {
-                correctCount++;
+        if (roomData.room.status === 'finished')
+            return; // Prevent double trigger
+        roomData.room.status = 'finished';
+        const p1 = roomData.room.player1;
+        const p2 = roomData.room.player2;
+        const p1Score = roomData.playerScores.get(p1) || 0;
+        const p2Score = p2 ? (roomData.playerScores.get(p2) || 0) : 0;
+        const p1Time = roomData.playerTimeSpent.get(p1) || 30000;
+        const p2Time = p2 ? (roomData.playerTimeSpent.get(p2) || 30000) : 30000;
+        let winnerId = null;
+        let isDraw = false;
+        if (p2) {
+            if (p1Score > p2Score) {
+                winnerId = p1;
             }
-        });
-        const score = Math.round((correctCount / questions.length) * 100);
+            else if (p2Score > p1Score) {
+                winnerId = p2;
+            }
+            else {
+                // Tie-breaker: speed
+                if (p1Time < p2Time) {
+                    winnerId = p1;
+                }
+                else if (p2Time < p1Time) {
+                    winnerId = p2;
+                }
+                else {
+                    isDraw = true; // "Seri Murni"
+                }
+            }
+        }
+        else {
+            winnerId = p1;
+        }
         // Save to database
-        await query(`INSERT INTO game_results 
-       (user_id, score, correct_answers, total_questions, duration, difficulty)
-       VALUES ($1, $2, $3, $4, $5, $6)`, [userId, score, correctCount, questions.length, 0, questions[0]?.difficulty || 'medium']);
-        console.log('[GameManager] Game finished:', { roomId, userId, score, correctCount });
+        const game = await prisma.game.findUnique({ where: { roomId } });
+        if (game) {
+            await prisma.game.update({
+                where: { id: game.id },
+                data: {
+                    status: GameStatus.FINISHED,
+                    endedAt: new Date(),
+                    winnerId,
+                    isDraw,
+                }
+            });
+            const resultsData = [
+                {
+                    userId: p1,
+                    gameId: game.id,
+                    score: p1Score,
+                    finalScore: p1Score,
+                    isWinner: winnerId === p1,
+                    isDraw,
+                    timeSpentMs: p1Time,
+                }
+            ];
+            if (p2) {
+                resultsData.push({
+                    userId: p2,
+                    gameId: game.id,
+                    score: p2Score,
+                    finalScore: p2Score,
+                    isWinner: winnerId === p2,
+                    isDraw,
+                    timeSpentMs: p2Time,
+                });
+            }
+            await prisma.gameResult.createMany({ data: resultsData });
+        }
+        await prisma.room.update({
+            where: { id: roomId },
+            data: { status: RoomStatus.FINISHED }
+        });
+        // Notify clients in Indonesian
+        io.to(roomId).emit('game:finished', {
+            message: 'Waktu habis!',
+            results: {
+                p1: { score: p1Score, time: p1Time, isWinner: winnerId === p1, isDraw },
+                p2: p2 ? { score: p2Score, time: p2Time, isWinner: winnerId === p2, isDraw } : null
+            },
+            winnerId,
+            isDraw
+        });
+        this.endRoom(roomId);
     }
-    static async endRoom(roomId) {
+    static endRoom(roomId) {
         const roomData = rooms.get(roomId);
         if (!roomData)
             return;
-        if (roomData.room.player1) {
+        if (roomData.room.player1)
             userRooms.delete(roomData.room.player1);
-            playerAnswers.delete(`${roomId}_${roomData.room.player1}`);
-        }
-        if (roomData.room.player2) {
+        if (roomData.room.player2)
             userRooms.delete(roomData.room.player2);
-            playerAnswers.delete(`${roomId}_${roomData.room.player2}`);
-        }
         rooms.delete(roomId);
         console.log('[GameManager] Room ended:', roomId);
-    }
-    static getRoomList() {
-        return Array.from(rooms.keys());
     }
     static getWaitingRooms() {
         return Array.from(rooms.values())

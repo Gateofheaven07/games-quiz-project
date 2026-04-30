@@ -28,7 +28,7 @@ export default function LoginPage() {
     setLocalError('');
 
     if (!formData.email || !formData.password) {
-      setLocalError('Please fill in all fields');
+      setLocalError('Harap isi semua kolom');
       return;
     }
 
@@ -36,7 +36,7 @@ export default function LoginPage() {
     if (result.success) {
       router.push('/dashboard');
     } else {
-      setLocalError(result.error || 'Login failed');
+      setLocalError(result.error || 'Login gagal');
     }
   };
 
@@ -58,20 +58,20 @@ export default function LoginPage() {
             <span className="font-bold text-4xl text-[#a4e6ff] tracking-tighter italic">QuizBattle</span>
           </div>
           <h1 className="font-bold text-5xl text-[#dde3e7] leading-tight">
-            ENTER THE <br />
+            MASUK KE <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00d1ff] to-[#cf5cff]">ARENA.</span>
           </h1>
           <p className="text-lg text-[#bbc9cf] max-w-md">
-            Join the ultimate tactical knowledge exchange. Rank up, dominate leaderboards, and prove your cognitive superiority.
+            Bergabunglah dalam pertukaran pengetahuan taktis terbaik. Tingkatkan peringkat, kuasai leaderboard, dan buktikan keunggulan kognitifmu.
           </p>
           <div className="pt-12 grid grid-cols-2 gap-6">
             <div className="glass-panel p-6 rounded-xl">
-              <div className="text-[#a4e6ff] font-bold text-xs uppercase tracking-widest mb-1">ACTIVE PLAYERS</div>
+              <div className="text-[#a4e6ff] font-bold text-xs uppercase tracking-widest mb-1">PEMAIN AKTIF</div>
               <div className="font-semibold text-2xl">12.4K+</div>
             </div>
             <div className="glass-panel p-6 rounded-xl">
-              <div className="text-[#ecb2ff] font-bold text-xs uppercase tracking-widest mb-1">CURRENT PRIZE</div>
-              <div className="font-semibold text-2xl">$2,500</div>
+              <div className="text-[#ecb2ff] font-bold text-xs uppercase tracking-widest mb-1">HADIAH SAAT INI</div>
+              <div className="font-semibold text-2xl">$2.500</div>
             </div>
           </div>
         </div>
@@ -82,29 +82,29 @@ export default function LoginPage() {
             {/* Subtle Header for Mobile */}
             <div className="md:hidden flex flex-col items-center mb-12">
               <span className="font-bold text-3xl text-[#a4e6ff] tracking-tighter italic mb-2">QuizBattle</span>
-              <h2 className="font-semibold text-2xl text-[#dde3e7]">Operator Login</h2>
+              <h2 className="font-semibold text-2xl text-[#dde3e7]">Login Operator</h2>
             </div>
             <div className="mb-12 hidden md:block">
-              <h2 className="font-bold text-3xl text-[#dde3e7]">Operator Access</h2>
-              <p className="text-[#bbc9cf]">Initialize your session to continue combat.</p>
+              <h2 className="font-bold text-3xl text-[#dde3e7]">Akses Operator</h2>
+              <p className="text-[#bbc9cf]">Inisialisasi sesi Anda untuk melanjutkan pertempuran.</p>
             </div>
 
             {/* Social Login */}
             <button className="w-full glass-panel py-3 px-6 rounded-lg flex items-center justify-center gap-2 font-bold text-xs tracking-widest hover:bg-white/10 transition-all duration-300 group border-white/5 uppercase">
               <img alt="Google Logo" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnuejLyVtsbzUOgEj7wcmB-fOqIUnrptC45hqrzOE3UetoaXmFpismcZo-lAdcZHoyM0-kyBu-NAWR5BD7VFs7NNw_BWmhHl1gA-CYZaFHjPThV0vnQEqVZ83jOZrDF0DeeigSEF_5usUgx56TYhCsA04fPVFNyqOKXEpTUZdjypLvL1yrzfzvWkHyrVt-b4ual0US4Lp2e255OoJyiHS6cUku862Q50ynXEDYE8P7zALehX2qMhdk_vqD-_kOangqlDZ2HhOxczc" />
-              <span>Continue with Google</span>
+              <span>Lanjutkan dengan Google</span>
             </button>
 
             <div className="relative my-8 flex items-center">
               <div className="flex-grow border-t border-[#3c494e]/30"></div>
-              <span className="px-2 font-bold text-xs tracking-widest text-[#859399]">OR SECURE LOGIN</span>
+              <span className="px-2 font-bold text-xs tracking-widest text-[#859399]">ATAU LOGIN AMAN</span>
               <div className="flex-grow border-t border-[#3c494e]/30"></div>
             </div>
 
             {/* Auth Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-1">
-                <label className="font-bold text-xs tracking-widest text-[#bbc9cf] ml-1">IDENTIFICATION (EMAIL)</label>
+                <label className="font-bold text-xs tracking-widest text-[#bbc9cf] ml-1">IDENTIFIKASI (EMAIL)</label>
                 <div className="relative group">
                   <div className="absolute left-6 top-1/2 -translate-y-1/2 text-[#859399] group-focus-within:text-[#00d1ff] transition-colors icon-box">
                     <span className="material-symbols-outlined text-xl">alternate_email</span>
@@ -121,8 +121,8 @@ export default function LoginPage() {
               </div>
               <div className="space-y-1">
                 <div className="flex justify-between items-center px-1">
-                  <label className="font-bold text-xs tracking-widest text-[#bbc9cf]">CYPHER (PASSWORD)</label>
-                  <Link href="#" className="text-[10px] font-bold tracking-widest text-[#a4e6ff] hover:text-[#b7eaff] transition-colors">FORGOT?</Link>
+                  <label className="font-bold text-xs tracking-widest text-[#bbc9cf]">CIPHER (KATA SANDI)</label>
+                  <Link href="#" className="text-[10px] font-bold tracking-widest text-[#a4e6ff] hover:text-[#b7eaff] transition-colors">LUPA?</Link>
                 </div>
                 <div className="relative group">
                   <div className="absolute left-6 top-1/2 -translate-y-1/2 text-[#859399] group-focus-within:text-[#00d1ff] transition-colors icon-box">
@@ -147,7 +147,7 @@ export default function LoginPage() {
 
               <div className="flex items-center gap-2 px-1">
                 <input id="remember" type="checkbox" className="w-4 h-4 rounded border-[#3c494e] bg-[#242b2e] text-[#00d1ff] focus:ring-[#00d1ff] focus:ring-offset-[#0e1417]" />
-                <label htmlFor="remember" className="font-bold tracking-widest text-[#bbc9cf] text-[11px] cursor-pointer">MAINTAIN PERSISTENT CONNECTION</label>
+                <label htmlFor="remember" className="font-bold tracking-widest text-[#bbc9cf] text-[11px] cursor-pointer">TETAP TERHUBUNG</label>
               </div>
               
               <div className="pt-2 space-y-3">
@@ -156,11 +156,11 @@ export default function LoginPage() {
                   disabled={isLoading}
                   className="w-full bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] py-5 rounded-lg font-bold text-xs tracking-widest text-[#0e1417] uppercase neon-glow-primary neon-glow-hover active:scale-95 transition-all flex items-center justify-center gap-3"
                 >
-                  <span>{isLoading ? 'INITIALIZING...' : 'INITIALIZE SESSION'}</span>
+                  <span>{isLoading ? 'MENGINISIALISASI...' : 'INISIALISASI SESI'}</span>
                   <span className="material-symbols-outlined text-xl">login</span>
                 </button>
                 <Link href="/auth/register" className="block text-center w-full border border-[#00d1ff]/30 hover:bg-[#00d1ff]/10 py-6 rounded-lg font-bold text-xs tracking-widest text-[#a4e6ff] transition-all uppercase">
-                  CREATE NEW OPERATOR ACCOUNT
+                  BUAT AKUN OPERATOR BARU
                 </Link>
               </div>
             </form>
@@ -172,15 +172,15 @@ export default function LoginPage() {
                 <div className="w-2 h-2 bg-[#00d1ff]/50 rounded-full"></div>
                 <div className="w-2 h-2 bg-[#00d1ff]/20 rounded-full"></div>
               </div>
-              <span className="font-bold text-[10px] tracking-widest uppercase">Encryption Active: AES-256</span>
+              <span className="font-bold text-[10px] tracking-widest uppercase">Enkripsi Aktif: AES-256</span>
             </div>
           </div>
 
           {/* Footer Links */}
           <div className="mt-6 flex justify-center gap-12">
-            <Link href="#" className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#dde3e7] transition-colors uppercase">STATUS: ONLINE</Link>
-            <Link href="#" className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#dde3e7] transition-colors uppercase">PRIVACY PROTOCOL</Link>
-            <Link href="#" className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#dde3e7] transition-colors uppercase">SUPPORT HUB</Link>
+            <Link href="#" className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#dde3e7] transition-colors uppercase">STATUS: AKTIF</Link>
+            <Link href="#" className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#dde3e7] transition-colors uppercase">PROTOKOL PRIVASI</Link>
+            <Link href="#" className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#dde3e7] transition-colors uppercase">PUSAT BANTUAN</Link>
           </div>
         </div>
       </div>

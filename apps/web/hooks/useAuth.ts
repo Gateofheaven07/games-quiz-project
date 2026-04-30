@@ -8,6 +8,7 @@ export interface User {
   username: string;
   email: string;
   level?: number;
+  totalScore?: number;
   createdAt?: string;
   avatar?: string;
 }
@@ -163,7 +164,7 @@ export const useAuth = () => {
         saveAuth(user, { token, refreshToken, expiresIn });
         return { success: true };
       } catch (err: any) {
-        const error = err.response?.data?.error || 'Registration failed';
+        const error = err.response?.data?.error || 'Pendaftaran gagal';
         setState((prev) => ({ ...prev, error }));
         return { success: false, error };
       } finally {
@@ -186,7 +187,7 @@ export const useAuth = () => {
         saveAuth(user, { token, refreshToken, expiresIn });
         return { success: true };
       } catch (err: any) {
-        const error = err.response?.data?.error || 'Login failed';
+        const error = err.response?.data?.error || 'Login gagal';
         setState((prev) => ({ ...prev, error }));
         return { success: false, error };
       } finally {

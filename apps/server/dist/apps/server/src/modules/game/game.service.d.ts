@@ -10,7 +10,7 @@ export declare class GameService {
      * Akan membuat record Game dan mengambil soal-soal secara random.
      * @param roomId ID room yang akan di-start
      */
-    static startGame(roomId: string): Promise<StartGameResult>;
+    static startGame(roomId: string, categoryId?: number): Promise<StartGameResult>;
     /**
      * Selesaikan game dan tentukan pemenang.
      * Simpan GameResult ke database untuk semua player.

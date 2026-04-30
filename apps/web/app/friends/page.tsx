@@ -19,11 +19,11 @@ function Sidebar({ active }: { active: string }) {
 
   const navItems = [
     { icon: 'dashboard',      label: 'Dashboard',     href: '/dashboard' },
-    { icon: 'swords',         label: 'Battle Arena',  href: '/game' },
-    { icon: 'sports_esports', label: 'Arcade',        href: '/game/crossword' },
-    { icon: 'group',          label: 'Friends',       href: '/friends' },
-    { icon: 'leaderboard',    label: 'Rankings',      href: '/leaderboard' },
-    { icon: 'person',         label: 'Profile',       href: '/profile' },
+    { icon: 'swords',         label: 'Arena Pertempuran',  href: '/game' },
+    { icon: 'sports_esports', label: 'Arkade',        href: '/game/crossword' },
+    { icon: 'group',          label: 'Teman',       href: '/friends' },
+    { icon: 'leaderboard',    label: 'Peringkat',      href: '/leaderboard' },
+    { icon: 'person',         label: 'Profil',       href: '/profile' },
   ]
 
   return (
@@ -55,7 +55,7 @@ function Sidebar({ active }: { active: string }) {
           ⚡ QuizBattle
         </h1>
         <p className="label-caps" style={{ color: 'var(--c-outline)', marginTop: 4 }}>
-          Tactical Game Arena
+          Arena Game Taktis
         </p>
       </div>
 
@@ -85,7 +85,7 @@ function Sidebar({ active }: { active: string }) {
           <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '0.875rem', color: 'var(--c-on-surface)' }}>
             {user?.username || 'OPERATOR_01'}
           </p>
-          <span className="badge badge-gold" style={{ marginTop: 2 }}>ELITE RANK</span>
+          <span className="badge badge-gold" style={{ marginTop: 2 }}>PERINGKAT ELIT</span>
         </div>
       </div>
 
@@ -109,7 +109,7 @@ function Sidebar({ active }: { active: string }) {
       {/* Settings */}
       <Link href="/profile/settings" className="nav-item">
         <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>settings</span>
-        Settings
+        Pengaturan
       </Link>
 
       {/* Logout */}
@@ -127,7 +127,7 @@ function Sidebar({ active }: { active: string }) {
         }}
       >
         <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>logout</span>
-        Log Out
+        Keluar
       </button>
     </aside>
   )
@@ -279,10 +279,10 @@ export default function FriendsPage() {
     try {
       const client = getAuthClient()
       await client.post('/friends/request', { username: addUsername })
-      setAddStatus({ type: 'success', msg: 'Friend request sent!' })
+      setAddStatus({ type: 'success', msg: 'Permintaan pertemanan terkirim!' })
       setAddUsername('')
     } catch (err: any) {
-      setAddStatus({ type: 'error', msg: err.response?.data?.error || 'Failed to send request' })
+      setAddStatus({ type: 'error', msg: err.response?.data?.error || 'Gagal mengirim permintaan' })
     }
   }
 
@@ -335,14 +335,14 @@ export default function FriendsPage() {
       if (socket) {
         socket.emit('chat:send', { 
           receiverId: friend.id, 
-          content: `I challenged you to a battle! Room code: ${inviteCode}` 
+          content: `Aku menantangmu bertarung! Kode ruangan: ${inviteCode}` 
         })
       }
       
       router.push(`/game?room=${inviteCode}`)
     } catch (err) {
       console.error('Error creating battle room', err)
-      alert('Failed to create battle room')
+      alert('Gagal membuat ruangan pertempuran')
     }
   }
 
@@ -384,7 +384,7 @@ export default function FriendsPage() {
       <div className="bg-orb bg-orb-blue" style={{ top: -100, right: 200 }} />
       <div className="bg-orb bg-orb-purple" style={{ bottom: 0, left: 100 }} />
 
-      <Sidebar active="Friends" />
+      <Sidebar active="Teman" />
 
       <main style={{ flex: 1, padding: 32, position: 'relative', zIndex: 1, display: 'flex', gap: 32 }}>
         
@@ -393,15 +393,15 @@ export default function FriendsPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
             <div>
               <p className="label-caps" style={{ color: 'var(--c-secondary-container)', marginBottom: 4 }}>
-                Social Hub
+                Pusat Sosial
               </p>
               <h2 style={{ color: 'var(--c-on-surface)', fontFamily: "'Space Grotesk', sans-serif" }}>
-                Connect with Elite Operators
+                Terhubung dengan Operator Elit
               </h2>
             </div>
             <button className="btn-primary" onClick={() => setShowAddModal(true)}>
               <span className="material-symbols-rounded">person_add</span>
-              Add Friend
+              Tambah Teman
             </button>
           </div>
 
@@ -414,7 +414,7 @@ export default function FriendsPage() {
               <div style={{ marginBottom: 24 }}>
                 <h3 style={{ color: 'var(--c-on-surface)', fontSize: '1.125rem', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#4aff91', boxShadow: '0 0 8px #4aff91' }} />
-                  Online Friends ({onlineFriends.length})
+                  Teman Online ({onlineFriends.length})
                 </h3>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -432,7 +432,7 @@ export default function FriendsPage() {
                             <p style={{ fontWeight: 600, color: 'var(--c-on-surface)', fontSize: '1.0625rem' }}>{friend.username}</p>
                             <span className="badge badge-primary">Lv {friend.level}</span>
                           </div>
-                          <p style={{ color: 'var(--c-on-surface-variant)', fontSize: '0.875rem' }}>{friend.wins} Wins | {friend.totalScore} Score</p>
+                          <p style={{ color: 'var(--c-on-surface-variant)', fontSize: '0.875rem' }}>{friend.wins} Menang | {friend.totalScore} Skor</p>
                         </div>
                       </div>
                       
@@ -441,13 +441,13 @@ export default function FriendsPage() {
                           <span className="material-symbols-rounded">chat</span>
                         </button>
                         <button onClick={() => createBattleRoom(friend)} className="btn-primary" style={{ padding: '0.5rem 1rem' }}>
-                          Challenge
+                          Tantang
                         </button>
                       </div>
                     </div>
                   ))}
                   {onlineFriends.length === 0 && (
-                    <p style={{ color: 'var(--c-on-surface-variant)', fontStyle: 'italic', padding: 16 }}>No friends currently online.</p>
+                    <p style={{ color: 'var(--c-on-surface-variant)', fontStyle: 'italic', padding: 16 }}>Tidak ada teman yang online saat ini.</p>
                   )}
                 </div>
               </div>
@@ -455,7 +455,7 @@ export default function FriendsPage() {
               {/* Offline Friends */}
               <div>
                 <h3 style={{ color: 'var(--c-on-surface-variant)', fontSize: '1.125rem', marginBottom: 16 }}>
-                  Offline Friends ({offlineFriends.length})
+                  Teman Offline ({offlineFriends.length})
                 </h3>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -487,7 +487,7 @@ export default function FriendsPage() {
               {/* Pending Requests */}
               <div className="glass-panel" style={{ padding: 24 }}>
                 <h3 style={{ color: 'var(--c-on-surface)', fontSize: '1rem', marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-                  Pending Requests
+                  Permintaan Tertunda
                   {requests.length > 0 && <span className="badge badge-secondary">{requests.length}</span>}
                 </h3>
                 
@@ -504,25 +504,25 @@ export default function FriendsPage() {
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 8 }}>
-                        <button onClick={() => handleAcceptRequest(req.id)} className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', flex: 1, justifyContent: 'center' }}>Accept</button>
-                        <button onClick={() => handleRejectRequest(req.id)} className="btn-ghost" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', flex: 1, justifyContent: 'center' }}>Ignore</button>
+                        <button onClick={() => handleAcceptRequest(req.id)} className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', flex: 1, justifyContent: 'center' }}>Terima</button>
+                        <button onClick={() => handleRejectRequest(req.id)} className="btn-ghost" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', flex: 1, justifyContent: 'center' }}>Abaikan</button>
                       </div>
                     </div>
                   ))}
                   {requests.length === 0 && (
-                    <p style={{ color: 'var(--c-on-surface-variant)', fontSize: '0.875rem' }}>No pending requests.</p>
+                    <p style={{ color: 'var(--c-on-surface-variant)', fontSize: '0.875rem' }}>Tidak ada permintaan tertunda.</p>
                   )}
                 </div>
               </div>
 
               {/* Global Ranking Hint */}
               <div className="glass-panel" style={{ padding: 24, background: 'linear-gradient(135deg, rgba(0,209,255,0.06), rgba(207,92,255,0.06))', border: '1px solid rgba(0,209,255,0.2)' }}>
-                <p className="label-caps" style={{ color: 'var(--c-primary-container)', marginBottom: 8 }}>Global Leaderboard</p>
+                <p className="label-caps" style={{ color: 'var(--c-primary-container)', marginBottom: 8 }}>Papan Peringkat Global</p>
                 <p style={{ color: 'var(--c-on-surface)', fontSize: '0.9375rem', lineHeight: 1.5 }}>
-                  You are currently ranked <strong style={{ color: '#cf5cff' }}>#1,204</strong> globally. Challenge friends to climb higher in the ranks.
+                  Kamu saat ini berada di peringkat <strong style={{ color: '#cf5cff' }}>#1.204</strong> secara global. Tantang teman untuk naik lebih tinggi di peringkat.
                 </p>
                 <Link href="/leaderboard" style={{ display: 'inline-block', marginTop: 12, color: 'var(--c-primary)', textDecoration: 'none', fontWeight: 600, fontSize: '0.875rem' }}>
-                  View Rankings →
+                  Lihat Peringkat →
                 </Link>
               </div>
 
@@ -587,7 +587,7 @@ export default function FriendsPage() {
                 type="text" 
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Type a message..." 
+                placeholder="Ketik pesan..." 
                 className="input-field"
                 style={{ padding: '0.5rem 1rem' }}
               />
@@ -611,9 +611,9 @@ export default function FriendsPage() {
               <span className="material-symbols-rounded">close</span>
             </button>
             
-            <h2 style={{ color: 'var(--c-primary-container)', marginBottom: 8, fontSize: '1.5rem', fontFamily: "'Space Grotesk', sans-serif" }}>Add Operator</h2>
+            <h2 style={{ color: 'var(--c-primary-container)', marginBottom: 8, fontSize: '1.5rem', fontFamily: "'Space Grotesk', sans-serif" }}>Tambah Operator</h2>
             <p style={{ color: 'var(--c-on-surface-variant)', marginBottom: 24, fontSize: '0.875rem' }}>
-              Enter the exact username to send a connection request.
+              Masukkan username yang tepat untuk mengirim permintaan pertemanan.
             </p>
 
             <form onSubmit={handleAddFriend}>
@@ -622,7 +622,7 @@ export default function FriendsPage() {
                   type="text" 
                   value={addUsername}
                   onChange={(e) => setAddUsername(e.target.value)}
-                  placeholder="Operator Username" 
+                  placeholder="Username Operator" 
                   className="input-field"
                   required
                 />
@@ -643,7 +643,7 @@ export default function FriendsPage() {
               )}
 
               <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                Send Request
+                Kirim Permintaan
               </button>
             </form>
           </div>

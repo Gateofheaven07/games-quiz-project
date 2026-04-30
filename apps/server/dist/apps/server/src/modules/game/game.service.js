@@ -1,5 +1,6 @@
 import { PrismaClient, GameMode, GameStatus, RoomStatus } from '@prisma/client';
 import { GameEngine } from './game.engine';
+import { fetchAndTranslate } from '../../lib/trivia';
 /**
  * Tujuan File: game.service.ts (ORCHESTRATOR)
  * Berfungsi sebagai penghubung antara WebSocket, Database (Prisma), dan Game Engine.
@@ -71,7 +72,7 @@ export class GameService {
      * Akan membuat record Game dan mengambil soal-soal secara random.
      * @param roomId ID room yang akan di-start
      */
-    static async startGame(roomId) {
+    static async startGame(roomId, categoryId) {
         if (!roomId)
             throw new Error('roomId is required');
         // 1. Validasi Room — pastikan room ada dan statusnya WAITING
@@ -84,12 +85,23 @@ export class GameService {
         if (room.status !== RoomStatus.WAITING) {
             throw new Error(`Room is already in status: ${room.status}`);
         }
-        // 2. Ambil soal dari DB DULU sebelum mengubah status apapun
-        //    Agar tidak ada state yang tidak konsisten jika soal tidak tersedia
-        const questions = await prisma.question.findMany({ take: 5 });
-        if (questions.length === 0) {
-            throw new Error('No questions available in database');
+        // 2. Fetch questions from Trivia API
+        // Ensure categoryId defaults to General Knowledge (9) if not provided
+        const catId = categoryId || 9;
+        const translatedQuestions = await fetchAndTranslate(catId, 10);
+        if (translatedQuestions.length === 0) {
+            throw new Error('No questions available from trivia API');
         }
+        // Save fetched questions to the database
+        const questions = await Promise.all(translatedQuestions.map((tq) => prisma.question.create({
+            data: {
+                question: tq.question,
+                options: tq.options,
+                answer: tq.correctAnswer,
+                category: tq.categoryId.toString(),
+                difficulty: 'medium',
+            },
+        })));
         // 3. Update status Room menjadi PLAYING
         await prisma.room.update({
             where: { id: roomId },

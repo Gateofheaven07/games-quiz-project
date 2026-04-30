@@ -116,6 +116,8 @@ model Game {
 
   startedAt DateTime?
   endedAt   DateTime?
+  winnerId  String?
+  isDraw    Boolean @default(false)
 
   room        Room           @relation(fields: [roomId], references: [id])
   questions   GameQuestion[]
@@ -164,8 +166,11 @@ model GameResult {
   userId String
   gameId String
 
-  score    Int
-  isWinner Boolean
+  score       Int
+  finalScore  Int?
+  isWinner    Boolean
+  isDraw      Boolean @default(false)
+  timeSpentMs Int     @default(0)
 
   createdAt DateTime @default(now())
 

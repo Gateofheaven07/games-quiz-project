@@ -33,11 +33,11 @@ function Sidebar({ active, userStats }: { active: string; userStats?: UserStats 
 
   const navItems = [
     { icon: 'dashboard',      label: 'Dashboard',     href: '/dashboard' },
-    { icon: 'swords',         label: 'Battle Arena',  href: '/game' },
-    { icon: 'sports_esports', label: 'Arcade',        href: '/game/crossword' },
-    { icon: 'group',          label: 'Friends',       href: '/friends' },
-    { icon: 'leaderboard',    label: 'Rankings',      href: '/leaderboard' },
-    { icon: 'person',         label: 'Profile',       href: '/profile' },
+    { icon: 'swords',         label: 'Arena Pertempuran',  href: '/game' },
+    { icon: 'sports_esports', label: 'Arkade',        href: '/game/crossword' },
+    { icon: 'group',          label: 'Teman',       href: '/friends' },
+    { icon: 'leaderboard',    label: 'Peringkat',      href: '/leaderboard' },
+    { icon: 'person',         label: 'Profil',       href: '/profile' },
   ]
 
   return (
@@ -69,7 +69,7 @@ function Sidebar({ active, userStats }: { active: string; userStats?: UserStats 
           ⚡ QuizBattle
         </h1>
         <p className="label-caps" style={{ color: 'var(--c-outline)', marginTop: 4 }}>
-          Tactical Game Arena
+          Arena Permainan Taktis
         </p>
       </div>
 
@@ -99,7 +99,7 @@ function Sidebar({ active, userStats }: { active: string; userStats?: UserStats 
           <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '0.875rem', color: 'var(--c-on-surface)' }}>
             {user?.username || 'OPERATOR_01'}
           </p>
-          <span className="badge badge-gold" style={{ marginTop: 2 }}>{getRankLabel(userStats?.totalScore ?? 0)} RANK</span>
+          <span className="badge badge-gold" style={{ marginTop: 2 }}>PERINGKAT {getRankLabel(userStats?.totalScore ?? 0)}</span>
         </div>
       </div>
 
@@ -123,7 +123,7 @@ function Sidebar({ active, userStats }: { active: string; userStats?: UserStats 
       {/* Settings */}
       <Link href="/profile/settings" className="nav-item">
         <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>settings</span>
-        Settings
+        Pengaturan
       </Link>
 
       {/* Logout */}
@@ -141,7 +141,7 @@ function Sidebar({ active, userStats }: { active: string; userStats?: UserStats 
         }}
       >
         <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>logout</span>
-        Log Out
+        Keluar
       </button>
     </aside>
   )
@@ -247,7 +247,7 @@ function GameModeCard({
             letterSpacing: '0.05em',
           }}
         >
-          PLAY NOW
+          MAIN SEKARANG
           <span className="material-symbols-rounded" style={{ fontSize: '1rem' }}>arrow_forward</span>
         </div>
       </div>
@@ -365,7 +365,7 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <div>
               <p className="label-caps" style={{ color: 'var(--c-primary-container)', marginBottom: 4 }}>
-                ⚡ Welcome back
+                ⚡ Selamat datang kembali
               </p>
               <h2
                 style={{
@@ -379,13 +379,13 @@ export default function DashboardPage() {
                 {user?.username || 'OPERATOR_01'}
               </h2>
               <p style={{ color: 'var(--c-on-surface-variant)', marginTop: 4, fontSize: '0.9375rem' }}>
-                Your combat efficiency is up{' '}
-                <span style={{ color: '#4aff91', fontWeight: 600 }}>+12%</span> this week. Ready for the next engagement?
+                Efisiensi tempur Anda naik{' '}
+                <span style={{ color: '#4aff91', fontWeight: 600 }}>+12%</span> minggu ini. Siap untuk pertempuran berikutnya?
               </p>
             </div>
             <button className="btn-primary" style={{ gap: 8 }}>
               <span className="material-symbols-rounded">swords</span>
-              Quick Battle
+              Pertarungan Cepat
             </button>
           </div>
         </div>
@@ -393,21 +393,21 @@ export default function DashboardPage() {
         {/* Stats row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32 }}>
           <StatCard
-            label="Battle Score"
+            label="Skor Pertempuran"
             value={userStats ? userStats.totalScore.toLocaleString() : '0'}
-            sub={userStats ? `Rank: ${getRankLabel(userStats.totalScore)}` : 'Loading...'}
+            sub={userStats ? `Peringkat: ${getRankLabel(userStats.totalScore)}` : 'Memuat...'}
             accent="#00d1ff"
           />
           <StatCard
-            label="Win Rate"
+            label="Tingkat Kemenangan"
             value={userStats ? `${userStats.winRate}%` : '0%'}
             sub={userStats ? `${userStats.wins}W / ${userStats.losses}L` : 'Loading...'}
             accent="#cf5cff"
           />
           <StatCard
-            label="Games Played"
+            label="Permainan Dimainkan"
             value={userStats ? String(userStats.gamesPlayed) : '0'}
-            sub="This season"
+            sub="Musim ini"
             accent="#ffd59c"
           />
         </div>
@@ -423,31 +423,31 @@ export default function DashboardPage() {
                 color: 'var(--c-on-surface)',
               }}
             >
-              Game Modes
+              Mode Permainan
             </h3>
-            <span className="badge badge-live">3 Active Rooms</span>
+            <span className="badge badge-live">3 Ruang Aktif</span>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
             <GameModeCard
               icon="swords"
-              title="Quiz Battle"
-              description="Live 1v1 tactical trivia combat. Destroy your opponent's core with knowledge."
+              title="Kuis Pertempuran"
+              description="Pertempuran trivia taktis 1 lawan 1 secara langsung. Hancurkan inti lawanmu dengan pengetahuan."
               href="/game"
               badge="LIVE"
               accent="#00d1ff"
             />
             <GameModeCard
               icon="grid_view"
-              title="Crossword"
-              description="Solve tactical word grids to unlock encrypted weapon skins and bonus XP."
+              title="Teka-teki Silang"
+              description="Selesaikan kisi kata taktis untuk membuka skin senjata terenkripsi dan bonus XP."
               href="/game/crossword"
               accent="#cf5cff"
             />
             <GameModeCard
               icon="view_comfy_alt"
               title="Tetris"
-              description="High-speed spatial reasoning. Stack, clear, and dominate the arena."
+              description="Penalaran spasial kecepatan tinggi. Susun, hapus, dan kuasai arena."
               href="/game/tetris"
               accent="#feb127"
             />
@@ -468,14 +468,14 @@ export default function DashboardPage() {
                   color: 'var(--c-on-surface)',
                 }}
               >
-                Weekly Top Players
+                Pemain Terbaik Mingguan
               </h3>
               <Link
                 href="/leaderboard"
                 className="label-caps"
                 style={{ color: 'var(--c-primary-container)', textDecoration: 'none', fontSize: '0.6875rem' }}
               >
-                View All →
+                Lihat Semua →
               </Link>
             </div>
 
@@ -517,7 +517,7 @@ export default function DashboardPage() {
                     {player.name}
                   </p>
                   <span className="label-caps" style={{ color: player.rank === 1 ? '#feb127' : 'var(--c-on-surface-variant)', fontSize: '0.6875rem' }}>
-                    {player.wins} wins
+                    {player.wins} kemenangan
                   </span>
                 </div>
               ))}
@@ -558,15 +558,15 @@ export default function DashboardPage() {
             </div>
 
             <p style={{ fontSize: '0.875rem', color: 'var(--c-on-surface-variant)', marginBottom: 20 }}>
-              Unlock the legendary{' '}
+              Buka skin legendaris{' '}
               <span style={{ color: '#cf5cff', fontWeight: 600 }}>'Glitch Protocol'</span>{' '}
-              skin at Tier 50.
+              di Tier 50.
             </p>
 
             {/* Progress */}
             <div style={{ marginBottom: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span className="label-caps" style={{ color: 'var(--c-on-surface-variant)', fontSize: '0.6875rem' }}>Progress</span>
+                <span className="label-caps" style={{ color: 'var(--c-on-surface-variant)', fontSize: '0.6875rem' }}>Kemajuan</span>
                 <span className="label-caps" style={{ color: 'var(--c-primary-container)', fontSize: '0.6875rem' }}>TIER 22/50</span>
               </div>
               <div className="progress-track">
@@ -575,7 +575,7 @@ export default function DashboardPage() {
             </div>
 
             <button className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: 16 }}>
-              View Rewards
+              Lihat Hadiah
             </button>
           </div>
         </div>

@@ -150,7 +150,7 @@ export default function ProfilePage() {
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600/20 border border-red-500/30 text-red-400 hover:bg-red-600/30 hover:text-red-300 transition-all text-xs font-bold tracking-widest uppercase"
           >
             <span className="material-symbols-outlined text-sm">logout</span>
-            Log Out
+            Keluar
           </button>
           {user?.avatar ? (
             <img src={user.avatar} alt="Profile" className="w-8 h-8 rounded-full border border-cyan-400/50 object-cover" />
@@ -183,13 +183,13 @@ export default function ProfilePage() {
             <span className="material-symbols-outlined">dashboard</span> Dashboard
           </Link>
           <Link className="text-slate-500 flex items-center gap-3 px-6 py-4 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/game">
-            <span className="material-symbols-outlined">swords</span> Battle Arena
+            <span className="material-symbols-outlined">swords</span> Arena Pertempuran
           </Link>
           <Link className="text-slate-500 flex items-center gap-3 px-6 py-4 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/game/crossword">
-            <span className="material-symbols-outlined">sports_esports</span> Arcade
+            <span className="material-symbols-outlined">sports_esports</span> Arkade
           </Link>
           <Link className="text-slate-500 flex items-center gap-3 px-6 py-4 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/leaderboard">
-            <span className="material-symbols-outlined">leaderboard</span> Leaderboard
+            <span className="material-symbols-outlined">leaderboard</span> Peringkat
           </Link>
           <span className="bg-cyan-500/20 text-cyan-400 border-r-4 border-cyan-400 flex items-center gap-3 px-6 py-4 font-['Space_Grotesk'] uppercase text-xs font-bold">
             <span className="material-symbols-outlined">person</span> Profil
@@ -202,7 +202,7 @@ export default function ProfilePage() {
             className="w-full py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-800 text-white font-bold text-[10px] rounded-lg hover:scale-105 active:scale-95 transition-all border border-red-500/30 tracking-widest uppercase"
           >
             <span className="material-symbols-outlined text-sm">logout</span>
-            LOG OUT
+            KELUAR
           </button>
         </div>
       </aside>
@@ -241,7 +241,7 @@ export default function ProfilePage() {
                   <h1 className="font-h1 text-white uppercase text-2xl font-bold">{user?.username || 'OPERATOR'}</h1>
                   <Link href="/profile/settings" className="px-4 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-xs font-bold text-white transition-colors flex items-center gap-2 uppercase tracking-widest mt-1 md:mt-0">
                     <span className="material-symbols-outlined text-sm">settings</span>
-                    Edit Profile
+                    Edit Profil
                   </Link>
                 </div>
                 <p className="text-cyan-400 font-bold text-sm tracking-[0.2em] mb-4 uppercase">Pemain Utama</p>
@@ -384,7 +384,7 @@ export default function ProfilePage() {
 
       {/* Footer */}
       <footer className="lg:ml-64 w-full flex justify-between px-10 items-center py-4 bg-slate-950 border-t border-white/5 mt-auto">
-        <p className="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-cyan-500">© 2024 QUIZBATTLE TACTICAL SYSTEMS</p>
+        <p className="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-cyan-500 uppercase">© 2024 QUIZBATTLE SISTEM TAKTIS</p>
         <div className="flex gap-6">
           <a className="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-slate-600 hover:text-cyan-400 transition-colors" href="#">Status</a>
           <a className="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-slate-600 hover:text-cyan-400 transition-colors" href="#">Privasi</a>

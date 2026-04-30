@@ -52,10 +52,10 @@ export default function SettingsPage() {
       if (updated && token) {
         const newUser = { ...user, ...updated };
         localStorage.setItem('auth', JSON.stringify({ user: newUser, token, refreshToken }));
-        setSuccessMsg('Profile updated successfully!');
+        setSuccessMsg('Profil berhasil diperbarui!');
       }
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.error || 'Failed to update profile');
+      setErrorMsg(err.response?.data?.error || 'Gagal memperbarui profil');
     } finally {
       setIsSaving(false);
     }
@@ -65,10 +65,10 @@ export default function SettingsPage() {
     e.preventDefault();
     setIsSaving(true); setSuccessMsg(''); setErrorMsg('');
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setErrorMsg('Passwords do not match'); setIsSaving(false); return;
+      setErrorMsg('Kata sandi tidak cocok'); setIsSaving(false); return;
     }
     if (passwordForm.newPassword.length < 6) {
-      setErrorMsg('Password must be at least 6 characters'); setIsSaving(false); return;
+      setErrorMsg('Kata sandi minimal 6 karakter'); setIsSaving(false); return;
     }
     try {
       const client = getAuthClient();
@@ -76,10 +76,10 @@ export default function SettingsPage() {
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword,
       });
-      setSuccessMsg('Password changed successfully!');
+      setSuccessMsg('Kata sandi berhasil diubah!');
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.error || 'Failed to change password');
+      setErrorMsg(err.response?.data?.error || 'Gagal mengubah kata sandi');
     } finally {
       setIsSaving(false);
     }
@@ -147,11 +147,11 @@ export default function SettingsPage() {
 
         {[
           { icon: 'dashboard', label: 'Dashboard', href: '/dashboard' },
-          { icon: 'swords', label: 'Battle Arena', href: '/game' },
-          { icon: 'sports_esports', label: 'Arcade', href: '/game/crossword' },
-          { icon: 'group', label: 'Friends', href: '/friends' },
-          { icon: 'leaderboard', label: 'Rankings', href: '/leaderboard' },
-          { icon: 'person', label: 'Profile', href: '/profile' },
+          { icon: 'swords', label: 'Arena Pertempuran', href: '/game' },
+          { icon: 'sports_esports', label: 'Arkade', href: '/game/crossword' },
+          { icon: 'group', label: 'Teman', href: '/friends' },
+          { icon: 'leaderboard', label: 'Peringkat', href: '/leaderboard' },
+          { icon: 'person', label: 'Profil', href: '/profile' },
         ].map((item) => (
           <Link key={item.href} href={item.href} className="nav-item-s">
             <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>{item.icon}</span>
@@ -163,11 +163,11 @@ export default function SettingsPage() {
 
         <a className="nav-item-s active">
           <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>settings</span>
-          Settings
+          Pengaturan
         </a>
         <button onClick={handleLogout} className="nav-item-s" style={{ background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', color: '#ffb4ab', width: '100%', marginTop: 4 }}>
           <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>logout</span>
-          Log Out
+          Keluar
         </button>
       </aside>
 
@@ -177,9 +177,9 @@ export default function SettingsPage() {
 
           {/* Page Header */}
           <div style={{ marginBottom: 32 }}>
-            <p style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#00d1ff', marginBottom: 6 }}>⚙ Account Settings</p>
-            <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '2rem', fontWeight: 700, color: '#dde3e7', letterSpacing: '-0.01em', marginBottom: 4 }}>Edit Profile</h2>
-            <p style={{ color: '#556e78', fontSize: '0.9375rem' }}>Manage your operator identity, avatar, and security credentials.</p>
+            <p style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#00d1ff', marginBottom: 6 }}>⚙ Pengaturan Akun</p>
+            <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '2rem', fontWeight: 700, color: '#dde3e7', letterSpacing: '-0.01em', marginBottom: 4 }}>Edit Profil</h2>
+            <p style={{ color: '#556e78', fontSize: '0.9375rem' }}>Kelola identitas operator, avatar, dan kredensial keamanan Anda.</p>
           </div>
 
           {/* Avatar Preview */}
@@ -197,17 +197,17 @@ export default function SettingsPage() {
             <div>
               <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '1.25rem', color: '#dde3e7' }}>{profileForm.username || user.username}</p>
               <p style={{ color: '#556e78', fontSize: '0.875rem', marginTop: 4 }}>{profileForm.email || user.email}</p>
-              <p style={{ fontSize: '0.6875rem', color: '#859399', marginTop: 8 }}>Upload an image below to change your avatar photo.</p>
+              <p style={{ fontSize: '0.6875rem', color: '#859399', marginTop: 8 }}>Unggah gambar di bawah untuk mengubah foto avatar Anda.</p>
             </div>
           </div>
 
           {/* Tabs */}
           <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
             <button className={`tab-btn ${tab === 'profile' ? 'active' : ''}`} onClick={() => { setTab('profile'); setSuccessMsg(''); setErrorMsg(''); }}>
-              Profile Info
+              Info Profil
             </button>
             <button className={`tab-btn ${tab === 'password' ? 'active' : ''}`} onClick={() => { setTab('password'); setSuccessMsg(''); setErrorMsg(''); }}>
-              Change Password
+              Ubah Kata Sandi
             </button>
           </div>
 
@@ -233,22 +233,22 @@ export default function SettingsPage() {
                 <input className="settings-input" value={profileForm.username} onChange={e => setProfileForm(p => ({ ...p, username: e.target.value }))} placeholder="Your username" />
               </div>
               <div>
-                <label className="settings-label">Identification (Email)</label>
+                <label className="settings-label">Identifikasi (Email)</label>
                 <input className="settings-input" type="email" value={profileForm.email} disabled style={{ opacity: 0.6, cursor: 'not-allowed' }} />
               </div>
               <div>
-                <label className="settings-label">Profile Picture (optional)</label>
+                <label className="settings-label">Foto Profil (opsional)</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <input type="file" accept="image/*" id="avatar-upload" style={{ display: 'none' }} onChange={handleImageUpload} />
                   <label htmlFor="avatar-upload" className="settings-input" style={{ cursor: 'pointer', textAlign: 'center', width: 'auto', display: 'inline-block', marginBottom: 0 }}>
-                    Choose File
+                    Pilih File
                   </label>
-                  {profileForm.avatar && profileForm.avatar.length > 200 && <span style={{ fontSize: '0.75rem', color: '#00d1ff', fontWeight: 'bold' }}>Image selected ✓</span>}
+                  {profileForm.avatar && profileForm.avatar.length > 200 && <span style={{ fontSize: '0.75rem', color: '#00d1ff', fontWeight: 'bold' }}>Gambar dipilih ✓</span>}
                 </div>
-                <p style={{ color: '#556e78', fontSize: '0.75rem', marginTop: 6 }}>Upload an image from your device (JPG, PNG, WebP)</p>
+                <p style={{ color: '#556e78', fontSize: '0.75rem', marginTop: 6 }}>Unggah gambar dari perangkat Anda (JPG, PNG, WebP)</p>
               </div>
               <button type="submit" className="save-btn" disabled={isSaving} style={{ marginTop: 8 }}>
-                {isSaving ? 'Saving...' : '💾 Save Profile'}
+                {isSaving ? 'Menyimpan...' : '💾 Simpan Profil'}
               </button>
             </form>
           )}
@@ -257,19 +257,19 @@ export default function SettingsPage() {
           {tab === 'password' && (
             <form onSubmit={handlePasswordSave} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.08)', padding: 28, display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div>
-                <label className="settings-label">Current Password</label>
+                <label className="settings-label">Kata Sandi Saat Ini</label>
                 <input className="settings-input" type="password" value={passwordForm.currentPassword} onChange={e => setPasswordForm(p => ({ ...p, currentPassword: e.target.value }))} placeholder="••••••••" />
               </div>
               <div>
-                <label className="settings-label">New Password</label>
-                <input className="settings-input" type="password" value={passwordForm.newPassword} onChange={e => setPasswordForm(p => ({ ...p, newPassword: e.target.value }))} placeholder="Minimum 6 characters" />
+                <label className="settings-label">Kata Sandi Baru</label>
+                <input className="settings-input" type="password" value={passwordForm.newPassword} onChange={e => setPasswordForm(p => ({ ...p, newPassword: e.target.value }))} placeholder="Minimal 6 karakter" />
               </div>
               <div>
-                <label className="settings-label">Confirm New Password</label>
+                <label className="settings-label">Konfirmasi Kata Sandi Baru</label>
                 <input className="settings-input" type="password" value={passwordForm.confirmPassword} onChange={e => setPasswordForm(p => ({ ...p, confirmPassword: e.target.value }))} placeholder="••••••••" />
               </div>
               <button type="submit" className="save-btn" disabled={isSaving} style={{ marginTop: 8 }}>
-                {isSaving ? 'Changing...' : '🔒 Change Password'}
+                {isSaving ? 'Mengubah...' : '🔒 Ubah Kata Sandi'}
               </button>
             </form>
           )}
@@ -277,7 +277,7 @@ export default function SettingsPage() {
           {/* Back link */}
           <div style={{ marginTop: 28, textAlign: 'center' }}>
             <Link href="/dashboard" style={{ color: '#556e78', fontSize: '0.8125rem', textDecoration: 'none', fontWeight: 600, letterSpacing: '0.05em' }}>
-              ← Back to Dashboard
+              ← Kembali ke Dashboard
             </Link>
           </div>
         </div>

@@ -53,7 +53,7 @@ export default function LeaderboardPage() {
 <div className="flex items-center gap-4">
 <div className="relative hidden sm:block">
 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
-<input className="bg-surface-container-lowest border border-white/10 rounded-full py-1.5 pl-10 pr-4 text-xs focus:border-primary-container focus:ring-0 w-48" placeholder="Search Players..." type="text"/>
+<input className="bg-surface-container-lowest border border-white/10 rounded-full py-1.5 pl-10 pr-4 text-xs focus:border-primary-container focus:ring-0 w-48" placeholder="Cari Pemain..." type="text"/>
 </div>
 <button className="material-symbols-outlined text-slate-400 hover:text-white transition-all scale-105 active:scale-95">notifications</button>
 {user?.avatar ? (
@@ -81,26 +81,26 @@ export default function LeaderboardPage() {
 <span className="material-symbols-outlined">dashboard</span> Dashboard
             </Link>
 <Link className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/game">
-<span className="material-symbols-outlined">swords</span> Battle Arena
+<span className="material-symbols-outlined">swords</span> Arena Pertempuran
             </Link>
 <Link className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/game/crossword">
-<span className="material-symbols-outlined">sports_esports</span> Arcade
+<span className="material-symbols-outlined">sports_esports</span> Arkade
             </Link>
 <Link className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/friends">
-<span className="material-symbols-outlined">group</span> Friends
+<span className="material-symbols-outlined">group</span> Teman
             </Link><Link className="bg-cyan-500/20 text-cyan-400 border-r-4 border-cyan-400 flex items-center gap-3 px-6 py-4 font-['Space_Grotesk'] uppercase text-xs font-bold" href="/leaderboard">
-<span className="material-symbols-outlined">leaderboard</span> Rankings
+<span className="material-symbols-outlined">leaderboard</span> Peringkat
             </Link>
 <Link className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/profile">
-<span className="material-symbols-outlined">person</span> Profile
+<span className="material-symbols-outlined">person</span> Profil
             </Link>
 </nav>
 <div className="p-6 flex flex-col gap-3">
 <button className="w-full py-3 bg-gradient-to-r from-primary-container to-secondary-container rounded-lg font-['Space_Grotesk'] font-black text-white text-sm tracking-widest uppercase neon-glow-primary transition-all hover:scale-105 active:scale-95">
-                FIND MATCH
+                CARI PERTANDINGAN
             </button>
 <button onClick={handleLogout} className="w-full py-3 bg-gradient-to-r from-red-600 to-red-800 text-white font-label-caps text-[10px] rounded-lg scale-100 hover:scale-105 active:scale-95 transition-all border border-red-500/30 font-black tracking-widest uppercase">
-                LOG OUT
+                KELUAR
             </button>
 </div>
 </aside>
@@ -109,10 +109,10 @@ export default function LeaderboardPage() {
 <header className="mb-10 text-center lg:text-left">
 <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1 mb-4">
 <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-<span className="font-label-caps text-cyan-400">LIVE GLOBAL STATS</span>
+<span className="font-label-caps text-cyan-400">STATISTIK GLOBAL LANGSUNG</span>
 </div>
-<h1 className="font-h1 text-on-surface mb-2">Weekly Top Players</h1>
-<p className="font-body-lg text-on-surface-variant max-w-2xl">Battle for supremacy in the digital arena. Top players receive exclusive gear and Operator Credits every Monday.</p>
+<h1 className="font-h1 text-on-surface mb-2">Pemain Terbaik Mingguan</h1>
+<p className="font-body-lg text-on-surface-variant max-w-2xl">Berjuang untuk supremasi di arena digital. Pemain top menerima perlengkapan eksklusif dan Kredit Operator setiap hari Senin.</p>
 </header>
 
 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -123,13 +123,13 @@ export default function LeaderboardPage() {
 <div className="absolute -bottom-2 -right-2 bg-outline-variant h-8 w-8 rounded-full flex items-center justify-center border-2 border-surface font-black text-xs">2</div>
 </div>
 <h3 className="font-h3 text-on-surface">V_Ghost</h3>
-<p className="font-label-caps text-secondary-fixed-dim mb-4">ELITE STREAK</p>
+<p className="font-label-caps text-secondary-fixed-dim mb-4">STREAK ELITE</p>
 <div className="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
 <div className="h-full bg-secondary-fixed-dim w-[85%]"></div>
 </div>
 <div className="flex justify-between w-full mt-2">
-<span className="text-[10px] font-bold text-slate-500">SCORE</span>
-<span className="text-[10px] font-bold text-on-surface">42,900</span>
+<span className="text-[10px] font-bold text-slate-500">SKOR</span>
+<span className="text-[10px] font-bold text-on-surface">42.900</span>
 </div>
 </div>
 
@@ -140,15 +140,15 @@ export default function LeaderboardPage() {
 <div className="absolute -bottom-3 -right-3 bg-tertiary-container h-10 w-10 rounded-full flex items-center justify-center border-4 border-surface font-black text-sm text-on-tertiary-container">1</div>
 </div>
 <h2 className="font-h2 text-tertiary-fixed mb-1">X_Terminator</h2>
-<p className="font-label-caps text-tertiary mb-6">UNSTOPPABLE</p>
+<p className="font-label-caps text-tertiary mb-6">TAK TERHENTIKAN</p>
 <div className="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
 <div className="h-full bg-tertiary-container w-[98%] relative">
 <div className="absolute inset-0 progress-shimmer animate-shimmer"></div>
 </div>
 </div>
 <div className="flex justify-between w-full mt-3">
-<span className="text-xs font-bold text-tertiary/50">MATCH SCORE</span>
-<span className="text-xs font-bold text-tertiary-fixed">51,240</span>
+<span className="text-xs font-bold text-tertiary/50">SKOR PERTANDINGAN</span>
+<span className="text-xs font-bold text-tertiary-fixed">51.240</span>
 </div>
 </div>
 
@@ -158,23 +158,23 @@ export default function LeaderboardPage() {
 <div className="absolute -bottom-2 -right-2 bg-on-tertiary-fixed-variant h-8 w-8 rounded-full flex items-center justify-center border-2 border-surface font-black text-xs">3</div>
 </div>
 <h3 className="font-h3 text-on-surface">Neon_Pulse</h3>
-<p className="font-label-caps text-on-tertiary-fixed mb-4">COMBAT VET</p>
+<p className="font-label-caps text-on-tertiary-fixed mb-4">VETERAN TEMPUR</p>
 <div className="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
 <div className="h-full bg-on-tertiary-fixed-variant w-[72%]"></div>
 </div>
 <div className="flex justify-between w-full mt-2">
-<span className="text-[10px] font-bold text-slate-500">SCORE</span>
-<span className="text-[10px] font-bold text-on-surface">38,150</span>
+<span className="text-[10px] font-bold text-slate-500">SKOR</span>
+<span className="text-[10px] font-bold text-on-surface">38.150</span>
 </div>
 </div>
 </div>
 
 <section className="glass-card rounded-xl overflow-hidden mb-12">
 <div className="bg-white/5 px-8 py-4 flex justify-between items-center border-b border-white/10">
-<span className="font-label-caps text-slate-400">RANKINGS LIST (4-10)</span>
+<span className="font-label-caps text-slate-400">DAFTAR PERINGKAT (4-10)</span>
 <div className="flex gap-4">
 <button className="text-[10px] font-bold text-cyan-400 border-b border-cyan-400">GLOBAL</button>
-<button className="text-[10px] font-bold text-slate-500 hover:text-white transition-colors">FRIENDS</button>
+<button className="text-[10px] font-bold text-slate-500 hover:text-white transition-colors">TEMAN</button>
 </div>
 </div>
 <div className="divide-y divide-white/5">
@@ -184,11 +184,11 @@ export default function LeaderboardPage() {
 <img alt="Player Avatar" className="h-10 w-10 rounded-lg border border-white/10" data-alt="Minimalist digital avatar of a player with blue glowing accents and dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDw0AevwlPcO72TXS0p-zAC-8ogif_M18bH4wlAWdRoJjlUsWDPySLq1x-Q3zYhKXIj2k_nL8Cc8jEtfNX06RDIGNbryz_QBBWLeF_XgypCv_LYPrlRjkC4K0CmT_UdTrv18Nt0iHPyAZ_3soV-ytV7IdKHDumdpq7h30a0d0pZDwnYll5LXg9lKmEEKqatxpUWafsSSfTSj-23It8hx8_qTG0Myn-iWLfBbRVT8FNIShrvl4FNkLkFI0LJWsArdHGgcGgNuh_e6D4"/>
 <div className="flex-1">
 <p className="font-body-md font-bold text-on-surface">Cipher_Zero</p>
-<p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">MASTER RANK</p>
+<p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">PERINGKAT MASTER</p>
 </div>
 <div className="text-right">
-<p className="font-h3 text-on-surface text-lg">34,500</p>
-<p className="text-[10px] font-bold text-cyan-500/50">+1,200 today</p>
+<p className="font-h3 text-on-surface text-lg">34.500</p>
+<p className="text-[10px] font-bold text-cyan-500/50">+1.200 hari ini</p>
 </div>
 </div>
 
@@ -232,7 +232,7 @@ export default function LeaderboardPage() {
 </div>
 </div>
 <div className="p-6 bg-white/5 text-center">
-<button className="font-label-caps text-cyan-400 hover:text-white transition-all">LOAD FULL LEADERBOARD</button>
+<button className="font-label-caps text-cyan-400 hover:text-white transition-all">MUAT SELURUH LEADERBOARD</button>
 </div>
 </section>
 
@@ -254,11 +254,11 @@ export default function LeaderboardPage() {
 <div className="h-1.5 w-32 bg-white/10 rounded-full overflow-hidden">
 <div className="h-full bg-cyan-400" style={{ width: `${Math.min(100, ((user?.totalScore || 0) % 1000) / 10)}%` }}></div>
 </div>
-<span className="text-[10px] text-slate-400 font-bold">{1000 - ((user?.totalScore || 0) % 1000)} XP TO NEXT RANK</span>
+<span className="text-[10px] text-slate-400 font-bold">{1000 - ((user?.totalScore || 0) % 1000)} XP KE PERINGKAT BERIKUTNYA</span>
 </div>
 </div>
 <div className="text-right px-4 border-l border-white/10 hidden sm:block">
-<p className="text-[10px] font-bold text-slate-500">CURRENT SCORE</p>
+<p className="text-[10px] font-bold text-slate-500">SKOR SAAT INI</p>
 <p className="font-h3 text-cyan-400">{user?.totalScore || 0}</p>
 </div>
 <Link href="/profile" className="h-12 w-12 bg-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all">
@@ -268,11 +268,11 @@ export default function LeaderboardPage() {
 </main>
 
 <footer className="w-full flex justify-between px-10 items-center mt-auto full-width py-4 bg-slate-950 border-t border-white/5">
-<span className="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-cyan-500 uppercase">© 2024 QUIZBATTLE TACTICAL SYSTEMS</span>
+<span className="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-cyan-500 uppercase">© 2024 QUIZBATTLE SISTEM TAKTIS</span>
 <div className="flex gap-6">
 <a className="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-slate-600 hover:text-cyan-400 transition-all uppercase" href="#">Status</a>
-<a className="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-slate-600 hover:text-cyan-400 transition-all uppercase" href="#">Privacy</a>
-<a className="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-slate-600 hover:text-cyan-400 transition-all uppercase" href="#">Support</a>
+<a className="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-slate-600 hover:text-cyan-400 transition-all uppercase" href="#">Privasi</a>
+<a className="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-slate-600 hover:text-cyan-400 transition-all uppercase" href="#">Bantuan</a>
 </div>
 </footer>
 

@@ -125,8 +125,8 @@ export function setupSocketHandlers(io: any) {
           return;
         }
 
-        const { difficulty = 'medium' } = data;
-        const room = await GameManager.createRoom(socket.userId, difficulty);
+        const { categoryId = 9 } = data; // Default General Knowledge
+        const room = await GameManager.createRoom(socket.userId, categoryId);
 
         socket.join(room.id);
         socket.emit('room:created', {
@@ -177,7 +177,12 @@ export function setupSocketHandlers(io: any) {
             index: 0,
             total: questions.length,
           });
+          
+          setTimeout(async () => {
+             await GameManager.finishRoom(roomId, io);
+          }, 30000);
         }
+
 
         console.log('[Socket] User joined room:', { roomId, userId: socket.userId });
       } catch (error) {
@@ -187,7 +192,37 @@ export function setupSocketHandlers(io: any) {
     });
 
     socket.on('game:submit_answer', async (data) => {
-      await submitAnswerHandler(socket, io, data);
+      try {
+        if (!socket.userId) return;
+        const roomId = GameManager.getUserRoom(socket.userId);
+        if (!roomId) return;
+        
+        const { answer, questionIndex } = data;
+        const questions = GameManager.getRoomQuestions(roomId);
+        const question = questions[questionIndex];
+        
+        if (!question) return;
+        
+        const isCorrect = question.correctAnswer === answer;
+        const scoreEarned = isCorrect ? 10 : 0;
+        
+        GameManager.submitAnswer(roomId, socket.userId, answer, scoreEarned);
+        
+        socket.emit('game:answer_result', {
+          isCorrect,
+          scoreEarned,
+          correctAnswer: question.correctAnswer
+        });
+        
+        io.to(roomId).emit('game:player_answered', {
+          userId: socket.userId,
+          isCorrect,
+          scoreEarned,
+        });
+        
+      } catch (error) {
+        console.error('[Socket] Answer error:', error);
+      }
     });
 
     socket.on('game:start', async (data) => {
@@ -206,8 +241,6 @@ export function setupSocketHandlers(io: any) {
           socket.emit('error', 'User not in a room');
           return;
         }
-
-        await GameManager.finishGame(roomId, socket.userId);
 
         io.to(roomId).emit('game:player_finished', {
           userId: socket.userId,

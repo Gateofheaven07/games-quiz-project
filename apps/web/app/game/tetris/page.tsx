@@ -68,11 +68,11 @@ function Sidebar() {
 
   const items = [
     { icon:'dashboard',      label:'Dashboard',    href:'/dashboard' },
-    { icon:'swords',         label:'Battle Arena', href:'/game' },
-    { icon:'sports_esports', label:'Arcade',       href:'/game/crossword' },
-    { icon:'group',          label:'Friends',      href:'/friends' },
-    { icon:'leaderboard',    label:'Rankings',     href:'/leaderboard' },
-    { icon:'person',         label:'Profile',      href:'/profile' },
+    { icon:'swords',         label:'Arena Pertempuran', href:'/game' },
+    { icon:'sports_esports', label:'Arkade',       href:'/game/crossword' },
+    { icon:'group',          label:'Teman',      href:'/friends' },
+    { icon:'leaderboard',    label:'Peringkat',     href:'/leaderboard' },
+    { icon:'person',         label:'Profil',      href:'/profile' },
   ]
   return (
     <aside style={{ width:200, minWidth:200, backgroundColor:'var(--c-surface-low)', borderRight:'1px solid var(--c-outline-variant)', display:'flex', flexDirection:'column', padding:'16px 12px', gap:4 }}>
@@ -103,7 +103,7 @@ function Sidebar() {
         }}
       >
         <span className="material-symbols-rounded" style={{ fontSize:'1.125rem' }}>logout</span>
-        Log Out
+        Keluar
       </button>
     </aside>
   )
@@ -261,8 +261,8 @@ export default function TetrisPage() {
         {/* Header */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
           <div>
-            <p className="label-caps" style={{ color:'#feb127', marginBottom:4 }}>ARCADE MODE</p>
-            <h2 style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:'1.5rem', fontWeight:700, color:'var(--c-on-surface)' }}>Tetris Arena</h2>
+            <p className="label-caps" style={{ color:'#feb127', marginBottom:4 }}>MODE ARKADE</p>
+            <h2 style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:'1.5rem', fontWeight:700, color:'var(--c-on-surface)' }}>Arena Tetris</h2>
           </div>
           <div style={{ display:'flex', gap:8 }}>
             <span className="badge badge-primary" style={{ padding:'0.375rem 1rem' }}>
@@ -270,7 +270,7 @@ export default function TetrisPage() {
               X_VOID_REAPER_X
             </span>
             <span className="badge" style={{ color:'#4aff91', border:'1px solid #4aff91', background:'rgba(74,255,145,0.08)', padding:'0.375rem 1rem' }}>
-              LATENCY: 24MS
+              LATENSI: 24MS
             </span>
           </div>
         </div>
@@ -279,14 +279,14 @@ export default function TetrisPage() {
           {/* Left panel: hold + stats */}
           <div style={{ display:'flex', flexDirection:'column', gap:16, width:160 }}>
             <div className="glass-panel" style={{ padding:16 }}>
-              <p className="label-caps" style={{ color:'var(--c-on-surface-variant)', marginBottom:10 }}>HOLD</p>
+              <p className="label-caps" style={{ color:'var(--c-on-surface-variant)', marginBottom:10 }}>SIMPAN</p>
               <PiecePreview piece={held}/>
-              <p style={{ fontSize:'0.6875rem', color:'var(--c-outline)', marginTop:6 }}>Press C to hold</p>
+              <p style={{ fontSize:'0.6875rem', color:'var(--c-outline)', marginTop:6 }}>Tekan C untuk simpan</p>
             </div>
             {[
-              { label:'SCORE',  value:score.toLocaleString(),  color:'#00d1ff' },
+              { label:'SKOR',  value:score.toLocaleString(),  color:'#00d1ff' },
               { label:'LEVEL',  value:String(level),            color:'#cf5cff' },
-              { label:'LINES',  value:String(lines),            color:'#feb127' },
+              { label:'BARIS',  value:String(lines),            color:'#feb127' },
             ].map(stat=>(
               <div key={stat.label} className="glass-panel" style={{ padding:'12px 16px' }}>
                 <p className="label-caps" style={{ color:'var(--c-on-surface-variant)', marginBottom:4, fontSize:'0.6rem' }}>{stat.label}</p>
@@ -300,14 +300,14 @@ export default function TetrisPage() {
             {(paused||gameOver)&&(
               <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', backgroundColor:'rgba(14,20,23,0.8)', backdropFilter:'blur(8px)', zIndex:10, borderRadius:'0.75rem', gap:16 }}>
                 <h3 style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:'1.5rem', fontWeight:700, color:'var(--c-on-surface)' }}>
-                  {gameOver?'GAME OVER':'PAUSED'}
+                  {gameOver?'PERMAINAN BERAKHIR':'JEDA'}
                 </h3>
                 {gameOver?(
                   <button className="btn-primary" onClick={()=>{ setBoard(emptyBoard()); setPiece(randomPiece()); setNextPiece(randomPiece()); setPos([0,Math.floor(COLS/2)-1]); setScore(0); setLevel(1); setLines(0); setGameOver(false); setHeld(null) }}>
-                    Play Again
+                    Main Lagi
                   </button>
                 ):(
-                  <button className="btn-ghost" onClick={()=>setPaused(false)}>Resume</button>
+                  <button className="btn-ghost" onClick={()=>setPaused(false)}>Lanjut</button>
                 )}
               </div>
             )}
@@ -331,7 +331,7 @@ export default function TetrisPage() {
 
             {/* Keyboard hints */}
             <div style={{ marginTop:10, display:'flex', gap:6, flexWrap:'wrap', justifyContent:'center' }}>
-              {[['←→','Move'],['↑','Rotate'],['↓','Soft Drop'],['Space','Hard Drop'],['C','Hold'],['P','Pause']].map(([k,v])=>(
+              {[['←→','Gerak'],['↑','Putar'],['↓','Turun Pelan'],['Spasi','Turun Cepat'],['C','Simpan'],['P','Jeda']].map(([k,v])=>(
                 <div key={k} style={{ display:'flex', alignItems:'center', gap:4 }}>
                   <kbd style={{ padding:'2px 6px', background:'var(--c-surface-highest)', border:'1px solid var(--c-outline-variant)', borderRadius:4, fontFamily:"'Space Grotesk',sans-serif", fontSize:'0.625rem', color:'var(--c-on-surface)' }}>{k}</kbd>
                   <span style={{ fontSize:'0.625rem', color:'var(--c-outline)' }}>{v}</span>
@@ -343,19 +343,19 @@ export default function TetrisPage() {
           {/* Right panel: next piece + opponent */}
           <div style={{ display:'flex', flexDirection:'column', gap:16, width:180 }}>
             <div className="glass-panel" style={{ padding:16 }}>
-              <p className="label-caps" style={{ color:'var(--c-on-surface-variant)', marginBottom:10 }}>NEXT</p>
+              <p className="label-caps" style={{ color:'var(--c-on-surface-variant)', marginBottom:10 }}>BERIKUTNYA</p>
               <PiecePreview piece={nextPiece}/>
             </div>
 
             {/* Arena match */}
             <div className="glass-panel" style={{ padding:16 }}>
-              <p className="label-caps" style={{ color:'var(--c-tertiary-container)', marginBottom:10 }}>ARENA MATCH</p>
+              <p className="label-caps" style={{ color:'var(--c-tertiary-container)', marginBottom:10 }}>PERTANDINGAN ARENA</p>
               <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                 {[{ name:'OPERATOR_01', score:score, color:'#00d1ff', you:true },
                   { name:'X_VOID_REAPER', score:38420, color:'#cf5cff', you:false }].map(p=>(
                   <div key={p.name} style={{ padding:'8px 10px', borderRadius:'0.5rem', background: p.you?'rgba(0,209,255,0.06)':'rgba(255,255,255,0.03)', border:`1px solid ${p.you?'rgba(0,209,255,0.2)':'rgba(255,255,255,0.06)'}` }}>
                     <p style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:'0.6875rem', fontWeight:700, color:p.color, marginBottom:4 }}>
-                      {p.you?'YOU':p.name}
+                      {p.you?'KAMU':p.name}
                     </p>
                     <p style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:'1rem', fontWeight:700, color:'var(--c-on-surface)' }}>{p.score.toLocaleString()}</p>
                     <div className="progress-track" style={{ marginTop:4 }}>
@@ -368,11 +368,11 @@ export default function TetrisPage() {
 
             <button className="btn-ghost" onClick={()=>setPaused(p=>!p)} style={{ justifyContent:'center' }}>
               <span className="material-symbols-rounded" style={{ fontSize:'1.125rem' }}>{paused?'play_arrow':'pause'}</span>
-              {paused?'Resume':'Pause'}
+              {paused?'Lanjut':'Jeda'}
             </button>
             <Link href="/dashboard" className="btn-danger" style={{ textDecoration:'none', justifyContent:'center', display:'flex', alignItems:'center', gap:8, padding:'0.75rem 1.5rem', borderRadius:'0.5rem' }}>
               <span className="material-symbols-rounded" style={{ fontSize:'1.125rem' }}>exit_to_app</span>
-              Quit
+              Keluar
             </Link>
           </div>
         </div>
