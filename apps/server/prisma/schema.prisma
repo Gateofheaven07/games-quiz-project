@@ -50,8 +50,8 @@ model Friendship {
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
 
-  sender   User @relation("FriendshipSender", fields: [senderId], references: [id])
-  receiver User @relation("FriendshipReceiver", fields: [receiverId], references: [id])
+  sender   User @relation("FriendshipSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("FriendshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
 
   @@unique([senderId, receiverId])
 }
@@ -67,7 +67,7 @@ model Message {
   read       Boolean  @default(false)
   createdAt  DateTime @default(now())
 
-  sender User @relation("MessageSender", fields: [senderId], references: [id])
+  sender User @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
 }
 
 //
@@ -98,8 +98,8 @@ model RoomPlayer {
   score   Int     @default(0)
   isReady Boolean @default(false)
 
-  user User @relation(fields: [userId], references: [id])
-  room Room @relation(fields: [roomId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@unique([userId, roomId])
 }
@@ -125,7 +125,7 @@ model Game {
   winnerId  String?
   isDraw    Boolean @default(false)
 
-  room        Room           @relation(fields: [roomId], references: [id])
+  room        Room           @relation(fields: [roomId], references: [id], onDelete: Cascade)
   questions   GameQuestion[]
   gameResults GameResult[]
 }
@@ -159,8 +159,8 @@ model GameQuestion {
 
   order Int
 
-  game     Game     @relation(fields: [gameId], references: [id])
-  question Question @relation(fields: [questionId], references: [id])
+  game     Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 //
@@ -180,8 +180,8 @@ model GameResult {
 
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
-  game Game @relation(fields: [gameId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
 }
 
 //
@@ -196,7 +196,7 @@ model AdminLog {
 
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 //
