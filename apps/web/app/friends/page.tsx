@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '../../hooks/useAuth'
 import axios from 'axios'
 import { io, Socket } from 'socket.io-client'
+import { SOCKET_URL } from '../../lib/socketSingleton'
 
 // ── Sidebar Navigation ────────────────────────────────────────────────────────
 function Sidebar({ active }: { active: string }) {
@@ -216,7 +217,7 @@ export default function FriendsPage() {
     if (!authDataStr) return
     const authData = JSON.parse(authDataStr)
     
-    const newSocket = io(process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3001', {
+    const newSocket = io(SOCKET_URL, {
       auth: { token: authData.token }
     })
 

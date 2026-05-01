@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import axios, { AxiosInstance } from 'axios';
 import { destroySocket } from '../lib/socketSingleton';
+import { API_BASE_URL } from '../lib/api';
 
 export interface User {
   id: string;
@@ -29,7 +30,7 @@ export interface AuthState {
   error: string | null;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+// API_BASE_URL imported from lib/api
 
 export const useAuth = () => {
   const [state, setState] = useState<AuthState>({
