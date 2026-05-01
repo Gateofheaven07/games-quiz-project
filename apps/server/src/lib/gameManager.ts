@@ -78,7 +78,7 @@ export class GameManager {
 
     // Persist to DB
     await prisma.room.create({
-      data: { id: roomId, code: roomCode, status: RoomStatus.PLAYING, maxPlayers: 2 },
+      data: { id: roomId, code: roomCode, status: RoomStatus.PLAYING, maxPlayers: 2, categoryId } as any,
     });
 
     await prisma.roomPlayer.createMany({
@@ -148,7 +148,7 @@ export class GameManager {
 
     // Persist ke DB — kategori PRACTICE agar terpisah dari leaderboard Global
     await prisma.room.create({
-      data: { id: roomId, code: roomCode, status: RoomStatus.PLAYING, maxPlayers: 2 },
+      data: { id: roomId, code: roomCode, status: RoomStatus.PLAYING, maxPlayers: 2, categoryId } as any,
     });
 
     await prisma.roomPlayer.create({ data: { roomId, userId: playerId } });
@@ -167,6 +167,147 @@ export class GameManager {
 
     console.log('[GameManager] Bot room created:', { roomId, playerId, difficulty, botUserId });
     return { roomId, botUserId };
+  }
+
+  /**
+   * createReservedRoom
+   * Tahap 1: Mereservasi room di DB dengan status RESERVED.
+   * Digunakan untuk direct invite agar room ID sudah ada di DB sebelum diterima.
+   */
+  static async createReservedRoom(
+    hostUserId: string,
+    categoryId: number,
+    hostUsername: string = ''
+  ): Promise<{ roomId: string; roomCode: string }> {
+    const roomId   = uuidv4();
+    const roomCode = roomId.substring(0, 6).toUpperCase();
+
+    const room: GameRoom = {
+      id:                   roomId,
+      player1:              hostUserId,
+      status:               'waiting', // Internal state stays waiting
+      questions:            [],
+      currentQuestionIndex: 0,
+      player1Answers:       [],
+      player2Answers:       [],
+      createdAt:            new Date(),
+    };
+
+    rooms.set(roomId, {
+      room,
+      questions:       [],
+      playerScores:    new Map([[hostUserId, 0]]),
+      playerTimeSpent: new Map([[hostUserId, 0]]),
+      startedAt:       0,
+      categoryId,
+      hostUsername,
+      isPrivate:       true,
+      roomCode,
+      playersFinished: new Set(),
+    });
+
+    userRooms.set(hostUserId, roomId);
+    roomCodes.set(roomCode, roomId);
+
+    await prisma.room.create({
+      data: { id: roomId, code: roomCode, status: RoomStatus.RESERVED as any, maxPlayers: 2, categoryId } as any,
+    });
+
+    await prisma.roomPlayer.create({ data: { roomId, userId: hostUserId } });
+
+    console.log('[GameManager] Reserved room created:', { roomId, roomCode, hostUserId });
+    return { roomId, roomCode };
+  }
+
+  /**
+   * activateReservedRoom
+   * Tahap 2: Mengubah status room dari RESERVED menjadi ACTIVE/PLAYING.
+   * Memasukkan pemain kedua dan mengaktifkan game.
+   */
+  static async activateReservedRoom(
+    roomId: string,
+    joinerUserId: string
+  ): Promise<{
+    roomId: string;
+    categoryId: number;
+    hostUserId: string;
+    hostUsername: string;
+  } | null> {
+    let roomData = rooms.get(roomId);
+    if (!roomData) {
+      // Fallback: Check DB if memory is lost (hydration)
+      const dbRoom = await prisma.room.findUnique({
+        where: { id: roomId },
+        include: { players: true }
+      });
+
+      if (!dbRoom || (dbRoom.status as any) !== (RoomStatus.RESERVED as any)) return null;
+
+      // Re-hydrate memory
+      const hostPlayer = dbRoom.players[0];
+      const hostUser = await prisma.user.findUnique({ where: { id: hostPlayer.userId }, select: { username: true } });
+
+      const room: GameRoom = {
+        id:                   dbRoom.id,
+        player1:              hostPlayer.userId,
+        status:               'waiting',
+        questions:            [],
+        currentQuestionIndex: 0,
+        player1Answers:       [],
+        player2Answers:       [],
+        createdAt:            dbRoom.createdAt,
+      };
+
+      roomData = {
+        room,
+        questions:       [],
+        playerScores:    new Map([[hostPlayer.userId, 0]]),
+        playerTimeSpent: new Map([[hostPlayer.userId, 0]]),
+        startedAt:       0,
+        categoryId:      (dbRoom as any).categoryId || 9,
+        hostUsername:    hostUser?.username || '',
+        isPrivate:       true,
+        roomCode:        dbRoom.code,
+        playersFinished: new Set(),
+      };
+      rooms.set(roomId, roomData);
+      userRooms.set(hostPlayer.userId, roomId);
+      roomCodes.set(dbRoom.code, roomId);
+    }
+
+    if (roomData.room.status !== 'waiting') return null;
+
+    // Update room
+    roomData.room.player2  = joinerUserId;
+    roomData.room.status   = 'active';
+    roomData.startedAt     = Date.now();
+    roomData.playerScores.set(joinerUserId, 0);
+    roomData.playerTimeSpent.set(joinerUserId, 0);
+
+    userRooms.set(joinerUserId, roomId);
+
+    await prisma.room.update({
+      where: { id: roomId },
+      data:  { status: RoomStatus.ACTIVE as any } as any, // Match user's request for ACTIVE status
+    });
+
+    await prisma.roomPlayer.create({ data: { roomId, userId: joinerUserId } });
+
+    await prisma.game.create({
+      data: {
+        roomId,
+        mode:      GameMode.QUIZ,
+        status:    GameStatus.STARTED,
+        startedAt: new Date(),
+      },
+    });
+
+    return {
+      roomId,
+      categoryId:   roomData.categoryId,
+      hostUserId:   roomData.room.player1,
+      hostUsername: roomData.hostUsername,
+    };
   }
 
   /**
@@ -209,7 +350,7 @@ export class GameManager {
     roomCodes.set(roomCode, roomId);
 
     await prisma.room.create({
-      data: { id: roomId, code: roomCode, status: RoomStatus.WAITING, maxPlayers: 2 },
+      data: { id: roomId, code: roomCode, status: RoomStatus.WAITING, maxPlayers: 2, categoryId } as any,
     });
 
     await prisma.roomPlayer.create({ data: { roomId, userId: hostUserId } });
@@ -231,7 +372,49 @@ export class GameManager {
     hostUserId: string;
     hostUsername: string;
   } | null> {
-    const roomId   = roomCodes.get(roomCode);
+    let roomId = roomCodes.get(roomCode);
+    
+    // Fallback: Check DB if memory is lost
+    if (!roomId) {
+      const dbRoom = await prisma.room.findUnique({
+        where: { code: roomCode },
+        include: { players: true }
+      });
+      if (dbRoom && dbRoom.status === RoomStatus.WAITING) {
+        roomId = dbRoom.id;
+        const hostPlayer = dbRoom.players[0];
+        const hostUser = await prisma.user.findUnique({ where: { id: hostPlayer.userId }, select: { username: true } });
+
+        const room: GameRoom = {
+          id:                   dbRoom.id,
+          player1:              hostPlayer.userId,
+          status:               'waiting',
+          questions:            [],
+          currentQuestionIndex: 0,
+          player1Answers:       [],
+          player2Answers:       [],
+          createdAt:            dbRoom.createdAt,
+        };
+
+        const roomData: RoomData = {
+          room,
+          questions:       [],
+          playerScores:    new Map([[hostPlayer.userId, 0]]),
+          playerTimeSpent: new Map([[hostPlayer.userId, 0]]),
+          startedAt:       0,
+          categoryId:      (dbRoom as any).categoryId || 9,
+          hostUsername:    hostUser?.username || '',
+          isPrivate:       true,
+          roomCode:        dbRoom.code,
+          playersFinished: new Set(),
+        };
+
+        rooms.set(roomId, roomData);
+        userRooms.set(hostPlayer.userId, roomId);
+        roomCodes.set(dbRoom.code, roomId);
+      }
+    }
+
     if (!roomId) return null;
 
     const roomData = rooms.get(roomId);

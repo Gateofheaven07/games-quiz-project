@@ -85,6 +85,7 @@ model Room {
 
   status     RoomStatus @default(WAITING)
   maxPlayers Int        @default(2)
+  categoryId Int?
 
   createdAt DateTime @default(now())
 
@@ -216,6 +217,8 @@ enum Role {
 }
 
 enum RoomStatus {
+  RESERVED
+  ACTIVE
   WAITING
   PLAYING
   FINISHED

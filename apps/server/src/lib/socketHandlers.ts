@@ -188,8 +188,9 @@ export function setupSocketHandlers(io: any) {
           return;
         }
 
-        // 4. Create Private Room
-        const { roomId, roomCode } = await GameManager.createPrivateRoom(
+        // 4. Tahap 1: Create Reserved Room (DB Status: RESERVED)
+        // Room ID sudah dibuat di DB, tapi status belum ACTIVE.
+        const { roomId, roomCode } = await GameManager.createReservedRoom(
           socket.userId,
           categoryId,
           socket.username
@@ -229,14 +230,14 @@ export function setupSocketHandlers(io: any) {
         // 7. Track Pending Invite
         pendingInvites.set(receiverId, { senderId: socket.userId!, roomId, timeoutId });
 
-        // 8. Join sender to room early
+        // 8. Join sender to room early (Backend only, no redirect yet)
         socket.join(roomId);
         
         // 9. Emit events
         io.to(`user:${receiverId}`).emit('receive_invite', notification);
         socket.emit('battle:invite_sent', { roomId, roomCode, categoryId, receiverId });
         
-        console.log(`[Battle] Invite sent from ${socket.userId} to ${receiverId} (Room: ${roomId})`);
+        console.log(`[Battle] Phase 1: Room Reserved and Invite sent from ${socket.userId} to ${receiverId} (Room: ${roomId})`);
       } catch (err) {
         console.error('[Socket] Battle invite error:', err);
         socket.emit('error', 'Gagal mengirim undangan');
@@ -251,6 +252,10 @@ export function setupSocketHandlers(io: any) {
         const invite = pendingInvites.get(socket.userId);
         if (!invite || invite.roomId !== roomId) {
           socket.emit('battle:invite_error', { message: 'Undangan sudah kedaluwarsa' });
+          // Notify sender to reset UI
+          if (invite) {
+             io.to(`user:${invite.senderId}`).emit('battle:invite_error', { message: 'Undangan gagal dikonfirmasi' });
+          }
           return;
         }
 
@@ -258,12 +263,13 @@ export function setupSocketHandlers(io: any) {
         clearTimeout(invite.timeoutId);
         pendingInvites.delete(socket.userId);
 
-        // 2. Join Room in GameManager
-        const roomCode = GameManager.getRoomCode(roomId) || '';
-        const result = await GameManager.joinPrivateRoom(roomCode, socket.userId);
+        // 2. Tahap 2: Activate Room (DB Status: ACTIVE)
+        const result = await GameManager.activateReservedRoom(roomId, socket.userId);
 
         if (!result) {
-          socket.emit('battle:invite_error', { message: 'Gagal bergabung ke ruangan' });
+          socket.emit('battle:invite_error', { message: 'Gagal mengaktifkan ruangan. Room mungkin sudah hilang.' });
+          // Notify sender to reset UI
+          io.to(`user:${invite.senderId}`).emit('battle:invite_error', { message: 'Koneksi terputus atau room hilang.' });
           return;
         }
 
@@ -273,19 +279,24 @@ export function setupSocketHandlers(io: any) {
           data: { status: 'READ' }
         });
 
-        // 4. Socket Join
+        // 4. Socket Join - Join BOTH players to the room simultaneously
         socket.join(roomId);
+        const hostSocketId = onlineUsers.get(invite.senderId);
+        if (hostSocketId) {
+          const hostSocket = io.sockets.sockets.get(hostSocketId);
+          if (hostSocket) hostSocket.join(roomId);
+        }
 
-        // 5. Notify both players to prepare
+        // 5. Notify both players to prepare (Transition UI)
         io.to(roomId).emit('matchmaking:preparing', {
           roomId,
-          message: 'Lawan menerima tantangan! Menyiapkan soal...',
+          message: 'Lawan menerima tantangan! Menyiapkan arena...',
         });
 
-        // 6. Load Questions
+        // 6. Load Questions (Slow operation)
         const questions = await GameManager.loadQuestionsForRoom(roomId, result.categoryId);
 
-        // 7. Emit Game Ready
+        // 7. Tahap 2 Final: Emit Game Ready (Trigger simultaneous redirect)
         io.to(roomId).emit('matchmaking:game_ready', {
           roomId,
           categoryId: result.categoryId,
@@ -296,7 +307,7 @@ export function setupSocketHandlers(io: any) {
           },
         });
 
-        console.log(`[Battle] Invite accepted by ${socket.userId} (Room: ${roomId})`);
+        console.log(`[Battle] Phase 2: Room Active and Game Ready for ${invite.senderId} and ${socket.userId} (Room: ${roomId})`);
       } catch (err) {
         console.error('[Socket] Battle accept error:', err);
         socket.emit('error', 'Gagal menerima undangan');
