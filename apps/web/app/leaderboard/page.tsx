@@ -48,10 +48,10 @@ export default function LeaderboardPage() {
       
 
       <AppMobileNav active="Peringkat" />
-      <div style={{ display: 'flex', flex: 1, width: '100%' }}>
+      <div className="flex flex-col lg:flex-row flex-1 w-full">
         <AppSidebar active="Peringkat" />
 
-<main className="flex-1 mt-16 lg:ml-72 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto pb-40 overflow-x-hidden">
+<main className="flex-1 mt-4 lg:mt-16 lg:ml-72 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto pb-40 overflow-x-hidden">
 <header className="mb-10 text-center lg:text-left">
 <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1 mb-4">
 <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>

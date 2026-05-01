@@ -129,11 +129,11 @@ export default function ProfilePage() {
 
       {/* Top Navigation & Sidebar */}
       <AppMobileNav active="Profil" />
-      <div style={{ display: 'flex', flex: 1, width: '100%' }}>
+      <div className="flex flex-col lg:flex-row flex-1 w-full">
         <AppSidebar active="Profil" />
 
       {/* Main Content */}
-      <main className="lg:ml-72 pt-24 px-6 pb-12 min-h-screen">
+      <main className="lg:ml-72 pt-8 lg:pt-24 px-6 pb-12 min-h-screen flex-1">
         <div className="max-w-6xl mx-auto">
 
           {/* Error Banner */}

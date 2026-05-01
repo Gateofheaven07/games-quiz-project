@@ -224,7 +224,7 @@ export default function DashboardPage() {
   if (isLoading || !isAuthenticated) return null
 
   return (
-    <div className="flex min-h-screen bg-[var(--c-bg)] relative">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-[var(--c-bg)] relative">
       {/* Font imports */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap');

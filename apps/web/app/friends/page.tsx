@@ -261,7 +261,7 @@ export default function FriendsPage() {
 
       <AppMobileNav active="Teman" />
 
-      <div className="flex flex-1">
+      <div className="flex flex-col lg:flex-row flex-1">
         <AppSidebar active="Teman" />
 
         <main className="flex-1 lg:ml-72 p-4 sm:p-8 relative z-10 flex flex-col gap-6 overflow-x-hidden">
