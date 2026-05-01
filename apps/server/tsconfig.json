@@ -12,6 +12,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "noImplicitAny": false,
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
