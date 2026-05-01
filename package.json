@@ -14,6 +14,8 @@
     "build:shared": "npm run build -w @quiz-battle/shared",
     "build:web": "npm run build:shared && npm run build -w quiz-battle-web",
     "build:server": "npm run build:shared && npm run build -w quiz-battle-server",
+    "deploy:server": "npm run build:shared && cd apps/server && npm run build",
+    "deploy:web": "npm run build:shared && cd apps/web && npm run build",
     "start": "npm run start -w quiz-battle-server",
     "lint": "eslint .",
     "type-check": "tsc --noEmit"
