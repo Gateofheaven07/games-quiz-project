@@ -46,7 +46,7 @@ export async function fetchAndTranslate(categoryId: number, amount: number = 10)
       const translatedQ = translatedTexts[textIndex++];
       const translatedCorrect = translatedTexts[textIndex++];
       
-      const translatedIncorrect = [];
+      const translatedIncorrect: string[] = [];
       for (let i = 0; i < item.incorrect_answers.length; i++) {
         translatedIncorrect.push(translatedTexts[textIndex++]);
       }
