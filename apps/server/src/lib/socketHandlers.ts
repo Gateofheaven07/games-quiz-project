@@ -1,10 +1,10 @@
 import { Socket } from 'socket.io';
-import { verifyToken } from './auth';
-import { GameManager } from './gameManager';
+import { verifyToken } from './auth.js';
+import { GameManager } from './gameManager.js';
 import { PrismaClient } from '@prisma/client';
-import { enqueue, remove, isWaiting, getQueueStats } from './matchmakingQueue';
-import { BotDifficulty, BOT_DIFFICULTY_CONFIGS } from './bot.types';
-import { startBotSession } from './botEngine';
+import { enqueue, remove, isWaiting, getQueueStats } from './matchmakingQueue.js';
+import { BotDifficulty, BOT_DIFFICULTY_CONFIGS } from './bot.types.js';
+import { startBotSession } from './botEngine.js';
 
 const prisma = new PrismaClient();
 

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { query } from '../lib/db';
-import { AuthRequest, authMiddleware } from '../middleware/auth';
+import { query } from '../lib/db.js';
+import { AuthRequest, authMiddleware } from '../middleware/auth.js';
 import { GameResult } from '@quiz-battle/shared';
 
 const router = Router();

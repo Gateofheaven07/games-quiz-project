@@ -4,13 +4,13 @@ import { Server as SocketIOServer } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import serverless from 'serverless-http';
-import { initialize } from './lib/db';
-import authRoutes from './routes/auth';
-import userRoutes from './routes/users';
-import quizRoutes from './routes/quiz';
-import leaderboardRoutes from './routes/leaderboard';
-import friendsRoutes from './routes/friends';
-import { setupSocketHandlers } from './lib/socketHandlers';
+import { initialize } from './lib/db.js';
+import authRoutes from './routes/auth.js';
+import userRoutes from './routes/users.js';
+import quizRoutes from './routes/quiz.js';
+import leaderboardRoutes from './routes/leaderboard.js';
+import friendsRoutes from './routes/friends.js';
+import { setupSocketHandlers } from './lib/socketHandlers.js';
 
 dotenv.config();
 

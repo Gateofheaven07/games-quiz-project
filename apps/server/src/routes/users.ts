@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { AuthRequest, authMiddleware } from '../middleware/auth';
-import { hashPassword, verifyPassword } from '../lib/auth';
+import { AuthRequest, authMiddleware } from '../middleware/auth.js';
+import { hashPassword, verifyPassword } from '../lib/auth.js';
 import { UserPublic } from '@quiz-battle/shared';
 
 const router = Router();

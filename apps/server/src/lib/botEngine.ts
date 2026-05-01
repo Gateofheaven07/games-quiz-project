@@ -11,8 +11,8 @@
  * Bot engine mengemulasi event yang sama (`game:player_answered`).
  */
 
-import { BOT_DIFFICULTY_CONFIGS, BotDifficulty } from './bot.types';
-import { GameManager } from './gameManager';
+import { BOT_DIFFICULTY_CONFIGS, BotDifficulty } from './bot.types.js';
+import { GameManager } from './gameManager.js';
 
 interface BotSessionOptions {
   roomId:      string;
