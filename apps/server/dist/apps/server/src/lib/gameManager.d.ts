@@ -1,5 +1,5 @@
 import { GameRoom, Question } from '@quiz-battle/shared';
-import { BotDifficulty } from './bot.types';
+import { BotDifficulty } from './bot.types.js';
 export declare class GameManager {
     /**
      * createMatchRoom

@@ -16,6 +16,7 @@ export default function SettingsPage() {
 
   const [profileForm, setProfileForm] = useState({ username: '', email: '', avatar: '' });
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push('/auth/login');
@@ -97,10 +98,23 @@ export default function SettingsPage() {
   const avatarLetter = (profileForm.username || user.username || 'O').charAt(0).toUpperCase();
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--c-bg, #090f12)', fontFamily: "'Inter', sans-serif", color: '#dde3e7' }}>
+    <div className="layout-container" style={{ backgroundColor: 'var(--c-bg, #090f12)', fontFamily: "'Inter', sans-serif", color: '#dde3e7' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
+        
+        .layout-container { display: flex; min-height: 100vh; flex-direction: column; }
+        .sidebar { display: none; }
+        .mobile-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.08); position: sticky; top: 0; z-index: 50; backdrop-filter: blur(10px); }
+        .main-content { flex: 1; padding: 20px; overflow-y: auto; }
+        
+        @media (min-width: 768px) {
+          .layout-container { flex-direction: row; }
+          .sidebar { display: flex; width: 260px; min-width: 260px; flex-direction: column; padding: 24px 16px; gap: 4px; background: rgba(255,255,255,0.03); border-right: 1px solid rgba(255,255,255,0.08); }
+          .mobile-nav { display: none; }
+          .main-content { padding: 40px; }
+        }
+
         .settings-input {
           width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
           border-radius: 10px; padding: 12px 16px; color: #dde3e7; font-size: 0.9375rem;
@@ -121,8 +135,43 @@ export default function SettingsPage() {
         .nav-item-s.active { background: rgba(0,209,255,0.1); color: #00d1ff; border-right: 3px solid #00d1ff; }
       `}</style>
 
+      <div className="mobile-nav">
+        <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '1.25rem', fontWeight: 700, background: 'linear-gradient(135deg, #00d1ff, #cf5cff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.02em', margin: 0 }}>
+          ⚡ QuizBattle
+        </h1>
+        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} style={{ background: 'transparent', border: 'none', color: '#dde3e7', cursor: 'pointer' }}>
+          <span className="material-symbols-rounded">{isMobileMenuOpen ? 'close' : 'menu'}</span>
+        </button>
+      </div>
+
+      {isMobileMenuOpen && (
+        <div style={{ position: 'absolute', top: 60, left: 0, right: 0, background: '#090f12', borderBottom: '1px solid rgba(255,255,255,0.08)', zIndex: 40, display: 'flex', flexDirection: 'column', padding: 16, gap: 8 }}>
+          {[
+            { icon: 'dashboard', label: 'Dashboard', href: '/dashboard' },
+            { icon: 'swords', label: 'Arena Pertempuran', href: '/game' },
+            { icon: 'sports_esports', label: 'Arkade', href: '/game/crossword' },
+            { icon: 'group', label: 'Teman', href: '/friends' },
+            { icon: 'leaderboard', label: 'Peringkat', href: '/leaderboard' },
+            { icon: 'person', label: 'Profil', href: '/profile' },
+          ].map((item) => (
+            <Link key={item.href} href={item.href} className="nav-item-s">
+              <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>{item.icon}</span>
+              {item.label}
+            </Link>
+          ))}
+          <a className="nav-item-s active">
+            <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>settings</span>
+            Pengaturan
+          </a>
+          <button onClick={handleLogout} className="nav-item-s" style={{ background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', color: '#ffb4ab', width: '100%', marginTop: 4 }}>
+            <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>logout</span>
+            Keluar
+          </button>
+        </div>
+      )}
+
       {/* Sidebar */}
-      <aside style={{ width: 260, minWidth: 260, backgroundColor: 'rgba(255,255,255,0.03)', borderRight: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', padding: '24px 16px', gap: 4 }}>
+      <aside className="sidebar">
         <div style={{ marginBottom: 32, paddingInline: 8 }}>
           <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '1.5rem', fontWeight: 700, background: 'linear-gradient(135deg, #00d1ff, #cf5cff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.02em' }}>
             ⚡ QuizBattle
@@ -172,7 +221,7 @@ export default function SettingsPage() {
       </aside>
 
       {/* Main Content */}
-      <main style={{ flex: 1, padding: 40, overflowY: 'auto' }}>
+      <main className="main-content">
         <div style={{ maxWidth: 680, margin: '0 auto' }}>
 
           {/* Page Header */}

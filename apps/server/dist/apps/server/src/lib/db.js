@@ -33,7 +33,8 @@ export async function initialize() {
     }
     catch (error) {
         console.error('[DB] Failed to connect', error);
-        process.exit(1);
+        // DO NOT process.exit(1) in serverless, just throw
+        throw error;
     }
 }
 export default pool;

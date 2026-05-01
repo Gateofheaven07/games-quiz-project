@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import { fetchAndTranslate } from './trivia';
-import { PrismaClient, GameStatus, RoomStatus, GameMode, GameCategory } from '@prisma/client';
-import { BOT_DIFFICULTY_CONFIGS } from './bot.types';
-const prisma = new PrismaClient();
+import { fetchAndTranslate } from './trivia.js';
+import prisma from './prisma.js';
+import { GameStatus, RoomStatus, GameMode, GameCategory } from '@prisma/client';
+import { BOT_DIFFICULTY_CONFIGS } from './bot.types.js';
 const rooms = new Map();
 const userRooms = new Map(); // userId → roomId
 // roomCode → roomId (for private rooms)

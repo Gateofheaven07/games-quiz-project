@@ -1,4 +1,4 @@
-import { verifyToken } from '../lib/auth';
+import { verifyToken } from '../lib/auth.js';
 export function authMiddleware(req, res, next) {
     try {
         const authHeader = req.headers.authorization;

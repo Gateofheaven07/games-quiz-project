@@ -1,8 +1,7 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { authMiddleware } from '../middleware/auth';
+import prisma from '../lib/prisma.js';
+import { authMiddleware } from '../middleware/auth.js';
 const router = Router();
-const prisma = new PrismaClient();
 // All routes require authentication
 router.use(authMiddleware);
 // ─── SEARCH USER BY USERNAME ───────────────────────────────────────────────────

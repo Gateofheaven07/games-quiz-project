@@ -7,133 +7,7 @@ import { useAuth } from '../../hooks/useAuth'
 import axios from 'axios'
 import { io, Socket } from 'socket.io-client'
 import { SOCKET_URL } from '../../lib/socketSingleton'
-
-// ── Sidebar Navigation ────────────────────────────────────────────────────────
-function Sidebar({ active }: { active: string }) {
-  const router = useRouter()
-  const { logout, user } = useAuth()
-
-  const handleLogout = () => {
-    logout()
-    router.push('/auth/login')
-  }
-
-  const navItems = [
-    { icon: 'dashboard',      label: 'Dashboard',     href: '/dashboard' },
-    { icon: 'swords',         label: 'Arena Pertempuran',  href: '/game' },
-    { icon: 'sports_esports', label: 'Arkade',        href: '/game/crossword' },
-    { icon: 'group',          label: 'Teman',       href: '/friends' },
-    { icon: 'leaderboard',    label: 'Peringkat',      href: '/leaderboard' },
-    { icon: 'person',         label: 'Profil',       href: '/profile' },
-  ]
-
-  return (
-    <aside
-      style={{
-        width: 260,
-        minWidth: 260,
-        backgroundColor: 'var(--c-surface-low)',
-        borderRight: '1px solid var(--c-outline-variant)',
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '24px 16px',
-        gap: 8,
-      }}
-    >
-      {/* Logo */}
-      <div style={{ marginBottom: 32, paddingInline: 8 }}>
-        <h1
-          style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: '1.5rem',
-            fontWeight: 700,
-            background: 'linear-gradient(135deg, #00d1ff, #cf5cff)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            letterSpacing: '-0.02em',
-          }}
-        >
-          ⚡ QuizBattle
-        </h1>
-        <p className="label-caps" style={{ color: 'var(--c-outline)', marginTop: 4 }}>
-          Arena Game Taktis
-        </p>
-      </div>
-
-      {/* User chip */}
-      <div
-        className="glass-panel"
-        style={{ padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}
-      >
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #00d1ff, #cf5cff)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontWeight: 700,
-            fontSize: '1rem',
-            color: '#003543',
-          }}
-        >
-          {user?.username ? user.username.charAt(0).toUpperCase() : 'O'}
-        </div>
-        <div>
-          <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '0.875rem', color: 'var(--c-on-surface)' }}>
-            {user?.username || 'OPERATOR_01'}
-          </p>
-          <span className="badge badge-gold" style={{ marginTop: 2 }}>PERINGKAT ELIT</span>
-        </div>
-      </div>
-
-      {/* Nav links */}
-      {navItems.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={`nav-item ${active === item.label ? 'active' : ''}`}
-        >
-          <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>
-            {item.icon}
-          </span>
-          {item.label}
-        </Link>
-      ))}
-
-      {/* Spacer */}
-      <div style={{ flex: 1 }} />
-
-      {/* Settings */}
-      <Link href="/profile/settings" className="nav-item">
-        <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>settings</span>
-        Pengaturan
-      </Link>
-
-      {/* Logout */}
-      <button 
-        onClick={handleLogout} 
-        className="nav-item" 
-        style={{ 
-          color: '#ffb4ab', 
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          textAlign: 'left',
-          width: '100%',
-          marginTop: '8px'
-        }}
-      >
-        <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>logout</span>
-        Keluar
-      </button>
-    </aside>
-  )
-}
-
+import { AppSidebar, AppMobileNav } from '../../components/AppSidebar'
 // ── TYPES ─────────────────────────────────────────────────────────────────────
 interface Friend {
   id: string
@@ -171,7 +45,7 @@ interface ChatMessage {
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────────
 export default function FriendsPage() {
   const router = useRouter()
-  const { isAuthenticated, isLoading, user, getAuthClient } = useAuth()
+  const { isAuthenticated, isLoading, user, getAuthClient, logout } = useAuth()
   
   const [friends, setFriends] = useState<Friend[]>([])
   const [requests, setRequests] = useState<RequestItem[]>([])
@@ -353,7 +227,7 @@ export default function FriendsPage() {
   const offlineFriends = friends.filter(f => !onlineUsers.has(f.id))
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--c-bg)', position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--c-bg)', position: 'relative' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
@@ -385,31 +259,34 @@ export default function FriendsPage() {
       <div className="bg-orb bg-orb-blue" style={{ top: -100, right: 200 }} />
       <div className="bg-orb bg-orb-purple" style={{ bottom: 0, left: 100 }} />
 
-      <Sidebar active="Teman" />
+      <AppMobileNav active="Teman" />
 
-      <main style={{ flex: 1, padding: 32, position: 'relative', zIndex: 1, display: 'flex', gap: 32 }}>
+      <div className="flex flex-1">
+        <AppSidebar active="Teman" />
+
+        <main className="flex-1 lg:ml-72 p-4 sm:p-8 relative z-10 w-full flex flex-col gap-6">
         
         {/* Main Content Area */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
+        <div className="flex-1 flex flex-col w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4">
             <div>
               <p className="label-caps" style={{ color: 'var(--c-secondary-container)', marginBottom: 4 }}>
                 Pusat Sosial
               </p>
-              <h2 style={{ color: 'var(--c-on-surface)', fontFamily: "'Space Grotesk', sans-serif" }}>
+              <h2 className="text-xl sm:text-2xl" style={{ color: 'var(--c-on-surface)', fontFamily: "'Space Grotesk', sans-serif" }}>
                 Terhubung dengan Operator Elit
               </h2>
             </div>
-            <button className="btn-primary" onClick={() => setShowAddModal(true)}>
+            <button className="btn-primary w-full sm:w-auto justify-center whitespace-nowrap text-sm sm:text-base px-4 py-3 sm:px-6 sm:py-3" onClick={() => setShowAddModal(true)}>
               <span className="material-symbols-rounded">person_add</span>
-              Tambah Teman
+              <span>Tambah Teman</span>
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24, flex: 1 }}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 w-full">
             
             {/* Left Column: Friends List */}
-            <div className="glass-panel" style={{ padding: 24, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div className="glass-panel lg:col-span-2 p-4 sm:p-6 flex flex-col overflow-hidden">
               
               {/* Online Friends */}
               <div style={{ marginBottom: 24 }}>
@@ -483,10 +360,10 @@ export default function FriendsPage() {
             </div>
 
             {/* Right Column: Pending Requests & Activity */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div className="flex flex-col gap-6">
               
               {/* Pending Requests */}
-              <div className="glass-panel" style={{ padding: 24 }}>
+              <div className="glass-panel p-4 sm:p-6">
                 <h3 style={{ color: 'var(--c-on-surface)', fontSize: '1rem', marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
                   Permintaan Tertunda
                   {requests.length > 0 && <span className="badge badge-secondary">{requests.length}</span>}
@@ -517,7 +394,7 @@ export default function FriendsPage() {
               </div>
 
               {/* Global Ranking Hint */}
-              <div className="glass-panel" style={{ padding: 24, background: 'linear-gradient(135deg, rgba(0,209,255,0.06), rgba(207,92,255,0.06))', border: '1px solid rgba(0,209,255,0.2)' }}>
+              <div className="glass-panel p-4 sm:p-6" style={{ background: 'linear-gradient(135deg, rgba(0,209,255,0.06), rgba(207,92,255,0.06))', border: '1px solid rgba(0,209,255,0.2)' }}>
                 <p className="label-caps" style={{ color: 'var(--c-primary-container)', marginBottom: 8 }}>Papan Peringkat Global</p>
                 <p style={{ color: 'var(--c-on-surface)', fontSize: '0.9375rem', lineHeight: 1.5 }}>
                   Kamu saat ini berada di peringkat <strong style={{ color: '#cf5cff' }}>#1.204</strong> secara global. Tantang teman untuk naik lebih tinggi di peringkat.
@@ -531,21 +408,15 @@ export default function FriendsPage() {
           </div>
         </div>
 
-        {/* Chat Drawer / Modal (absolute or flex depending on layout) */}
+        {/* Chat Drawer / Modal */}
         {activeChat && (
           <div 
-            className="glass-panel" 
+            className="glass-panel fixed sm:absolute sm:right-8 sm:bottom-8 w-full sm:w-[380px] h-[60vh] sm:h-[500px] z-[100] flex flex-col bottom-0 left-0 sm:left-auto" 
             style={{ 
-              position: 'absolute', 
-              right: 32, 
-              bottom: 32, 
-              width: 380, 
-              height: 500, 
-              display: 'flex', 
-              flexDirection: 'column',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-              zIndex: 50,
-              backgroundColor: 'var(--c-surface)'
+              boxShadow: '0 -8px 32px rgba(0,0,0,0.5)',
+              backgroundColor: 'var(--c-surface)',
+              borderBottomLeftRadius: 0,
+              borderBottomRightRadius: 0
             }}
           >
             {/* Header */}
@@ -583,7 +454,7 @@ export default function FriendsPage() {
             </div>
 
             {/* Input Area */}
-            <form onSubmit={sendMessage} style={{ padding: 16, borderTop: '1px solid var(--c-outline-variant)', display: 'flex', gap: 8, background: 'var(--c-surface-high)', borderBottomLeftRadius: '1rem', borderBottomRightRadius: '1rem' }}>
+            <form onSubmit={sendMessage} className="sm:rounded-b-2xl" style={{ padding: 16, borderTop: '1px solid var(--c-outline-variant)', display: 'flex', gap: 8, background: 'var(--c-surface-high)' }}>
               <input 
                 type="text" 
                 value={newMessage}
@@ -600,6 +471,7 @@ export default function FriendsPage() {
         )}
 
       </main>
+      </div>
 
       {/* Add Friend Modal */}
       {showAddModal && (

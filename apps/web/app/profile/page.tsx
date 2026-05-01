@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../hooks/useAuth';
-
+import { AppSidebar, AppMobileNav } from '../../components/AppSidebar';
 interface UserStats {
   gamesPlayed: number;
   totalScore: number;
@@ -30,6 +30,7 @@ export default function ProfilePage() {
   const [history, setHistory] = useState<GameHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -126,89 +127,13 @@ export default function ProfilePage() {
   return (
     <div className="font-body-md text-on-background selection:bg-primary-container selection:text-on-primary-container bg-[#0b0e14] text-[#dde3e7] min-h-screen">
 
-      {/* Top Navigation */}
-      <nav className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-slate-950/80 backdrop-blur-xl border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
-        <div className="flex items-center gap-8">
-          <Link href="/dashboard" className="text-2xl font-black italic tracking-tighter text-cyan-400 drop-shadow-[0_0_10px_rgba(0,209,255,0.5)] font-['Space_Grotesk']">
-            QuizBattle
-          </Link>
-          <div className="hidden md:flex gap-6">
-            <Link className="text-slate-400 hover:text-white font-['Space_Grotesk'] tracking-tight hover:bg-white/5 transition-all px-3 py-1 rounded-lg" href="/dashboard">
-              Dashboard
-            </Link>
-            <Link className="text-slate-400 hover:text-white font-['Space_Grotesk'] tracking-tight hover:bg-white/5 transition-all px-3 py-1 rounded-lg" href="/leaderboard">
-              Leaderboard
-            </Link>
-            <span className="text-cyan-400 border-b-2 border-cyan-400 pb-1 font-['Space_Grotesk'] tracking-tight">
-              Profil
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600/20 border border-red-500/30 text-red-400 hover:bg-red-600/30 hover:text-red-300 transition-all text-xs font-bold tracking-widest uppercase"
-          >
-            <span className="material-symbols-outlined text-sm">logout</span>
-            Keluar
-          </button>
-          {user?.avatar ? (
-            <img src={user.avatar} alt="Profile" className="w-8 h-8 rounded-full border border-cyan-400/50 object-cover" />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-400/50 flex items-center justify-center text-cyan-400 font-bold text-sm">
-              {user?.username?.charAt(0).toUpperCase() || 'O'}
-            </div>
-          )}
-        </div>
-      </nav>
-
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-16 h-[calc(100vh-64px)] z-40 pt-8 bg-[#FFFFFF0D] backdrop-blur-2xl border-r border-white/20 shadow-[20px_0_40px_rgba(0,0,0,0.3)] w-64 hidden lg:flex flex-col">
-        <div className="px-6 mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-600 p-[1px]">
-              <div className="w-full h-full bg-slate-900 rounded-[7px] flex items-center justify-center">
-                <span className="material-symbols-outlined text-cyan-400">shield</span>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-h3 text-xs uppercase tracking-widest text-white">{user.username}</h4>
-              <p className="text-[10px] text-cyan-400 font-bold tracking-tighter">OPERATOR</p>
-            </div>
-          </div>
-        </div>
-
-        <nav className="flex flex-col gap-1">
-          <Link className="text-slate-500 flex items-center gap-3 px-6 py-4 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/dashboard">
-            <span className="material-symbols-outlined">dashboard</span> Dashboard
-          </Link>
-          <Link className="text-slate-500 flex items-center gap-3 px-6 py-4 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/game">
-            <span className="material-symbols-outlined">swords</span> Arena Pertempuran
-          </Link>
-          <Link className="text-slate-500 flex items-center gap-3 px-6 py-4 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/game/crossword">
-            <span className="material-symbols-outlined">sports_esports</span> Arkade
-          </Link>
-          <Link className="text-slate-500 flex items-center gap-3 px-6 py-4 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/leaderboard">
-            <span className="material-symbols-outlined">leaderboard</span> Peringkat
-          </Link>
-          <span className="bg-cyan-500/20 text-cyan-400 border-r-4 border-cyan-400 flex items-center gap-3 px-6 py-4 font-['Space_Grotesk'] uppercase text-xs font-bold">
-            <span className="material-symbols-outlined">person</span> Profil
-          </span>
-        </nav>
-
-        <div className="mt-auto p-6 flex flex-col gap-3">
-          <button
-            onClick={handleLogout}
-            className="w-full py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-800 text-white font-bold text-[10px] rounded-lg hover:scale-105 active:scale-95 transition-all border border-red-500/30 tracking-widest uppercase"
-          >
-            <span className="material-symbols-outlined text-sm">logout</span>
-            KELUAR
-          </button>
-        </div>
-      </aside>
+      {/* Top Navigation & Sidebar */}
+      <AppMobileNav active="Profil" />
+      <div style={{ display: 'flex', flex: 1, width: '100%' }}>
+        <AppSidebar active="Profil" />
 
       {/* Main Content */}
-      <main className="lg:ml-64 pt-24 px-6 pb-12 min-h-screen">
+      <main className="lg:ml-72 pt-24 px-6 pb-12 min-h-screen">
         <div className="max-w-6xl mx-auto">
 
           {/* Error Banner */}
@@ -220,43 +145,67 @@ export default function ProfilePage() {
 
           {/* Profile Header */}
           <header className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-10">
-            <div className="md:col-span-8 glass-card rounded-xl p-8 relative overflow-hidden flex flex-col md:flex-row items-center gap-8">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 blur-[80px] rounded-full -mr-20 -mt-20"></div>
-              <div className="relative">
+            <div className="md:col-span-8 glass-card rounded-2xl p-6 sm:p-10 relative overflow-hidden flex flex-col md:flex-row items-center gap-6 sm:gap-10 shadow-2xl border border-white/5 bg-gradient-to-br from-white/[0.03] to-transparent">
+              {/* Decorative backgrounds */}
+              <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-cyan-500/10 via-transparent to-transparent pointer-events-none"></div>
+              <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-purple-500/10 blur-[100px] rounded-full pointer-events-none"></div>
+              
+              <div className="relative group shrink-0">
+                <div className="absolute inset-0 bg-cyan-400/20 rounded-full blur-xl group-hover:bg-cyan-400/30 transition-all duration-500"></div>
                 {user?.avatar ? (
-                  <img src={user.avatar} alt="Profile" className="w-32 h-32 rounded-full border-4 border-cyan-400 p-1 object-cover bg-slate-800" />
+                  <img src={user.avatar} alt="Profile" className="w-28 h-28 sm:w-36 sm:h-36 rounded-full border-[3px] border-cyan-400/80 p-1 object-cover bg-slate-900 relative z-10 shadow-[0_0_20px_rgba(0,209,255,0.3)] transition-transform duration-300 group-hover:scale-105" />
                 ) : (
-                  <div className="w-32 h-32 rounded-full border-4 border-cyan-400 p-1 neon-glow-primary bg-slate-800 flex items-center justify-center">
-                    <span className="text-5xl font-black text-cyan-400">
+                  <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full border-[3px] border-cyan-400/80 p-1 bg-slate-900 flex items-center justify-center relative z-10 shadow-[0_0_20px_rgba(0,209,255,0.3)] transition-transform duration-300 group-hover:scale-105">
+                    <span className="text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-cyan-300 to-cyan-600">
                       {user?.username?.charAt(0).toUpperCase() || 'O'}
                     </span>
                   </div>
                 )}
-                <div className="absolute bottom-1 right-1 bg-primary-container text-on-primary-container px-2 py-0.5 rounded-full text-[10px] font-bold border border-white/20">
+                <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-3 py-1 rounded-full text-xs font-black border-2 border-slate-900 shadow-lg z-20 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[12px]">military_tech</span>
                   LVL {user?.level || 0}
                 </div>
               </div>
-              <div className="flex-1 text-center md:text-left z-10">
-                <div className="flex flex-col md:flex-row items-center md:items-start gap-4 mb-1">
-                  <h1 className="font-h1 text-white uppercase text-2xl font-bold">{user?.username || 'OPERATOR'}</h1>
-                  <Link href="/profile/settings" className="px-4 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-xs font-bold text-white transition-colors flex items-center gap-2 uppercase tracking-widest mt-1 md:mt-0">
-                    <span className="material-symbols-outlined text-sm">settings</span>
+
+              <div className="flex-1 text-center md:text-left z-10 w-full">
+                <div className="flex flex-col md:flex-row items-center md:items-end justify-between gap-4 mb-2">
+                  <div className="flex flex-col items-center md:items-start">
+                    <p className="text-cyan-400 font-bold text-[10px] sm:text-xs tracking-[0.25em] mb-2 uppercase bg-cyan-400/10 px-2 py-1 rounded text-center md:text-left inline-block">
+                      Pemain Utama
+                    </p>
+                    <h1 className="font-['Space_Grotesk'] text-white uppercase text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight drop-shadow-md">
+                      {user?.username || 'OPERATOR'}
+                    </h1>
+                  </div>
+                  <Link href="/profile/settings" className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition-all flex items-center gap-2 uppercase tracking-widest backdrop-blur-md shrink-0">
+                    <span className="material-symbols-outlined text-sm">edit</span>
                     Edit Profil
                   </Link>
                 </div>
-                <p className="text-cyan-400 font-bold text-sm tracking-[0.2em] mb-4 uppercase">Pemain Utama</p>
-                <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                  <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-lg">
-                    <p className="text-[10px] text-slate-500 font-bold uppercase">Peringkat Global</p>
-                    <p className="text-white font-bold text-xl">#{stats?.rank ?? '-'}</p>
+                
+                <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-6"></div>
+                
+                <div className="grid grid-cols-3 gap-3 sm:gap-4 w-full">
+                  <div className="bg-slate-900/50 backdrop-blur-sm border border-white/5 px-3 py-3 sm:p-4 rounded-xl flex flex-col items-center md:items-start hover:border-cyan-500/30 transition-colors group">
+                    <p className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 group-hover:text-cyan-300 transition-colors">Peringkat</p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xs sm:text-sm text-cyan-500 font-bold">#</span>
+                      <p className="text-xl sm:text-2xl font-black text-white">{stats?.rank ?? '-'}</p>
+                    </div>
                   </div>
-                  <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-lg">
-                    <p className="text-[10px] text-slate-500 font-bold uppercase">Total Skor</p>
-                    <p className="text-cyan-400 font-bold text-xl">{isLoading ? '...' : (stats?.totalScore ?? 0)}</p>
+                  <div className="bg-slate-900/50 backdrop-blur-sm border border-white/5 px-3 py-3 sm:p-4 rounded-xl flex flex-col items-center md:items-start hover:border-cyan-500/30 transition-colors group">
+                    <p className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 group-hover:text-cyan-300 transition-colors">Skor</p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="material-symbols-outlined text-[14px] text-purple-400">local_fire_department</span>
+                      <p className="text-xl sm:text-2xl font-black text-white">{isLoading ? '...' : (stats?.totalScore ?? 0)}</p>
+                    </div>
                   </div>
-                  <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-lg">
-                    <p className="text-[10px] text-slate-500 font-bold uppercase">Total Permainan</p>
-                    <p className="text-white font-bold text-xl">{isLoading ? '...' : (stats?.gamesPlayed ?? 0)}</p>
+                  <div className="bg-slate-900/50 backdrop-blur-sm border border-white/5 px-3 py-3 sm:p-4 rounded-xl flex flex-col items-center md:items-start hover:border-cyan-500/30 transition-colors group">
+                    <p className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 group-hover:text-cyan-300 transition-colors">Main</p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="material-symbols-outlined text-[14px] text-blue-400">sports_esports</span>
+                      <p className="text-xl sm:text-2xl font-black text-white">{isLoading ? '...' : (stats?.gamesPlayed ?? 0)}</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -381,9 +330,9 @@ export default function ProfilePage() {
           </section>
         </div>
       </main>
-
+      </div>
       {/* Footer */}
-      <footer className="lg:ml-64 w-full flex justify-between px-10 items-center py-4 bg-slate-950 border-t border-white/5 mt-auto">
+      <footer className="lg:ml-72 w-full flex justify-between px-10 items-center py-4 bg-slate-950 border-t border-white/5 mt-auto">
         <p className="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-cyan-500 uppercase">© 2024 QUIZBATTLE SISTEM TAKTIS</p>
         <div className="flex gap-6">
           <a className="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-slate-600 hover:text-cyan-400 transition-colors" href="#">Status</a>

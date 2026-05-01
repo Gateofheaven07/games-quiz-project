@@ -128,16 +128,17 @@ export default function LobbyPage() {
       {tab === 'bot' && <div style={{ position:'absolute', width:400, height:400, borderRadius:'50%', background:'radial-gradient(circle, rgba(74,255,145,0.05) 0%, transparent 70%)', top:'50%', left:'50%', transform:'translate(-50%,-50%)', pointerEvents:'none', transition:'opacity 0.4s' }} />}
 
       {/* Header */}
-      <nav style={{ padding:'0 24px', height:64, display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px solid rgba(255,255,255,0.06)', backdropFilter:'blur(20px)', position:'sticky', top:0, zIndex:10 }}>
-        <button onClick={() => router.push('/dashboard')} style={{ background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:8, color:'var(--c-outline)', fontFamily:"'Inter',sans-serif", fontSize:'0.875rem' }}>
-          ← Dashboard
+      <nav className="px-4 sm:px-6 h-16 flex items-center justify-between border-b border-white/5 backdrop-blur-xl sticky top-0 z-10">
+        <button onClick={() => router.push('/dashboard')} className="bg-transparent border-none cursor-pointer flex items-center gap-2 text-slate-400 font-['Inter'] text-sm hover:text-white transition-colors">
+          <span className="material-symbols-outlined text-lg">arrow_back</span>
+          <span className="hidden sm:inline">Dashboard</span>
         </button>
-        <span style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1.25rem', background:'linear-gradient(135deg,#00d1ff,#cf5cff)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
-          ⚡ QuizBattle Arena
+        <span className="font-['Space_Grotesk'] font-bold text-lg sm:text-xl bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] bg-clip-text text-transparent truncate max-w-[150px] sm:max-w-none">
+          ⚡ QuizBattle <span className="hidden sm:inline">Arena</span>
         </span>
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <div style={{ width:8, height:8, borderRadius:'50%', backgroundColor: isConnected ? '#4aff91' : '#feb127', boxShadow: isConnected ? '0 0 8px #4aff91' : 'none', animation: isConnected ? 'none' : 'pulse-soft 1s infinite' }} />
-          <span style={{ fontFamily:"'Inter',sans-serif", fontSize:'0.75rem', color:'var(--c-outline)' }}>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: isConnected ? '#4aff91' : '#feb127', boxShadow: isConnected ? '0 0 8px #4aff91' : 'none', animation: isConnected ? 'none' : 'pulse-soft 1s infinite' }} />
+          <span className="font-['Inter'] text-xs text-slate-400 hidden sm:inline">
             {isConnected ? 'Terhubung' : 'Menghubungkan...'}
           </span>
         </div>

@@ -37,6 +37,10 @@ model User {
 
   // Messages
   messagesSent Message[] @relation("MessageSender")
+
+  // Notifications
+  notificationsSent     Notification[] @relation("NotificationSender")
+  notificationsReceived Notification[] @relation("NotificationReceiver")
 }
 
 //
@@ -68,6 +72,8 @@ model Message {
   createdAt  DateTime @default(now())
 
   sender User @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  notifications Notification[]
 }
 
 //
@@ -84,6 +90,8 @@ model Room {
 
   players RoomPlayer[]
   game    Game?
+
+  notifications Notification[]
 }
 
 //
@@ -242,4 +250,37 @@ enum FriendshipStatus {
   PENDING
   ACCEPTED
   BLOCKED
+}
+
+//
+// 🔔 NOTIFICATION
+//
+model Notification {
+  id         String             @id @default(uuid())
+  type       NotificationType
+  senderId   String
+  receiverId String
+  status     NotificationStatus @default(UNREAD)
+
+  messageId  String?
+  roomId     String? // for BATTLE_INVITE
+
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  sender   User @relation("NotificationSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("NotificationReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  message  Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  room     Room?    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+}
+
+enum NotificationType {
+  MESSAGE
+  BATTLE_INVITE
+}
+
+enum NotificationStatus {
+  READ
+  UNREAD
 }

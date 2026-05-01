@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../hooks/useAuth';
 import { leaderboardApi } from '../../lib/api';
-
+import { AppSidebar, AppMobileNav } from '../../components/AppSidebar';
 export default function LeaderboardPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
   const [leaderboard, setLeaderboard] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [timeframe, setTimeframe] = useState('allTime');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -46,66 +47,11 @@ export default function LeaderboardPage() {
     <div className="font-body-md text-on-background min-h-screen flex flex-col bg-[#0e1417]" style={{backgroundImage: "radial-gradient(circle at 20% 30%, rgba(0, 209, 255, 0.05) 0%, transparent 40%), radial-gradient(circle at 80% 70%, rgba(207, 92, 255, 0.05) 0%, transparent 40%)"}}>
       
 
-<nav className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-slate-950/80 backdrop-blur-xl border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
-<div className="flex items-center gap-8">
-<span className="text-2xl font-black italic tracking-tighter text-cyan-400 drop-shadow-[0_0_10px_rgba(0,209,255,0.5)] font-['Space_Grotesk']">QuizBattle</span>
-</div>
-<div className="flex items-center gap-4">
-<div className="relative hidden sm:block">
-<span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
-<input className="bg-surface-container-lowest border border-white/10 rounded-full py-1.5 pl-10 pr-4 text-xs focus:border-primary-container focus:ring-0 w-48" placeholder="Cari Pemain..." type="text"/>
-</div>
-<button className="material-symbols-outlined text-slate-400 hover:text-white transition-all scale-105 active:scale-95">notifications</button>
-{user?.avatar ? (
-  <img src={user.avatar} alt="Profile" className="h-8 w-8 rounded-full border border-cyan-400/50 object-cover" />
-) : (
-  <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-400/50 flex items-center justify-center text-cyan-400 font-bold text-sm">
-    {user?.username?.charAt(0).toUpperCase() || 'O'}
-  </div>
-)}
-</div>
-</nav>
+      <AppMobileNav active="Peringkat" />
+      <div style={{ display: 'flex', flex: 1, width: '100%' }}>
+        <AppSidebar active="Peringkat" />
 
-<aside className="fixed left-0 top-16 h-[calc(100vh-64px)] z-40 flex flex-col pt-8 bg-[#FFFFFF0D] backdrop-blur-2xl border-r border-white/20 shadow-[20px_0_40px_rgba(0,0,0,0.3)] w-64 hidden lg:flex">
-<div className="px-6 mb-8 flex items-center gap-3">
-<div className="h-10 w-10 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-lg flex items-center justify-center">
-<span className="material-symbols-outlined text-white" style={{"fontVariationSettings": "\'FILL\' 1"}}>military_tech</span>
-</div>
-<div>
-<p className="font-['Space_Grotesk'] uppercase text-xs font-bold text-cyan-400">{user?.username || 'OPERATOR_01'}</p>
-<p className="text-[10px] text-slate-400 tracking-widest font-bold">LVL {user?.level || 0}</p>
-</div>
-</div>
-<nav className="flex-1">
-<Link className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/dashboard">
-<span className="material-symbols-outlined">dashboard</span> Dashboard
-            </Link>
-<Link className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/game">
-<span className="material-symbols-outlined">swords</span> Arena Pertempuran
-            </Link>
-<Link className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/game/crossword">
-<span className="material-symbols-outlined">sports_esports</span> Arkade
-            </Link>
-<Link className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/friends">
-<span className="material-symbols-outlined">group</span> Teman
-            </Link><Link className="bg-cyan-500/20 text-cyan-400 border-r-4 border-cyan-400 flex items-center gap-3 px-6 py-4 font-['Space_Grotesk'] uppercase text-xs font-bold" href="/leaderboard">
-<span className="material-symbols-outlined">leaderboard</span> Peringkat
-            </Link>
-<Link className="flex items-center gap-3 px-6 py-4 text-slate-500 hover:bg-white/10 hover:text-cyan-200 transition-colors font-['Space_Grotesk'] uppercase text-xs font-bold" href="/profile">
-<span className="material-symbols-outlined">person</span> Profil
-            </Link>
-</nav>
-<div className="p-6 flex flex-col gap-3">
-<button className="w-full py-3 bg-gradient-to-r from-primary-container to-secondary-container rounded-lg font-['Space_Grotesk'] font-black text-white text-sm tracking-widest uppercase neon-glow-primary transition-all hover:scale-105 active:scale-95">
-                CARI PERTANDINGAN
-            </button>
-<button onClick={handleLogout} className="w-full py-3 bg-gradient-to-r from-red-600 to-red-800 text-white font-label-caps text-[10px] rounded-lg scale-100 hover:scale-105 active:scale-95 transition-all border border-red-500/30 font-black tracking-widest uppercase">
-                KELUAR
-            </button>
-</div>
-</aside>
-
-<main className="flex-1 mt-16 lg:ml-64 p-6 md:p-8 max-w-7xl mx-auto w-full pb-32">
+<main className="flex-1 mt-16 lg:ml-72 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full pb-40">
 <header className="mb-10 text-center lg:text-left">
 <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1 mb-4">
 <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
@@ -236,37 +182,37 @@ export default function LeaderboardPage() {
 </div>
 </section>
 
-<div className="fixed bottom-12 left-1/2 -translate-x-1/2 lg:left-[calc(50%+128px)] w-[90%] max-w-4xl glass-card rounded-2xl p-4 flex items-center gap-6 border-cyan-400/40 shadow-[0_0_50px_rgba(0,209,255,0.2)] z-30">
-<div className="bg-cyan-500/20 text-cyan-400 h-12 w-12 rounded-xl flex flex-col items-center justify-center">
-<span className="text-[10px] font-bold">LVL</span>
-<span className="font-h3 text-lg leading-none">{user?.level || 0}</span>
+<div className="fixed bottom-4 sm:bottom-12 left-1/2 -translate-x-1/2 lg:left-[calc(50%+144px)] w-[95%] sm:w-[90%] max-w-4xl glass-card rounded-2xl p-3 sm:p-4 flex items-center gap-3 sm:gap-6 border border-cyan-400/40 shadow-[0_0_50px_rgba(0,209,255,0.3)] z-30 bg-[#0e1417]/95 backdrop-blur-2xl">
+<div className="bg-cyan-500/20 text-cyan-400 h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex flex-col items-center justify-center shrink-0">
+<span className="text-[8px] sm:text-[10px] font-bold">LVL</span>
+<span className="font-h3 text-base sm:text-lg leading-none">{user?.level || 0}</span>
 </div>
 {user?.avatar ? (
-  <img src={user.avatar} alt="My Profile" className="h-10 w-10 rounded-lg border border-cyan-400 object-cover" />
+  <img src={user.avatar} alt="My Profile" className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg border border-cyan-400 object-cover shrink-0" />
 ) : (
-  <div className="h-10 w-10 rounded-lg border border-cyan-400 bg-slate-800 flex items-center justify-center text-cyan-400 font-bold">
+  <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg border border-cyan-400 bg-slate-800 flex items-center justify-center text-cyan-400 font-bold shrink-0">
     {user?.username?.charAt(0).toUpperCase() || 'O'}
   </div>
 )}
-<div className="flex-1">
-<p className="font-body-md font-bold text-on-surface uppercase">{user?.username || 'OPERATOR'}</p>
+<div className="flex-1 min-w-0">
+<p className="font-body-md font-bold text-on-surface uppercase truncate text-sm sm:text-base">{user?.username || 'OPERATOR'}</p>
 <div className="flex items-center gap-2">
-<div className="h-1.5 w-32 bg-white/10 rounded-full overflow-hidden">
+<div className="h-1 sm:h-1.5 w-16 sm:w-32 bg-white/10 rounded-full overflow-hidden shrink-0">
 <div className="h-full bg-cyan-400" style={{ width: `${Math.min(100, ((user?.totalScore || 0) % 1000) / 10)}%` }}></div>
 </div>
-<span className="text-[10px] text-slate-400 font-bold">{1000 - ((user?.totalScore || 0) % 1000)} XP KE PERINGKAT BERIKUTNYA</span>
+<span className="text-[8px] sm:text-[10px] text-slate-400 font-bold truncate hidden sm:inline">{1000 - ((user?.totalScore || 0) % 1000)} XP KE PERINGKAT BERIKUTNYA</span>
 </div>
 </div>
-<div className="text-right px-4 border-l border-white/10 hidden sm:block">
-<p className="text-[10px] font-bold text-slate-500">SKOR SAAT INI</p>
-<p className="font-h3 text-cyan-400">{user?.totalScore || 0}</p>
+<div className="text-right px-2 sm:px-4 border-l border-white/10 shrink-0">
+<p className="text-[8px] sm:text-[10px] font-bold text-slate-500">SKOR</p>
+<p className="font-h3 text-cyan-400 text-sm sm:text-base">{user?.totalScore || 0}</p>
 </div>
-<Link href="/profile" className="h-12 w-12 bg-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all">
-<span className="material-symbols-outlined text-white">chevron_right</span>
+<Link href="/profile" className="h-8 w-8 sm:h-12 sm:w-12 bg-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all shrink-0">
+<span className="material-symbols-outlined text-white text-sm sm:text-base">chevron_right</span>
 </Link>
 </div>
 </main>
-
+      </div>
 <footer className="w-full flex justify-between px-10 items-center mt-auto full-width py-4 bg-slate-950 border-t border-white/5">
 <span className="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-cyan-500 uppercase">© 2024 QUIZBATTLE SISTEM TAKTIS</span>
 <div className="flex gap-6">

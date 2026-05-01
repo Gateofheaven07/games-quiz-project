@@ -1,10 +1,9 @@
-import { verifyToken } from './auth';
-import { GameManager } from './gameManager';
-import { PrismaClient } from '@prisma/client';
-import { enqueue, remove, getQueueStats } from './matchmakingQueue';
-import { BOT_DIFFICULTY_CONFIGS } from './bot.types';
-import { startBotSession } from './botEngine';
-const prisma = new PrismaClient();
+import { verifyToken } from './auth.js';
+import { GameManager } from './gameManager.js';
+import prisma from './prisma.js';
+import { enqueue, remove, getQueueStats } from './matchmakingQueue.js';
+import { BOT_DIFFICULTY_CONFIGS } from './bot.types.js';
+import { startBotSession } from './botEngine.js';
 // Track online users: userId → socketId
 const onlineUsers = new Map();
 // ─────────────────────────────────────────────────────────────────────────────
@@ -102,6 +101,19 @@ export function setupSocketHandlers(io) {
                     data: { senderId: socket.userId, receiverId, content: content.trim() },
                     include: { sender: { select: { id: true, username: true } } },
                 });
+                const notification = await prisma.notification.create({
+                    data: {
+                        type: 'MESSAGE',
+                        status: 'UNREAD',
+                        senderId: socket.userId,
+                        receiverId: receiverId,
+                        messageId: message.id
+                    },
+                    include: {
+                        sender: { select: { id: true, username: true, avatar: true } },
+                        message: true
+                    }
+                });
                 const payload = {
                     id: message.id,
                     senderId: message.senderId,
@@ -112,6 +124,7 @@ export function setupSocketHandlers(io) {
                 };
                 io.to(`user:${receiverId}`).emit('chat:message', payload);
                 socket.emit('chat:message', payload);
+                io.to(`user:${receiverId}`).emit('receive_message', notification);
             }
             catch (err) {
                 console.error('[Socket] Chat send error:', err);
@@ -126,6 +139,38 @@ export function setupSocketHandlers(io) {
                 username: socket.username,
                 isTyping: data.isTyping,
             });
+        });
+        socket.on('battle:invite', async (data) => {
+            try {
+                if (!socket.userId || !socket.username)
+                    return;
+                const { receiverId, categoryId } = data;
+                if (!receiverId)
+                    return;
+                // Create Private Room
+                const { roomId, roomCode } = await GameManager.createPrivateRoom(socket.userId, categoryId);
+                const notification = await prisma.notification.create({
+                    data: {
+                        type: 'BATTLE_INVITE',
+                        status: 'UNREAD',
+                        senderId: socket.userId,
+                        receiverId: receiverId,
+                        roomId: roomId
+                    },
+                    include: {
+                        sender: { select: { id: true, username: true, avatar: true } },
+                        room: true
+                    }
+                });
+                // Add creator to room early? Wait until they actually join, or just send the code.
+                socket.join(roomId);
+                io.to(`user:${receiverId}`).emit('receive_invite', notification);
+                socket.emit('battle:invite_sent', { roomId, roomCode, categoryId, receiverId });
+            }
+            catch (err) {
+                console.error('[Socket] Battle invite error:', err);
+                socket.emit('error', 'Failed to send battle invite');
+            }
         });
         // ─────────────────────────────────────────────────────────────────────────
         // MATCHMAKING

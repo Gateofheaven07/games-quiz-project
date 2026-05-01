@@ -10,8 +10,8 @@
  * Abstraction: socketHandlers tidak perlu tahu apakah lawan Bot atau Human;
  * Bot engine mengemulasi event yang sama (`game:player_answered`).
  */
-import { BOT_DIFFICULTY_CONFIGS } from './bot.types';
-import { GameManager } from './gameManager';
+import { BOT_DIFFICULTY_CONFIGS } from './bot.types.js';
+import { GameManager } from './gameManager.js';
 /**
  * Mulai sesi Bot untuk satu permainan.
  * Bot akan menjawab setiap soal secara otomatis dengan delay dan akurasi

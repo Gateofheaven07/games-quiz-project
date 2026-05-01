@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../hooks/useAuth'
-
+import { AppSidebar, AppMobileNav } from '../../components/AppSidebar'
 interface UserStats {
   totalScore: number;
   wins: number;
@@ -19,170 +19,6 @@ function getRankLabel(score: number): string {
   if (score >= 2000) return 'SILVER';
   if (score >= 500) return 'BRONZE';
   return 'RECRUIT';
-}
-
-// ── Sidebar Navigation ────────────────────────────────────────────────────────
-function Sidebar({ active, userStats }: { active: string; userStats?: UserStats | null }) {
-  const router = useRouter()
-  const { logout, user } = useAuth()
-
-  const handleLogout = () => {
-    logout()
-    router.push('/auth/login')
-  }
-
-  const navItems = [
-    { icon: 'dashboard',      label: 'Dashboard',     href: '/dashboard' },
-    { icon: 'swords',         label: 'Arena Pertempuran',  href: '/game/lobby' },
-    { icon: 'sports_esports', label: 'Arkade',        href: '/game/crossword' },
-    { icon: 'group',          label: 'Teman',       href: '/friends' },
-    { icon: 'leaderboard',    label: 'Peringkat',      href: '/leaderboard' },
-    { icon: 'person',         label: 'Profil',       href: '/profile' },
-  ]
-
-  return (
-    <aside className="hidden md:flex flex-col w-[260px] min-w-[260px] bg-[var(--c-surface-low)] border-r border-[var(--c-outline-variant)] py-6 px-4 gap-2 z-20 relative">
-      {/* Logo */}
-      <div style={{ marginBottom: 32, paddingInline: 8 }}>
-        <h1
-          style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: '1.5rem',
-            fontWeight: 700,
-            background: 'linear-gradient(135deg, #00d1ff, #cf5cff)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            letterSpacing: '-0.02em',
-          }}
-        >
-          ⚡ QuizBattle
-        </h1>
-        <p className="label-caps" style={{ color: 'var(--c-outline)', marginTop: 4 }}>
-          Arena Permainan Taktis
-        </p>
-      </div>
-
-      {/* User chip */}
-      <div
-        className="glass-panel"
-        style={{ padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}
-      >
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #00d1ff, #cf5cff)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontWeight: 700,
-            fontSize: '1rem',
-            color: '#003543',
-          }}
-        >
-          O1
-        </div>
-        <div>
-          <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '0.875rem', color: 'var(--c-on-surface)' }}>
-            {user?.username || 'OPERATOR_01'}
-          </p>
-          <span className="badge badge-gold" style={{ marginTop: 2 }}>PERINGKAT {getRankLabel(userStats?.totalScore ?? 0)}</span>
-        </div>
-      </div>
-
-      {/* Nav links */}
-      {navItems.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={`nav-item ${active === item.label ? 'active' : ''}`}
-        >
-          <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>
-            {item.icon}
-          </span>
-          {item.label}
-        </Link>
-      ))}
-
-      {/* Spacer */}
-      <div style={{ flex: 1 }} />
-
-      {/* Settings */}
-      <Link href="/profile/settings" className="nav-item">
-        <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>settings</span>
-        Pengaturan
-      </Link>
-
-      {/* Logout */}
-      <button 
-        onClick={handleLogout} 
-        className="nav-item" 
-        style={{ 
-          color: '#ffb4ab', 
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          textAlign: 'left',
-          width: '100%',
-          marginTop: '8px'
-        }}
-      >
-        <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>logout</span>
-        Keluar
-      </button>
-    </aside>
-  )
-}
-
-function MobileNav({ active, handleLogout }: { active: string; handleLogout: () => void }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const navItems = [
-    { icon: 'dashboard',      label: 'Dashboard',     href: '/dashboard' },
-    { icon: 'swords',         label: 'Arena',         href: '/game/lobby' },
-    { icon: 'sports_esports', label: 'Arkade',        href: '/game/crossword' },
-    { icon: 'group',          label: 'Teman',         href: '/friends' },
-    { icon: 'leaderboard',    label: 'Peringkat',     href: '/leaderboard' },
-    { icon: 'person',         label: 'Profil',        href: '/profile' },
-  ]
-
-  return (
-    <div className="md:hidden flex items-center justify-between p-4 bg-[var(--c-surface-low)] border-b border-[var(--c-outline-variant)] sticky top-0 z-50">
-      <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] font-['Space_Grotesk']">
-        ⚡ QuizBattle
-      </h1>
-      <button onClick={() => setIsOpen(!isOpen)} className="p-2 text-[var(--c-on-surface)]">
-        <span className="material-symbols-rounded">{isOpen ? 'close' : 'menu'}</span>
-      </button>
-
-      {isOpen && (
-        <div className="absolute top-full left-0 right-0 bg-[var(--c-surface-low)] border-b border-[var(--c-outline-variant)] flex flex-col p-4 gap-2 shadow-xl">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`nav-item ${active === item.label ? 'active' : ''}`}
-              onClick={() => setIsOpen(false)}
-            >
-              <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>
-                {item.icon}
-              </span>
-              {item.label}
-            </Link>
-          ))}
-          <div className="h-px w-full bg-[var(--c-outline-variant)] my-2"></div>
-          <button 
-            onClick={handleLogout} 
-            className="nav-item text-left text-[#ffb4ab]" 
-          >
-            <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>logout</span>
-            Keluar
-          </button>
-        </div>
-      )}
-    </div>
-  )
 }
 
 // ── Game Mode Card ─────────────────────────────────────────────────────────────
@@ -388,7 +224,7 @@ export default function DashboardPage() {
   if (isLoading || !isAuthenticated) return null
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-[var(--c-bg)] relative">
+    <div className="flex min-h-screen bg-[var(--c-bg)] relative">
       {/* Font imports */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap');
@@ -400,16 +236,13 @@ export default function DashboardPage() {
       <div className="bg-orb bg-orb-purple" style={{ bottom: 0, right: 100 }} />
 
       {/* Sidebar */}
-      <Sidebar active="Dashboard" userStats={userStats} />
+      <AppSidebar active="Dashboard" userStats={userStats} />
       
       {/* Mobile Nav */}
-      <MobileNav active="Dashboard" handleLogout={() => {
-        logout()
-        router.push('/auth/login')
-      }} />
+      <AppMobileNav active="Dashboard" />
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto p-4 md:p-8 relative z-10 w-full">
+      <main className="flex-1 lg:ml-72 p-4 md:p-8 relative z-10 w-full">
 
         {/* Welcome header */}
         <div style={{ marginBottom: 32 }}>

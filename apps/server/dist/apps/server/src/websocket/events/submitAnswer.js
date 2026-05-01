@@ -1,4 +1,4 @@
-import { GameService } from '../../modules/game/game.service';
+import { GameService } from '../../modules/game/game.service.js';
 /**
  * Event: game:submit_answer
  *

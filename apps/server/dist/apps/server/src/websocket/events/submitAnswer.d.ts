@@ -1,4 +1,4 @@
-import { AuthenticatedSocket } from '../../lib/socketHandlers';
+import { AuthenticatedSocket } from '../../lib/socketHandlers.js';
 /**
  * Event: game:submit_answer
  *

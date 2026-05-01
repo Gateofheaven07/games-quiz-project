@@ -9,6 +9,7 @@ import userRoutes from './routes/users.js';
 import quizRoutes from './routes/quiz.js';
 import leaderboardRoutes from './routes/leaderboard.js';
 import friendsRoutes from './routes/friends.js';
+import notificationRoutes from './routes/notifications.js';
 import { setupSocketHandlers } from './lib/socketHandlers.js';
 
 dotenv.config();
@@ -109,6 +110,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/friends', friendsRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Start Server
 const PORT = process.env.PORT || 3001;

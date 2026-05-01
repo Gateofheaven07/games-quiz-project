@@ -10,7 +10,7 @@
  * Abstraction: socketHandlers tidak perlu tahu apakah lawan Bot atau Human;
  * Bot engine mengemulasi event yang sama (`game:player_answered`).
  */
-import { BotDifficulty } from './bot.types';
+import { BotDifficulty } from './bot.types.js';
 interface BotSessionOptions {
     roomId: string;
     botUserId: string;

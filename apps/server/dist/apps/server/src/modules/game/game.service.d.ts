@@ -1,4 +1,4 @@
-import { AnswerPayload, AnswerResult, StartGameResult } from './game.types';
+import { AnswerPayload, AnswerResult, StartGameResult } from './game.types.js';
 export declare class GameService {
     /**
      * Proses submit jawaban dari player.

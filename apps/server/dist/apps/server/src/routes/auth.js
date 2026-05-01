@@ -1,10 +1,8 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { hashPassword, verifyPassword, generateTokens, verifyRefreshToken } from '../lib/auth';
-import { authMiddleware } from '../middleware/auth';
+import prisma from '../lib/prisma.js';
+import { hashPassword, verifyPassword, generateTokens, verifyRefreshToken } from '../lib/auth.js';
+import { authMiddleware } from '../middleware/auth.js';
 const router = Router();
-const prisma = new PrismaClient();
-// Register
 router.post('/register', async (req, res) => {
     try {
         const { username, email, password } = req.body;

@@ -119,6 +119,20 @@ export function setupSocketHandlers(io: any) {
           include: { sender: { select: { id: true, username: true } } },
         });
 
+        const notification = await prisma.notification.create({
+          data: {
+            type: 'MESSAGE',
+            status: 'UNREAD',
+            senderId: socket.userId,
+            receiverId: receiverId,
+            messageId: message.id
+          },
+          include: {
+            sender: { select: { id: true, username: true, avatar: true } },
+            message: true
+          }
+        });
+
         const payload = {
           id:         message.id,
           senderId:   message.senderId,
@@ -130,6 +144,7 @@ export function setupSocketHandlers(io: any) {
 
         io.to(`user:${receiverId}`).emit('chat:message', payload);
         socket.emit('chat:message', payload);
+        io.to(`user:${receiverId}`).emit('receive_message', notification);
       } catch (err) {
         console.error('[Socket] Chat send error:', err);
         socket.emit('error', 'Failed to send message');
@@ -143,6 +158,43 @@ export function setupSocketHandlers(io: any) {
         username: socket.username,
         isTyping: data.isTyping,
       });
+    });
+
+    socket.on('battle:invite', async (data: { receiverId: string; categoryId: number }) => {
+      try {
+        if (!socket.userId || !socket.username) return;
+        const { receiverId, categoryId } = data;
+        if (!receiverId) return;
+
+        // Create Private Room
+        const { roomId, roomCode } = await GameManager.createPrivateRoom(
+          socket.userId,
+          categoryId
+        );
+
+        const notification = await prisma.notification.create({
+          data: {
+            type: 'BATTLE_INVITE',
+            status: 'UNREAD',
+            senderId: socket.userId,
+            receiverId: receiverId,
+            roomId: roomId
+          },
+          include: {
+            sender: { select: { id: true, username: true, avatar: true } },
+            room: true
+          }
+        });
+
+        // Add creator to room early? Wait until they actually join, or just send the code.
+        socket.join(roomId);
+        
+        io.to(`user:${receiverId}`).emit('receive_invite', notification);
+        socket.emit('battle:invite_sent', { roomId, roomCode, categoryId, receiverId });
+      } catch (err) {
+        console.error('[Socket] Battle invite error:', err);
+        socket.emit('error', 'Failed to send battle invite');
+      }
     });
 
     // ─────────────────────────────────────────────────────────────────────────

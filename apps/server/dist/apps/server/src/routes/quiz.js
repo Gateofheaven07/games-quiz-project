@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { query } from '../lib/db';
-import { authMiddleware } from '../middleware/auth';
+import { query } from '../lib/db.js';
+import { authMiddleware } from '../middleware/auth.js';
 const router = Router();
 // Get random questions by difficulty
 router.get('/questions', async (req, res) => {
