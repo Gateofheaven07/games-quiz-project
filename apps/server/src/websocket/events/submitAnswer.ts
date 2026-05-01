@@ -1,6 +1,6 @@
-import { AuthenticatedSocket } from '../../lib/socketHandlers';
-import { GameService } from '../../modules/game/game.service';
-import { AnswerPayload } from '../../modules/game/game.types';
+import { AuthenticatedSocket } from '../../lib/socketHandlers.js';
+import { GameService } from '../../modules/game/game.service.js';
+import { AnswerPayload } from '../../modules/game/game.types.js';
 
 /**
  * Event: game:submit_answer
