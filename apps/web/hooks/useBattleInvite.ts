@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSocket } from './useSocket'
 import { useToast } from './use-toast'
 
@@ -10,6 +10,7 @@ export function useBattleInvite() {
   
   // State for sending invites
   const [invitingId, setInvitingId] = useState<string | null>(null)
+  const inviteTimerRef = useRef<NodeJS.Timeout | null>(null)
   
   // State for incoming invite
   const [incomingInvite, setIncomingInvite] = useState<any | null>(null)
@@ -32,6 +33,7 @@ export function useBattleInvite() {
 
     const handleInviteTimeout = (data: { receiverId: string }) => {
       if (invitingId === data.receiverId) {
+        if (inviteTimerRef.current) clearTimeout(inviteTimerRef.current)
         setInvitingId(null)
         toast({
           title: "Undangan Kedaluwarsa",
@@ -43,6 +45,7 @@ export function useBattleInvite() {
 
     const handleInviteDeclined = (data: { receiverId: string }) => {
       if (invitingId === data.receiverId) {
+        if (inviteTimerRef.current) clearTimeout(inviteTimerRef.current)
         setInvitingId(null)
         toast({
           title: "Undangan Ditolak",
@@ -53,10 +56,11 @@ export function useBattleInvite() {
     }
 
     const handleInviteError = (data: { message: string }) => {
+      if (inviteTimerRef.current) clearTimeout(inviteTimerRef.current)
       setInvitingId(null)
       toast({
         title: "Gagal Mengundang",
-        description: data.message,
+        description: data.message || "Pemain tidak online/gagal dihubungi",
         variant: "destructive"
       })
     }
@@ -108,11 +112,46 @@ export function useBattleInvite() {
     return () => clearInterval(timer)
   }, [incomingInvite, clearIncoming])
 
+  // Clear timeout when invitingId changes to null (e.g., game ready)
+  useEffect(() => {
+    if (!invitingId && inviteTimerRef.current) {
+      clearTimeout(inviteTimerRef.current)
+      inviteTimerRef.current = null
+    }
+  }, [invitingId])
+
   const sendInvite = useCallback((receiverId: string, categoryId: number) => {
     if (!socket) return
     setInvitingId(receiverId)
-    socket.emit('battle:invite', { receiverId, categoryId })
-  }, [socket])
+    
+    if (inviteTimerRef.current) clearTimeout(inviteTimerRef.current)
+    
+    inviteTimerRef.current = setTimeout(() => {
+      setInvitingId(prev => {
+        if (prev === receiverId) {
+          toast({
+            title: "Request Timeout",
+            description: "Request Timeout - Tidak ada respons",
+            variant: "destructive"
+          })
+          return null
+        }
+        return prev
+      })
+    }, 15000)
+
+    socket.emit('battle:invite', { receiverId, categoryId }, (response: any) => {
+      if (response && response.error) {
+        if (inviteTimerRef.current) clearTimeout(inviteTimerRef.current)
+        setInvitingId(null)
+        toast({
+          title: "Gagal Mengundang",
+          description: response.error,
+          variant: "destructive"
+        })
+      }
+    })
+  }, [socket, toast])
 
   const acceptInvite = useCallback(() => {
     if (!socket || !incomingInvite) return

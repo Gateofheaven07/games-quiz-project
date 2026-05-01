@@ -31,11 +31,11 @@ import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '../../hooks/useAuth'
-import { useGame } from '../../context/GameContext'
-import { useGameEngine } from '../../hooks/useGameEngine'
-import { useSocket } from '../../hooks/useSocket'
-import type { GameReadyPayload } from '../../context/GameContext'
+import { useAuth } from '../../../hooks/useAuth'
+import { useGame } from '../../../context/GameContext'
+import { useGameEngine } from '../../../hooks/useGameEngine'
+import { useSocket } from '../../../hooks/useSocket'
+import type { GameReadyPayload } from '../../../context/GameContext'
 
 // ── Shared Types ──────────────────────────────────────────────────────────────
 
@@ -307,15 +307,22 @@ const AnswerGrid = memo(function AnswerGrid({
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN PAGE
 // ─────────────────────────────────────────────────────────────────────────────
-export default function QuizBattleRoomPage() {
+export default function QuizBattleRoomPage({ params }: { params: { roomId: string } }) {
   const TIMER_DURATION = 30
 
   const router = useRouter()
   const { isAuthenticated, isLoading, user } = useAuth()
-  const { submitAnswer, finishGame, on, off } = useGame()
+  const { submitAnswer, finishGame, on, off, gameData: contextGameData } = useGame()
 
   // ── Slow state: game data (set once) ───────────────────────────────────────
   const [gameData, setGameData] = useState<GameReadyPayload | null>(null)
+
+  // Sync with context if we receive game_ready from a rejoin
+  useEffect(() => {
+    if (contextGameData) {
+      setGameData(contextGameData)
+    }
+  }, [contextGameData])
 
   // Timer DOM refs — updated directly by useGameEngine (bypasses setState)
   const timerDisplayRef = useRef<HTMLSpanElement | null>(null)
@@ -326,25 +333,46 @@ export default function QuizBattleRoomPage() {
 
   const { socket } = useSocket()
 
+  // FORCE RECONNECT & REJOIN LOGIC
+  useEffect(() => {
+    if (!socket) return;
+    
+    if (!socket.connected) {
+      socket.connect();
+    }
+    
+    // Attempt to rejoin if already connected
+    if (socket.connected) {
+      socket.emit('game:rejoin', { roomId: params.roomId });
+    }
+    
+    const onConnect = () => {
+      socket.emit('game:rejoin', { roomId: params.roomId });
+    };
+    
+    socket.on('connect', onConnect);
+    return () => {
+      socket.off('connect', onConnect);
+    };
+  }, [socket, params.roomId]);
+
   useEffect(() => {
     if (hasInitialized.current) return
     hasInitialized.current = true
 
     const raw = sessionStorage.getItem('quizGameData')
-    if (!raw) {
-      router.replace('/game/lobby')
-      return
-    }
-    try {
-      setGameData(JSON.parse(raw))
-      sessionStorage.removeItem('quizGameData')
-      
-      // Mark as busy
-      if (socket) {
-        socket.emit('toggle_presence', { busy: true, reason: 'In game' })
+    if (raw) {
+      try {
+        setGameData(JSON.parse(raw))
+        sessionStorage.removeItem('quizGameData')
+        
+        // Mark as busy
+        if (socket) {
+          socket.emit('toggle_presence', { busy: true, reason: 'In game' })
+        }
+      } catch {
+        // failed to parse
       }
-    } catch {
-      router.replace('/game/lobby')
     }
 
     return () => {
@@ -353,7 +381,7 @@ export default function QuizBattleRoomPage() {
         socket.emit('toggle_presence', { busy: false })
       }
     }
-  }, [router, socket])
+  }, [socket])
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.push('/auth/login')

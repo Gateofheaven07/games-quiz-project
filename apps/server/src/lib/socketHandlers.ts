@@ -164,27 +164,32 @@ export function setupSocketHandlers(io: any) {
     });
 
     // ── Battle Invites ────────────────────────────────────────────────────────
-    socket.on('battle:invite', async (data: { receiverId: string; categoryId: number }) => {
+    socket.on('battle:invite', async (data: { receiverId: string; categoryId: number }, callback?: (res: any) => void) => {
       try {
         if (!socket.userId || !socket.username) return;
         const { receiverId, categoryId } = data;
         
+        const sendError = (message: string) => {
+          if (callback) callback({ error: message });
+          else socket.emit('battle:invite_error', { message });
+        };
+
         // 1. Validation: Online Status
         if (!onlineUsers.has(receiverId)) {
-          socket.emit('battle:invite_error', { message: 'Teman sedang offline' });
+          sendError('Teman sedang offline');
           return;
         }
 
         // 2. Validation: Busy State (in game or manually marked busy)
         const isCurrentlyInRoom = !!GameManager.getUserRoom(receiverId);
         if (busyUsers.has(receiverId) || isCurrentlyInRoom) {
-          socket.emit('battle:invite_error', { message: 'Teman sedang dalam pertandingan' });
+          sendError('Teman sedang dalam pertandingan');
           return;
         }
 
         // 3. Validation: Prevent multiple invites to the same person
         if (pendingInvites.has(receiverId)) {
-          socket.emit('battle:invite_error', { message: 'Teman sedang memiliki undangan tertunda' });
+          sendError('Teman sedang memiliki undangan tertunda');
           return;
         }
 
@@ -237,10 +242,13 @@ export function setupSocketHandlers(io: any) {
         io.to(`user:${receiverId}`).emit('receive_invite', notification);
         socket.emit('battle:invite_sent', { roomId, roomCode, categoryId, receiverId });
         
+        if (callback) callback({ success: true, roomId });
+
         console.log(`[Battle] Phase 1: Room Reserved and Invite sent from ${socket.userId} to ${receiverId} (Room: ${roomId})`);
       } catch (err) {
         console.error('[Socket] Battle invite error:', err);
-        socket.emit('error', 'Gagal mengirim undangan');
+        if (callback) callback({ error: 'Gagal mengirim undangan' });
+        else socket.emit('error', 'Gagal mengirim undangan');
       }
     });
 
@@ -653,6 +661,32 @@ export function setupSocketHandlers(io: any) {
         });
       } catch (err) {
         console.error('[Socket] Answer error:', err);
+      }
+    });
+
+    socket.on('game:rejoin', async (data: { roomId: string }) => {
+      try {
+        if (!socket.userId) return;
+        const roomId = data.roomId;
+        const room = GameManager.getRoom(roomId);
+        if (room && (room.player1 === socket.userId || room.player2 === socket.userId)) {
+          socket.join(roomId);
+          console.log(`[Socket] Player ${socket.userId} rejoined room ${roomId}`);
+          
+          // Emit full game data to the rejoining player so their UI can catch up
+          const questions = GameManager.getRoomQuestions(roomId);
+          socket.emit('matchmaking:game_ready', {
+            roomId,
+            categoryId: GameManager.getRoomCategoryId(roomId) || 9,
+            questions,
+            players: {
+              player1: { userId: room.player1, username: '' }, // Frontend uses sessionStorage for now, but this is a fallback
+              player2: { userId: room.player2, username: '' },
+            },
+          });
+        }
+      } catch (err) {
+        console.error('[Socket] Rejoin error:', err);
       }
     });
 

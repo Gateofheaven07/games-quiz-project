@@ -502,6 +502,10 @@ export class GameManager {
     return rooms.get(roomId)?.room || null;
   }
 
+  static getRoomCategoryId(roomId: string): number | null {
+    return rooms.get(roomId)?.categoryId || null;
+  }
+
   static getRoomCode(roomId: string): string | null {
     return rooms.get(roomId)?.roomCode || null;
   }

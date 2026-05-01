@@ -79,7 +79,7 @@ export default function LobbyPage() {
   useEffect(() => {
     if (matchmakingStatus === 'ready' && gameData) {
       sessionStorage.setItem('quizGameData', JSON.stringify(gameData))
-      router.push('/game')
+      router.push(`/game/${gameData.roomId}`)
     }
   }, [matchmakingStatus, gameData, router])
 
