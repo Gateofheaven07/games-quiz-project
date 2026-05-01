@@ -412,7 +412,7 @@ export default function QuizBattleRoomPage({ params }: { params: { roomId: strin
     answerState,
     playerScore,
     opponentScore,
-    gameEnded,
+    status,
     gameResults,
     handleAnswer,
     revealedCorrect,
@@ -487,7 +487,7 @@ export default function QuizBattleRoomPage({ params }: { params: { roomId: strin
   }
 
   // ── Final Results Screen ───────────────────────────────────────────────────
-  if (gameEnded) {
+  if (status === 'GAME_OVER') {
     if (!gameResults) {
       return (
         <div style={{ minHeight: '100vh', backgroundColor: 'var(--c-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>

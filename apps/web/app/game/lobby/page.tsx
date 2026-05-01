@@ -6,6 +6,7 @@ import { useAuth } from '../../../hooks/useAuth'
 import { useGame, BotDifficulty, BOT_DIFFICULTY_INFO } from '../../../context/GameContext'
 import { usePresence } from '../../../hooks/usePresence'
 import { useBattleInvite } from '../../../hooks/useBattleInvite'
+import { useGameInit } from '../../../hooks/useGameInit'
 import axios from 'axios'
 
 const CATEGORIES = [
@@ -18,19 +19,18 @@ const CATEGORIES = [
 ]
 
 const STATUS_MESSAGES: Record<string, string> = {
-  connecting:     'Menghubungkan ke server...',
-  searching:      'Mencari lawan yang setimpal...',
-  opponent_found: 'Lawan ditemukan! Mempersiapkan...',
-  preparing:      'Mengambil dan menerjemahkan soal...',
-  ready:          'Pertandingan siap! Memasuki arena...',
-  error:          'Terjadi kesalahan.',
+  IDLE:                   'Menunggu...',
+  MATCHMAKING_OR_WAITING: 'Mencari lawan yang setimpal...',
+  INITIALIZING_BOARD:     'Mengambil dan menerjemahkan soal...',
+  PLAYING:                'Pertandingan siap! Memasuki arena...',
+  ERROR:                  'Terjadi kesalahan.',
 }
 
 const BOT_STATUS_MESSAGES: Record<string, string> = {
-  searching:      'Menyiapkan Bot...',
-  opponent_found: 'Bot siap! Mempersiapkan soal...',
-  preparing:      'Menerjemahkan soal ke Bahasa Indonesia...',
-  ready:          'Mode Latihan siap! Memasuki arena...',
+  IDLE:                   'Menyiapkan Sesi Latihan...',
+  MATCHMAKING_OR_WAITING: 'Menyiapkan Bot...',
+  INITIALIZING_BOARD:     'Menerjemahkan soal ke Bahasa Indonesia...',
+  PLAYING:                'Mode Latihan siap! Memasuki arena...',
 }
 
 export default function LobbyPage() {
@@ -42,6 +42,8 @@ export default function LobbyPage() {
     findRandomMatch, findBotMatch, cancelMatchmaking,
     createInviteRoom, joinByCode, resetMatchmaking,
   } = useGame()
+
+  const { startQuickMatch, startPracticeMatch } = useGameInit()
 
   const [selectedCategory, setSelectedCategory]   = useState(9)
   const [tab, setTab]                             = useState<'random' | 'bot' | 'invite'>('random')
@@ -77,7 +79,7 @@ export default function LobbyPage() {
 
   // Redirect ke game ketika data siap
   useEffect(() => {
-    if (matchmakingStatus === 'ready' && gameData) {
+    if (matchmakingStatus === 'PLAYING' && gameData) {
       sessionStorage.setItem('quizGameData', JSON.stringify(gameData))
       router.push(`/game/${gameData.roomId}`)
     }
@@ -89,12 +91,12 @@ export default function LobbyPage() {
 
   const handleFindMatch = () => {
     if (!isConnected) return
-    findRandomMatch(selectedCategory)
+    startQuickMatch(selectedCategory)
   }
 
   const handleFindBot = () => {
     if (!isConnected) return
-    findBotMatch(selectedCategory, selectedDifficulty)
+    startPracticeMatch(selectedCategory, selectedDifficulty)
   }
 
   const handleCreateInvite = () => {
@@ -114,7 +116,7 @@ export default function LobbyPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const isSearching = ['searching', 'opponent_found', 'preparing', 'ready'].includes(matchmakingStatus)
+  const isSearching = ['MATCHMAKING_OR_WAITING', 'INITIALIZING_BOARD', 'PLAYING'].includes(matchmakingStatus)
   const isBotMode   = tab === 'bot'
 
   if (isLoading || !isAuthenticated) return null
@@ -397,7 +399,7 @@ export default function LobbyPage() {
         {/* Status / Progress overlay */}
         {isSearching && (
           <div className="lobby-card" style={{ padding:32, textAlign:'center', animation:'slide-up 0.3s ease', border: isBotMode ? '1px solid rgba(74,255,145,0.3)' : '1px solid rgba(0,209,255,0.2)' }}>
-            {matchmakingStatus === 'opponent_found' || matchmakingStatus === 'preparing' || matchmakingStatus === 'ready' ? (
+            {matchmakingStatus === 'INITIALIZING_BOARD' || matchmakingStatus === 'PLAYING' ? (
               <div style={{ fontSize:'3rem', marginBottom:16 }}>{isBotMode ? '🤖' : '🎯'}</div>
             ) : (
               <div style={{ width:48, height:48, border:`4px solid ${isBotMode ? 'rgba(74,255,145,0.2)' : 'rgba(0,209,255,0.2)'}`, borderTopColor: isBotMode ? '#4aff91' : '#00d1ff', borderRadius:'50%', animation:'spin 1s linear infinite', margin:'0 auto 16px' }} />
@@ -423,15 +425,15 @@ export default function LobbyPage() {
             )}
 
             <div style={{ display:'flex', gap:8, justifyContent:'center', margin:'16px 0' }}>
-              {['searching','opponent_found','preparing','ready'].map((s, i) => (
-                <div key={s} style={{ width:8, height:8, borderRadius:'50%', backgroundColor: ['searching','opponent_found','preparing','ready'].indexOf(matchmakingStatus) >= i ? (isBotMode ? '#4aff91' : '#00d1ff') : 'rgba(255,255,255,0.1)', transition:'background-color 0.3s', boxShadow: ['searching','opponent_found','preparing','ready'].indexOf(matchmakingStatus) >= i ? (isBotMode ? '0 0 6px #4aff91' : '0 0 6px #00d1ff') : 'none' }} />
+              {['MATCHMAKING_OR_WAITING', 'INITIALIZING_BOARD', 'PLAYING'].map((s, i) => (
+                <div key={s} style={{ width:8, height:8, borderRadius:'50%', backgroundColor: ['MATCHMAKING_OR_WAITING', 'INITIALIZING_BOARD', 'PLAYING'].indexOf(matchmakingStatus) >= i ? (isBotMode ? '#4aff91' : '#00d1ff') : 'rgba(255,255,255,0.1)', transition:'background-color 0.3s', boxShadow: ['MATCHMAKING_OR_WAITING', 'INITIALIZING_BOARD', 'PLAYING'].indexOf(matchmakingStatus) >= i ? (isBotMode ? '0 0 6px #4aff91' : '0 0 6px #00d1ff') : 'none' }} />
               ))}
             </div>
           </div>
         )}
 
         {/* Error state */}
-        {matchmakingStatus === 'error' && matchmakingError && (
+        {matchmakingStatus === 'ERROR' && matchmakingError && (
           <div style={{ background:'rgba(255,69,69,0.1)', border:'1px solid rgba(255,69,69,0.3)', borderRadius:12, padding:20, textAlign:'center', animation:'slide-up 0.3s ease' }}>
             <p style={{ color:'#ff4545', fontFamily:"'Inter',sans-serif", marginBottom:12 }}>⚠️ {matchmakingError}</p>
             <button onClick={resetMatchmaking} className="btn-secondary" style={{ width:'auto', padding:'8px 24px' }}>

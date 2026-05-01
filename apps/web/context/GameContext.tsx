@@ -79,13 +79,12 @@ export interface GameReadyPayload {
 }
 
 export type MatchmakingStatus =
-  | 'idle'
-  | 'connecting'
-  | 'searching'
-  | 'opponent_found'
-  | 'preparing'
-  | 'ready'
-  | 'error';
+  | 'IDLE'
+  | 'MATCHMAKING_OR_WAITING'
+  | 'INITIALIZING_BOARD'
+  | 'PLAYING'
+  | 'GAME_OVER'
+  | 'ERROR';
 
 // ── Context shape ─────────────────────────────────────────────────────────────
 
@@ -127,7 +126,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const socketRef = useRef<Socket | null>(null);
 
   const [isConnected,       setIsConnected]       = useState(false);
-  const [matchmakingStatus, setMatchmakingStatus] = useState<MatchmakingStatus>('idle');
+  const [matchmakingStatus, setMatchmakingStatus] = useState<MatchmakingStatus>('IDLE');
   const [matchmakingError,  setMatchmakingError]  = useState<string | null>(null);
   const [gameData,          setGameData]           = useState<GameReadyPayload | null>(null);
   const [opponentInfo,      setOpponentInfo]       = useState<PlayerInfo | null>(null);
@@ -143,22 +142,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
     // Sync state dengan kondisi socket saat ini
     setIsConnected(socket.connected);
-    if (socket.connected) {
-      setMatchmakingStatus('idle');
-    } else {
-      setMatchmakingStatus('connecting');
-    }
+    setMatchmakingStatus('IDLE');
 
     // ── Core events ─────────────────────────────────────────────────────────
     const onConnect = () => {
       console.log('[GameContext] Socket connected:', socket.id);
       setIsConnected(true);
-      setMatchmakingStatus('idle');
+      setMatchmakingStatus('IDLE');
     };
 
     const onConnectionSuccess = (data: any) => {
       console.log('[GameContext] Handshake confirmed:', data);
-      setMatchmakingStatus('idle');
+      setMatchmakingStatus('IDLE');
     };
 
     const onDisconnect = (reason: string) => {
@@ -170,49 +165,49 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
     const onConnectError = (err: Error) => {
       console.error('[GameContext] Connection error:', err.message);
-      setMatchmakingStatus('error');
+      setMatchmakingStatus('ERROR');
       setMatchmakingError(`Tidak dapat terhubung ke server: ${err.message}`);
     };
 
     // ── Matchmaking events ───────────────────────────────────────────────────
     const onSearching = () => {
       console.log('[GameContext] Matchmaking: searching…');
-      setMatchmakingStatus('searching');
+      setMatchmakingStatus('MATCHMAKING_OR_WAITING');
     };
 
     const onOpponentFound = (data: { opponentId: string; opponentUsername: string; isBot?: boolean }) => {
       console.log('[GameContext] Opponent found:', data);
       setOpponentInfo({ userId: data.opponentId, username: data.opponentUsername, isBot: data.isBot });
-      setMatchmakingStatus('opponent_found');
+      setMatchmakingStatus('MATCHMAKING_OR_WAITING');
     };
 
     const onPreparing = (data: { roomId: string; message: string }) => {
       console.log('[GameContext] Preparing:', data.message);
-      setMatchmakingStatus('preparing');
+      setMatchmakingStatus('INITIALIZING_BOARD');
     };
 
     const onGameReady = (data: GameReadyPayload) => {
       console.log('[GameContext] Game ready:', data.roomId, '| isVsBot:', data.isVsBot);
       setGameData(data);
-      setMatchmakingStatus('ready');
+      setMatchmakingStatus('PLAYING');
     };
 
     const onRoomCreated = (data: { roomId: string; roomCode: string }) => {
       console.log('[GameContext] Private room created:', data.roomCode);
       setPrivateRoomCode(data.roomCode);
-      setMatchmakingStatus('searching');
+      setMatchmakingStatus('MATCHMAKING_OR_WAITING');
     };
 
-    const onCancelled = () => setMatchmakingStatus('idle');
+    const onCancelled = () => setMatchmakingStatus('IDLE');
 
     const onMatchmakingError = (data: { message: string }) => {
       console.error('[GameContext] Matchmaking error:', data.message);
-      setMatchmakingStatus('error');
+      setMatchmakingStatus('ERROR');
       setMatchmakingError(data.message);
     };
 
     const onRoomNotFound = (data: { roomCode: string }) => {
-      setMatchmakingStatus('error');
+      setMatchmakingStatus('ERROR');
       setMatchmakingError(`Room dengan kode "${data.roomCode}" tidak ditemukan.`);
     };
 
@@ -273,7 +268,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     s.emit('toggle_presence', { busy: true, reason: 'bot_match' });
     console.log('[GameContext] Presence toggled: busy (bot_match)');
 
-    setMatchmakingStatus('searching');
+    setMatchmakingStatus('MATCHMAKING_OR_WAITING');
     s.emit('matchmaking:find_bot', { categoryId, difficulty });
   }, []);
 
@@ -300,13 +295,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const resetMatchmaking = useCallback(() => {
-    setMatchmakingStatus('idle');
+    setMatchmakingStatus('IDLE');
     setMatchmakingError(null);
     setGameData(null);
     setOpponentInfo(null);
     setPrivateRoomCode(null);
     // Kembalikan presence ke normal
     socketRef.current?.emit('toggle_presence', { busy: false });
+    // Force purge on backend
+    socketRef.current?.emit('game:purge');
   }, []);
 
   // ── Gameplay actions ───────────────────────────────────────────────────────

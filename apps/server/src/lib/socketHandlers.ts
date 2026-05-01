@@ -664,6 +664,28 @@ export function setupSocketHandlers(io: any) {
       }
     });
 
+    socket.on('game:purge', () => {
+      try {
+        if (!socket.userId) return;
+        
+        // Remove from busy state
+        busyUsers.delete(socket.userId);
+        
+        // Remove from matchmaking queue
+        remove(socket.id);
+        
+        // Force leave any room
+        const roomId = GameManager.getUserRoom(socket.userId);
+        if (roomId) {
+          socket.leave(roomId);
+          GameManager.endRoom(roomId);
+          console.log(`[Socket] Force purged user ${socket.userId} from room ${roomId}`);
+        }
+      } catch (err) {
+        console.error('[Socket] Purge error:', err);
+      }
+    });
+
     socket.on('game:rejoin', async (data: { roomId: string }) => {
       try {
         if (!socket.userId) return;

@@ -31,6 +31,8 @@ interface UseGameEngineProps {
   timerArcRef?:     React.RefObject<SVGCircleElement | null>;
 }
 
+export type GameStatus = 'IDLE' | 'INITIALIZING_BOARD' | 'PLAYING' | 'GAME_OVER';
+
 export interface GameEngineReturn {
   currentQ:        number;
   round:           number;
@@ -41,7 +43,7 @@ export interface GameEngineReturn {
   answerState:     'idle' | 'selected' | 'benar' | 'salah';
   playerScore:     number;
   opponentScore:   number;
-  gameEnded:       boolean;
+  status:          GameStatus;
   gameResults:     any | null;
   revealedCorrect: number;
   handleAnswer:    (idx: number) => void;
@@ -55,12 +57,13 @@ type GameState = {
   answerState: 'idle' | 'selected' | 'benar' | 'salah';
   playerScore: number;
   opponentScore: number;
-  gameEnded: boolean;
+  status: GameStatus;
   gameResults: any | null;
   revealedCorrect: number;
 };
 
 type Action =
+  | { type: 'START_GAME' }
   | { type: 'ANSWER_SUBMITTED'; payload: { answer: number; isCorrect: boolean; correctAnswer: number; scoreEarned: number } }
   | { type: 'OPPONENT_ANSWERED'; payload: { scoreEarned: number } }
   | { type: 'NEXT_QUESTION'; payload: { totalRounds: number } }
@@ -68,6 +71,9 @@ type Action =
 
 function gameReducer(state: GameState, action: Action): GameState {
   switch (action.type) {
+    case 'START_GAME':
+      return { ...state, status: 'PLAYING' };
+
     case 'ANSWER_SUBMITTED':
       // Optimistic UI: Update both Visual (colors) and Data (score) instantly
       return {
@@ -94,10 +100,15 @@ function gameReducer(state: GameState, action: Action): GameState {
       };
 
     case 'GAME_OVER':
+      // STRICT TRANSITION VALIDATION: Only allow GAME_OVER from PLAYING
+      if (state.status !== 'PLAYING') {
+        console.warn(`[FSM] Invalid transition attempt: ${state.status} -> GAME_OVER. Rejected.`);
+        return state;
+      }
       return {
         ...state,
-        gameEnded: true,
-        gameResults: action.payload || state.gameResults, // Set if provided, otherwise keep existing
+        status: 'GAME_OVER',
+        gameResults: action.payload || state.gameResults,
       };
 
     default:
@@ -111,7 +122,7 @@ const initialState: GameState = {
   answerState: 'idle',
   playerScore: 0,
   opponentScore: 0,
-  gameEnded: false,
+  status: 'INITIALIZING_BOARD',
   gameResults: null,
   revealedCorrect: -1,
 };
@@ -138,6 +149,13 @@ export function useGameEngine({
   // Fast state — timer stored in useRef
   const timeLeftRef = useRef(totalDuration);
   const gameEndedRef = useRef(false);
+
+  // Transition from INITIALIZING_BOARD to PLAYING when gameRoom is ready
+  useEffect(() => {
+    if (gameRoom && state.status === 'INITIALIZING_BOARD') {
+      dispatch({ type: 'START_GAME' });
+    }
+  }, [gameRoom, state.status]);
 
   // Throttle ref for opponent answers
   const opponentAnswerPendingRef = useRef(false);
@@ -169,7 +187,7 @@ export function useGameEngine({
 
   // ── Timer: RAF-based countdown (zero React re-renders) ─────────────────────
   useEffect(() => {
-    if (gameRoom?.status !== 'active' || gameEndedRef.current) return;
+    if (state.status !== 'PLAYING' || gameEndedRef.current) return;
 
     let rafId:       number;
     let lastTick:    number = performance.now();
@@ -227,7 +245,7 @@ export function useGameEngine({
 
   // ── Graceful Fallback for Results (Offline-first) ─────────────────────────
   useEffect(() => {
-    if (state.gameEnded && !state.gameResults) {
+    if (state.status === 'GAME_OVER' && !state.gameResults) {
       const fallbackTimer = setTimeout(() => {
         console.warn('[GameEngine] Server timeout. Using local fallback for game results.');
         
@@ -252,7 +270,7 @@ export function useGameEngine({
 
       return () => clearTimeout(fallbackTimer);
     }
-  }, [state.gameEnded, state.gameResults, state.playerScore, state.opponentScore, userId]);
+  }, [state.status, state.gameResults, state.playerScore, state.opponentScore, userId]);
 
   // ── Answer handler (Optimistic UI) ─────────────────────────────────────────
   const handleAnswer = useCallback(
@@ -305,7 +323,7 @@ export function useGameEngine({
     answerState: state.answerState,
     playerScore: state.playerScore,
     opponentScore: state.opponentScore,
-    gameEnded: state.gameEnded,
+    status: state.status,
     gameResults: state.gameResults,
     revealedCorrect: state.revealedCorrect,
     handleAnswer,
