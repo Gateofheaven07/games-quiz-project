@@ -1,10 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 import { GameRoom, Question } from '@quiz-battle/shared';
 import { fetchAndTranslate } from './trivia.js';
-import { PrismaClient, GameStatus, RoomStatus, GameMode, BotDifficulty as PrismaBotDifficulty, GameCategory } from '@prisma/client';
+import prisma from './prisma.js';
+import { GameStatus, RoomStatus, GameMode, BotDifficulty as PrismaBotDifficulty, GameCategory } from '@prisma/client';
 import { BotDifficulty, BOT_DIFFICULTY_CONFIGS } from './bot.types.js';
-
-const prisma = new PrismaClient();
 
 interface RoomData {
   room:            GameRoom;

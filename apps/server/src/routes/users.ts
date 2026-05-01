@@ -1,11 +1,10 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma.js';
 import { AuthRequest, authMiddleware } from '../middleware/auth.js';
 import { hashPassword, verifyPassword } from '../lib/auth.js';
 import { UserPublic } from '@quiz-battle/shared';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Get user profile
 router.get('/profile', authMiddleware, async (req: AuthRequest, res: Response) => {

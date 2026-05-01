@@ -1,26 +1,8 @@
-import { PrismaClient, GameMode, GameStatus, RoomStatus } from '@prisma/client';
-import { GameEngine } from './game.engine';
-import { AnswerPayload, AnswerResult, StartGameResult } from './game.types';
-import { fetchAndTranslate } from '../../lib/trivia';
-
-/**
- * Tujuan File: game.service.ts (ORCHESTRATOR)
- * Berfungsi sebagai penghubung antara WebSocket, Database (Prisma), dan Game Engine.
- *
- * Kenapa dipisah?
- * Sesuai prinsip Clean Architecture, logic bisnis (Engine) tidak boleh tahu soal Database.
- * File ini yang bertugas mengambil data, memanggil engine, dan menyimpan hasilnya kembali.
- *
- * Alur Kerja:
- * 1. Di-trigger oleh WebSocket event handler.
- * 2. Ambil data dari Database (Prisma).
- * 3. Proses data dengan GameEngine.
- * 4. Simpan hasil ke Database.
- * 5. Kembalikan data ke pemanggil (WebSocket) untuk di-broadcast.
- */
-
-// Singleton Prisma Client — satu instance untuk seluruh service
-const prisma = new PrismaClient();
+import prisma from '../../lib/prisma.js';
+import { GameMode, GameStatus, RoomStatus } from '@prisma/client';
+import { GameEngine } from './game.engine.js';
+import { AnswerPayload, AnswerResult, StartGameResult } from './game.types.js';
+import { fetchAndTranslate } from '../../lib/trivia.js';
 
 export class GameService {
   /**
