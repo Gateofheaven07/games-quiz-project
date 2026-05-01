@@ -29,33 +29,38 @@ const ensureDbConnected = async () => {
   return dbInitPromise;
 };
 
-// 2. Strict CORS Configuration (Whitelist Mode)
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
-  .split(',')
-  .map(o => o.trim().replace(/\/$/, ""))
-  .filter(Boolean);
+// 2. Centralized CORS Configuration
+const getAllowedOrigins = () => {
+  const defaults = ['http://localhost:3000', 'https://games-quiz-project-web.vercel.app'];
+  const fromEnv = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(o => o.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+  
+  // Merge and deduplicate
+  return Array.from(new Set([...defaults, ...fromEnv]));
+};
 
-// Add default local origins for development
-if (process.env.NODE_ENV !== 'production') {
-  allowedOrigins.push('http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000');
-}
+const allowedOrigins = getAllowedOrigins();
 
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl)
+    // 1. Allow internal requests (no origin)
     if (!origin) return callback(null, true);
 
+    // 2. Sanitize and Check Whitelist
     const sanitizedOrigin = origin.replace(/\/$/, "");
     if (allowedOrigins.includes(sanitizedOrigin)) {
       callback(null, true);
     } else {
-      console.error(`[CORS] Rejected Origin: ${origin}. Whitelist:`, allowedOrigins);
-      callback(new Error('Not allowed by CORS'));
+      console.warn(`[CORS] Access Denied for: ${origin}`);
+      callback(new Error('Blocked by CORS Policy'));
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200, // Legacy browser support
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 };
 
 // 3. Socket.IO Optimization (Prioritizing WebSocket for Cloudflare Tunnel)
