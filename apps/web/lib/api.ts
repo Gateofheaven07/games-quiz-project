@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+export const API_BASE_URL = rawBaseUrl.replace(/\/$/, '') + '/api';
 
 export const createApiClient = (token?: string): AxiosInstance => {
   return axios.create({
