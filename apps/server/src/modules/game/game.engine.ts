@@ -1,4 +1,4 @@
-import { Player } from './game.types';
+import { Player } from './game.types.js';
 
 /**
  * Tujuan File: game.engine.ts (CORE LOGIC)

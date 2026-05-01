@@ -1,5 +1,5 @@
-import { AuthenticatedSocket } from '../../lib/socketHandlers';
-import { GameService } from '../../modules/game/game.service';
+import { AuthenticatedSocket } from '../../lib/socketHandlers.js';
+import { GameService } from '../../modules/game/game.service.js';
 
 /**
  * Event: game:start

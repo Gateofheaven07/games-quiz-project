@@ -36,7 +36,7 @@ export function getSocket(token: string): Socket {
     console.log('[SocketSingleton] Creating new socket connection');
     _socket = io(SOCKET_URL, {
       auth:                 { token },
-      transports:           ['websocket', 'polling'], // Fallback ke polling jika ws gagal
+      transports:           ['websocket'], // Dipaksa ke websocket untuk menghindari masalah proxy/tunnel
       reconnection:         true,
       reconnectionDelay:    1000,
       reconnectionDelayMax: 5000,
