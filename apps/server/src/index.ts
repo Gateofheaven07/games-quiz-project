@@ -30,11 +30,13 @@ const ensureDbConnected = async () => {
 };
 
 // 2. Dynamic Origin Configuration
-const rawOrigins = process.env.CLIENT_URL 
-  ? process.env.CLIENT_URL.split(',') 
-  : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+const defaultOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000'];
+const envOrigins = (process.env.FRONTEND_URL || process.env.CLIENT_URL || '')
+  .split(',')
+  .filter(Boolean);
 
-const allowedOrigins = rawOrigins.map(o => o.trim().replace(/\/$/, ""));
+const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]))
+  .map(o => o.trim().replace(/\/$/, ""));
 
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
