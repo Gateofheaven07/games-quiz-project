@@ -10,7 +10,10 @@
     "dev": "concurrently \"npm run dev -w quiz-battle-web\" \"npm run dev -w quiz-battle-server\"",
     "dev:web": "npm run dev -w quiz-battle-web",
     "dev:server": "npm run dev -w quiz-battle-server",
-    "build": "npm run build -w quiz-battle-web && npm run build -w quiz-battle-server",
+    "build": "npm run build -w @quiz-battle/shared && npm run build -w quiz-battle-web && npm run build -w quiz-battle-server",
+    "build:shared": "npm run build -w @quiz-battle/shared",
+    "build:web": "npm run build:shared && npm run build -w quiz-battle-web",
+    "build:server": "npm run build:shared && npm run build -w quiz-battle-server",
     "start": "npm run start -w quiz-battle-server",
     "lint": "eslint .",
     "type-check": "tsc --noEmit"

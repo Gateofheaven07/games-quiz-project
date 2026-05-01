@@ -12,7 +12,11 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@quiz-battle/shared": ["../../packages/shared"]
+    }
   },
   "include": ["src", "../../packages/shared"],
   "exclude": ["node_modules"]

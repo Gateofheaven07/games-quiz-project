@@ -22,7 +22,8 @@
     "pg": "^8.20.0",
     "prisma": "^6.0.0",
     "socket.io": "^4.8.3",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "@quiz-battle/shared": "*"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
