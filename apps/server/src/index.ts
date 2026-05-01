@@ -29,7 +29,12 @@ const ensureDbConnected = async () => {
   return dbInitPromise;
 };
 
-// 2. Conditional Socket.IO (Disabled on Vercel)
+// 2. Origin Configuration
+const allowedOrigins = process.env.CLIENT_URL 
+  ? process.env.CLIENT_URL.split(',') 
+  : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
+// 3. Conditional Socket.IO (Disabled on Vercel Serverless)
 const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL;
 let io: SocketIOServer | null = null;
 
@@ -38,9 +43,11 @@ if (!isVercel) {
   const httpServer = createServer(app);
   io = new SocketIOServer(httpServer, {
     cors: {
-      origin: process.env.CLIENT_URL || ['http://localhost:3000', 'http://127.0.0.1:3000'],
+      origin: allowedOrigins,
       credentials: true,
+      methods: ['GET', 'POST'],
     },
+    transports: ['websocket', 'polling'],
   });
   setupSocketHandlers(io);
 
@@ -52,11 +59,9 @@ if (!isVercel) {
   });
 }
 
-// 3. Standard Middleware
+// 4. Standard Middleware
 app.use(cors({
-  origin: process.env.CLIENT_URL
-    ? process.env.CLIENT_URL.split(',')
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
 }));
