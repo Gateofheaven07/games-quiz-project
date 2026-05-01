@@ -9,6 +9,12 @@ import { startBotSession } from './botEngine.js';
 // Track online users: userId → socketId
 const onlineUsers = new Map<string, string>();
 
+// Track users who are "busy" (in bot match / active game)
+const busyUsers = new Set<string>();
+
+// Track pending invites: receiverId → { senderId, roomId, timeoutId }
+const pendingInvites = new Map<string, { senderId: string; roomId: string; timeoutId: NodeJS.Timeout }>();
+
 export interface AuthenticatedSocket extends Socket {
   userId?: string;
   username?: string;
@@ -17,9 +23,6 @@ export interface AuthenticatedSocket extends Socket {
 // ─────────────────────────────────────────────────────────────────────────────
 // SETUP
 // ─────────────────────────────────────────────────────────────────────────────
-// Track users who are "busy" (in bot match / active game) and should NOT
-// be added to the public matchmaking queue
-const busyUsers = new Set<string>();
 
 export function setupSocketHandlers(io: any) {
 
@@ -160,18 +163,39 @@ export function setupSocketHandlers(io: any) {
       });
     });
 
+    // ── Battle Invites ────────────────────────────────────────────────────────
     socket.on('battle:invite', async (data: { receiverId: string; categoryId: number }) => {
       try {
         if (!socket.userId || !socket.username) return;
         const { receiverId, categoryId } = data;
-        if (!receiverId) return;
+        
+        // 1. Validation: Online Status
+        if (!onlineUsers.has(receiverId)) {
+          socket.emit('battle:invite_error', { message: 'Teman sedang offline' });
+          return;
+        }
 
-        // Create Private Room
+        // 2. Validation: Busy State (in game or manually marked busy)
+        const isCurrentlyInRoom = !!GameManager.getUserRoom(receiverId);
+        if (busyUsers.has(receiverId) || isCurrentlyInRoom) {
+          socket.emit('battle:invite_error', { message: 'Teman sedang dalam pertandingan' });
+          return;
+        }
+
+        // 3. Validation: Prevent multiple invites to the same person
+        if (pendingInvites.has(receiverId)) {
+          socket.emit('battle:invite_error', { message: 'Teman sedang memiliki undangan tertunda' });
+          return;
+        }
+
+        // 4. Create Private Room
         const { roomId, roomCode } = await GameManager.createPrivateRoom(
           socket.userId,
-          categoryId
+          categoryId,
+          socket.username
         );
 
+        // 5. Create Notification Record
         const notification = await prisma.notification.create({
           data: {
             type: 'BATTLE_INVITE',
@@ -186,14 +210,123 @@ export function setupSocketHandlers(io: any) {
           }
         });
 
-        // Add creator to room early? Wait until they actually join, or just send the code.
+        // 6. Setup 30s Timeout
+        const timeoutId = setTimeout(() => {
+          if (pendingInvites.has(receiverId)) {
+            const invite = pendingInvites.get(receiverId);
+            if (invite && invite.roomId === roomId) {
+              pendingInvites.delete(receiverId);
+              // Notify receiver that invite expired
+              io.to(`user:${receiverId}`).emit('battle:invite_expired', { roomId });
+              // Notify sender that invite wasn't responded
+              io.to(`user:${socket.userId}`).emit('battle:invite_timeout', { receiverId });
+              // Cleanup room
+              GameManager.endRoom(roomId);
+            }
+          }
+        }, 30000);
+
+        // 7. Track Pending Invite
+        pendingInvites.set(receiverId, { senderId: socket.userId!, roomId, timeoutId });
+
+        // 8. Join sender to room early
         socket.join(roomId);
         
+        // 9. Emit events
         io.to(`user:${receiverId}`).emit('receive_invite', notification);
         socket.emit('battle:invite_sent', { roomId, roomCode, categoryId, receiverId });
+        
+        console.log(`[Battle] Invite sent from ${socket.userId} to ${receiverId} (Room: ${roomId})`);
       } catch (err) {
         console.error('[Socket] Battle invite error:', err);
-        socket.emit('error', 'Failed to send battle invite');
+        socket.emit('error', 'Gagal mengirim undangan');
+      }
+    });
+
+    socket.on('battle:accept', async (data: { notificationId: string; roomId: string }) => {
+      try {
+        if (!socket.userId) return;
+        const { roomId, notificationId } = data;
+
+        const invite = pendingInvites.get(socket.userId);
+        if (!invite || invite.roomId !== roomId) {
+          socket.emit('battle:invite_error', { message: 'Undangan sudah kedaluwarsa' });
+          return;
+        }
+
+        // 1. Clear Timeout
+        clearTimeout(invite.timeoutId);
+        pendingInvites.delete(socket.userId);
+
+        // 2. Join Room in GameManager
+        const roomCode = GameManager.getRoomCode(roomId) || '';
+        const result = await GameManager.joinPrivateRoom(roomCode, socket.userId);
+
+        if (!result) {
+          socket.emit('battle:invite_error', { message: 'Gagal bergabung ke ruangan' });
+          return;
+        }
+
+        // 3. Mark Notification as Read
+        await prisma.notification.update({
+          where: { id: notificationId },
+          data: { status: 'READ' }
+        });
+
+        // 4. Socket Join
+        socket.join(roomId);
+
+        // 5. Notify both players to prepare
+        io.to(roomId).emit('matchmaking:preparing', {
+          roomId,
+          message: 'Lawan menerima tantangan! Menyiapkan soal...',
+        });
+
+        // 6. Load Questions
+        const questions = await GameManager.loadQuestionsForRoom(roomId, result.categoryId);
+
+        // 7. Emit Game Ready
+        io.to(roomId).emit('matchmaking:game_ready', {
+          roomId,
+          categoryId: result.categoryId,
+          questions,
+          players: {
+            player1: { userId: invite.senderId, username: result.hostUsername },
+            player2: { userId: socket.userId, username: socket.username },
+          },
+        });
+
+        console.log(`[Battle] Invite accepted by ${socket.userId} (Room: ${roomId})`);
+      } catch (err) {
+        console.error('[Socket] Battle accept error:', err);
+        socket.emit('error', 'Gagal menerima undangan');
+      }
+    });
+
+    socket.on('battle:decline', async (data: { notificationId: string; roomId: string }) => {
+      try {
+        if (!socket.userId) return;
+        const { roomId, notificationId } = data;
+
+        const invite = pendingInvites.get(socket.userId);
+        if (invite && invite.roomId === roomId) {
+          clearTimeout(invite.timeoutId);
+          pendingInvites.delete(socket.userId);
+
+          // Notify sender
+          io.to(`user:${invite.senderId}`).emit('battle:invite_declined', { receiverId: socket.userId });
+          
+          // Cleanup room
+          GameManager.endRoom(roomId);
+        }
+
+        // Mark Notification as Read/Declined
+        await prisma.notification.update({
+          where: { id: notificationId },
+          data: { status: 'READ' }
+        });
+      } catch (err) {
+        console.error('[Socket] Battle decline error:', err);
       }
     });
 
@@ -544,6 +677,13 @@ export function setupSocketHandlers(io: any) {
 
           onlineUsers.delete(socket.userId);
           notifyFriendsPresence(socket.userId, false, io);
+
+          // Cleanup pending invite if this user was a receiver
+          const invite = pendingInvites.get(socket.userId);
+          if (invite) {
+            clearTimeout(invite.timeoutId);
+            pendingInvites.delete(socket.userId);
+          }
 
           const roomId = GameManager.getUserRoom(socket.userId);
           if (roomId) {

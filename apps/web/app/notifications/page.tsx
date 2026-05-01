@@ -130,7 +130,7 @@ export default function NotificationsPage() {
       <div className="flex flex-1 w-full relative z-10">
         <AppSidebar active="Notifikasi" />
         
-        <main className="flex-1 mt-16 lg:ml-72 p-4 sm:p-6 md:p-8 max-w-4xl mx-auto w-full pb-40">
+        <main className="flex-1 mt-16 lg:ml-72 p-4 sm:p-6 md:p-8 max-w-5xl mx-auto pb-40 overflow-x-hidden">
           <header className="mb-12 relative">
             <div className="flex items-center gap-4 mb-3">
               <div className="w-14 h-14 shrink-0 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 animate-glow-pulse">

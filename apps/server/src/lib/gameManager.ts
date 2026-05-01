@@ -319,6 +319,10 @@ export class GameManager {
     return rooms.get(roomId)?.room || null;
   }
 
+  static getRoomCode(roomId: string): string | null {
+    return rooms.get(roomId)?.roomCode || null;
+  }
+
   static getRoomQuestions(roomId: string): Question[] {
     return rooms.get(roomId)?.questions || [];
   }

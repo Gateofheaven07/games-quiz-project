@@ -332,7 +332,7 @@ export default function ProfilePage() {
       </main>
       </div>
       {/* Footer */}
-      <footer className="lg:ml-72 w-full flex justify-between px-10 items-center py-4 bg-slate-950 border-t border-white/5 mt-auto">
+      <footer className="lg:ml-72 flex justify-between px-10 items-center py-4 bg-slate-950 border-t border-white/5 mt-auto">
         <p className="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-cyan-500 uppercase">© 2024 QUIZBATTLE SISTEM TAKTIS</p>
         <div className="flex gap-6">
           <a className="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-slate-600 hover:text-cyan-400 transition-colors" href="#">Status</a>

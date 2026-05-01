@@ -41,18 +41,18 @@ export function AppSidebar({ active, userStats }: { active: string; userStats?: 
   ]
 
   return (
-    <aside className="hidden lg:flex flex-col w-72 min-w-[288px] h-screen fixed left-0 top-0 bg-[#0b0e14]/80 backdrop-blur-xl border-r border-white/5 py-8 px-6 z-40">
+    <aside className="hidden lg:flex flex-col w-72 min-w-[288px] h-screen fixed left-0 top-0 bg-[#0b0e14]/80 backdrop-blur-xl border-r border-white/5 py-8 px-6 z-40 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
       {/* Logo Section */}
       <div className="mb-10 px-2">
         <div className="flex items-center gap-3 group cursor-pointer" onClick={() => router.push('/dashboard')}>
           <div className="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-110 transition-transform">
             <span className="material-symbols-outlined text-white text-2xl">rocket_launch</span>
           </div>
-          <div>
-            <h1 className="text-xl font-black italic tracking-tighter text-white font-heading leading-none">
+          <div className="min-w-0">
+            <div className="text-2xl font-black italic tracking-[-0.05em] text-white leading-none">
               Quiz<span className="text-cyan-400">Battle</span>
-            </h1>
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 mt-1">
+            </div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mt-1.5 ml-0.5">
               Arena Taktis
             </p>
           </div>
@@ -186,7 +186,7 @@ export function AppMobileNav({ active }: { active: string }) {
           onClick={() => setIsOpen(false)}
         >
           <div 
-            className="absolute top-0 right-0 w-80 h-full bg-[#0b0e14] border-l border-white/10 p-6 flex flex-col shadow-2xl animate-in slide-in-from-right duration-300"
+            className="absolute top-0 right-0 w-80 h-full bg-[#0b0e14] border-l border-white/10 p-6 flex flex-col shadow-2xl animate-in slide-in-from-right duration-300 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Drawer Header */}

@@ -64,6 +64,7 @@ export type MatchmakingStatus =
 export const useSocket = () => {
   const { token, isAuthenticated } = useAuth();
   const socketRef = useRef<Socket | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   const [isConnected,       setIsConnected]       = useState(false);
   const [matchmakingStatus, setMatchmakingStatus] = useState<MatchmakingStatus>('idle');
@@ -86,6 +87,7 @@ export const useSocket = () => {
     });
 
     socketRef.current = socket;
+    setSocket(socket);
     setMatchmakingStatus('connecting');
 
     // ── Core connection events ─────────────────────────────────────────────
@@ -158,6 +160,7 @@ export const useSocket = () => {
     return () => {
       socket.disconnect();
       socketRef.current = null;
+      setSocket(null);
     };
   }, [isAuthenticated, token]);
 
@@ -225,6 +228,7 @@ export const useSocket = () => {
 
   return {
     // Connection
+    socket,
     isConnected,
     socketRef,
     // Matchmaking

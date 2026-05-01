@@ -242,7 +242,7 @@ export default function DashboardPage() {
       <AppMobileNav active="Dashboard" />
 
       {/* Main content */}
-      <main className="flex-1 lg:ml-72 p-4 md:p-8 relative z-10 w-full">
+      <main className="flex-1 lg:ml-72 p-4 md:p-8 relative z-10 overflow-x-hidden">
 
         {/* Welcome header */}
         <div style={{ marginBottom: 32 }}>

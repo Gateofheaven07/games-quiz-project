@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../hooks/useAuth'
 import { useGame, BotDifficulty, BOT_DIFFICULTY_INFO } from '../../../context/GameContext'
+import { usePresence } from '../../../hooks/usePresence'
+import { useBattleInvite } from '../../../hooks/useBattleInvite'
+import axios from 'axios'
 
 const CATEGORIES = [
   { id: 9,  label: 'Pengetahuan Umum', icon: '🌍', color: '#00d1ff' },
@@ -45,6 +48,32 @@ export default function LobbyPage() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<BotDifficulty>('MEDIUM')
   const [joinCode, setJoinCode]                   = useState('')
   const [copied, setCopied]                       = useState(false)
+  const [friends, setFriends]                     = useState<any[]>([])
+  const [loadingFriends, setLoadingFriends]       = useState(false)
+
+  const { onlineUsers, isOnline } = usePresence(friends)
+  const { invitingId, sendInvite } = useBattleInvite()
+
+  // Load friends
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const fetchFriends = async () => {
+        setLoadingFriends(true)
+        try {
+          const authData = JSON.parse(localStorage.getItem('auth') || '{}')
+          const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/friends`, {
+            headers: { Authorization: `Bearer ${authData.token}` }
+          })
+          setFriends(res.data.data)
+        } catch (err) {
+          console.error('Error fetching friends', err)
+        } finally {
+          setLoadingFriends(false)
+        }
+      }
+      fetchFriends()
+    }
+  }, [isAuthenticated, user])
 
   // Redirect ke game ketika data siap
   useEffect(() => {
@@ -275,52 +304,91 @@ export default function LobbyPage() {
             {/* ── Tab: Invite ── */}
             {tab === 'invite' && (
               <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
-                {/* Create room */}
-                <div>
-                  <p style={{ fontFamily:"'Inter',sans-serif", color:'var(--c-outline)', fontSize:'0.8rem', marginBottom:8 }}>
-                    Buat room dan bagikan kode ke teman:
-                  </p>
-                  {privateRoomCode ? (
-                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                      <div className="flex-1 bg-[rgba(0,209,255,0.1)] border border-[rgba(0,209,255,0.3)] rounded-[10px] p-3 font-['Space_Grotesk'] font-bold text-2xl tracking-[0.3em] text-[#00d1ff] text-center">
-                        {privateRoomCode}
+                <p style={{ fontFamily:"'Inter',sans-serif", color:'var(--c-outline)', fontSize:'0.85rem', marginBottom:4 }}>
+                  Undang teman yang sedang online untuk bertanding secara langsung.
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {friends.filter(f => isOnline(f.id)).map(friend => (
+                    <div key={friend.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ position: 'relative' }}>
+                          <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #00d1ff, #cf5cff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#003543' }}>
+                            {friend.username.charAt(0).toUpperCase()}
+                          </div>
+                          <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: '50%', background: '#4aff91', border: '2px solid #1a2328' }} />
+                        </div>
+                        <div>
+                          <p style={{ fontWeight: 600, color: 'var(--c-on-surface)', fontSize: '0.9375rem' }}>{friend.username}</p>
+                          <p style={{ color: 'var(--c-outline)', fontSize: '0.75rem' }}>Level {friend.level}</p>
+                        </div>
                       </div>
-                      <button onClick={handleCopyCode} style={{ background:'rgba(0,209,255,0.15)', border:'1px solid rgba(0,209,255,0.3)', borderRadius:10, padding:'12px 20px', cursor:'pointer', color:'#00d1ff', fontFamily:"'Inter',sans-serif", fontWeight:600, fontSize:'0.875rem', whiteSpace:'nowrap' }}>
-                        {copied ? '✓ Disalin!' : '📋 Salin'}
+                      
+                      <button 
+                        onClick={() => sendInvite(friend.id, selectedCategory)}
+                        disabled={invitingId === friend.id}
+                        className="btn-primary" 
+                        style={{ 
+                          width: 'auto', padding: '8px 16px', fontSize: '0.8125rem',
+                          background: invitingId === friend.id ? 'rgba(255,255,255,0.1)' : undefined,
+                          color: invitingId === friend.id ? 'var(--c-outline)' : undefined,
+                          border: invitingId === friend.id ? '1px solid rgba(255,255,255,0.1)' : 'none'
+                        }}
+                      >
+                        {invitingId === friend.id ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 12, height: 12, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#00d1ff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                            Menunggu...
+                          </div>
+                        ) : (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>add</span>
+                            Invite
+                          </span>
+                        )}
                       </button>
                     </div>
-                  ) : (
-                    <button className="btn-secondary" onClick={handleCreateInvite} disabled={!isConnected || isSearching}>
-                      🔗 Buat Kode Undangan
-                    </button>
+                  ))}
+
+                  {friends.filter(f => isOnline(f.id)).length === 0 && !loadingFriends && (
+                    <div style={{ textAlign: 'center', padding: '32px 16px', background: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px dashed rgba(255,255,255,0.1)' }}>
+                      <p style={{ color: 'var(--c-outline)', fontSize: '0.875rem' }}>Tidak ada teman yang online saat ini.</p>
+                    </div>
+                  )}
+
+                  {loadingFriends && (
+                    <div style={{ textAlign: 'center', padding: 20 }}>
+                      <div style={{ width: 24, height: 24, border: '3px solid rgba(0,209,255,0.2)', borderTopColor: '#00d1ff', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
+                    </div>
                   )}
                 </div>
 
-                <div style={{ textAlign:'center', color:'var(--c-outline)', fontSize:'0.75rem' }}>— atau —</div>
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '8px 0' }} />
 
-                {/* Join by code */}
-                <div>
-                  <p style={{ fontFamily:"'Inter',sans-serif", color:'var(--c-outline)', fontSize:'0.8rem', marginBottom:8 }}>
-                    Masukkan kode dari teman:
-                  </p>
-                  <div style={{ display:'flex', gap:8 }}>
-                    <input
-                      className="code-input"
-                      placeholder="XXXXXX"
-                      value={joinCode}
-                      onChange={(e) => setJoinCode(e.target.value.toUpperCase().slice(0, 6))}
-                      maxLength={6}
-                      disabled={isSearching}
-                    />
-                    <button
-                      onClick={handleJoinByCode}
-                      disabled={!isConnected || joinCode.length < 6 || isSearching}
-                      style={{ background:'linear-gradient(135deg,#4aff91,#00d1ff)', border:'none', borderRadius:10, padding:'12px 20px', cursor:'pointer', color:'#003543', fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, whiteSpace:'nowrap', opacity: joinCode.length < 6 ? 0.5 : 1 }}
-                    >
-                      Masuk →
-                    </button>
+                {/* Optional: Keep old room code logic as fallback? User said "menggantikan", so I'll move it to a sub-section or hide it. */}
+                <details style={{ cursor: 'pointer' }}>
+                  <summary style={{ color: 'var(--c-outline)', fontSize: '0.75rem', padding: '4px 0' }}>Gunakan Kode Ruangan (Lama)</summary>
+                  <div style={{ display:'flex', flexDirection:'column', gap:12, marginTop:12 }}>
+                    <div>
+                      <p style={{ fontFamily:"'Inter',sans-serif", color:'var(--c-outline)', fontSize:'0.75rem', marginBottom:8 }}>Buat room:</p>
+                      {privateRoomCode ? (
+                        <div className="flex gap-2">
+                          <div style={{ flex: 1, background:'rgba(0,209,255,0.1)', border:'1px solid rgba(0,209,255,0.3)', borderRadius:8, padding:10, textAlign:'center', color:'#00d1ff', fontWeight:700, letterSpacing:4 }}>{privateRoomCode}</div>
+                          <button onClick={handleCopyCode} style={{ background:'rgba(255,255,255,0.06)', border:'none', borderRadius:8, padding:'0 12px', color:'#00d1ff' }}>{copied ? '✓' : '📋'}</button>
+                        </div>
+                      ) : (
+                        <button className="btn-secondary" onClick={handleCreateInvite} style={{ padding: '8px 16px', fontSize: '0.8rem' }}>Buat Kode</button>
+                      )}
+                    </div>
+                    <div>
+                      <p style={{ fontFamily:"'Inter',sans-serif", color:'var(--c-outline)', fontSize:'0.75rem', marginBottom:8 }}>Gabung kode:</p>
+                      <div style={{ display:'flex', gap:8 }}>
+                        <input className="code-input" style={{ fontSize: '0.9rem', padding: 8 }} placeholder="XXXXXX" value={joinCode} onChange={(e) => setJoinCode(e.target.value.toUpperCase().slice(0, 6))} />
+                        <button onClick={handleJoinByCode} className="btn-primary" style={{ width: 'auto', padding: '0 16px', fontSize: '0.8rem' }}>Masuk</button>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </details>
               </div>
             )}
           </div>

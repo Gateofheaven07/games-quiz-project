@@ -51,7 +51,7 @@ export default function LeaderboardPage() {
       <div style={{ display: 'flex', flex: 1, width: '100%' }}>
         <AppSidebar active="Peringkat" />
 
-<main className="flex-1 mt-16 lg:ml-72 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full pb-40">
+<main className="flex-1 mt-16 lg:ml-72 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto pb-40 overflow-x-hidden">
 <header className="mb-10 text-center lg:text-left">
 <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1 mb-4">
 <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
@@ -213,7 +213,7 @@ export default function LeaderboardPage() {
 </div>
 </main>
       </div>
-<footer className="w-full flex justify-between px-10 items-center mt-auto full-width py-4 bg-slate-950 border-t border-white/5">
+<footer className="lg:ml-72 flex justify-between px-10 items-center mt-auto py-4 bg-slate-950 border-t border-white/5">
 <span className="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-cyan-500 uppercase">© 2024 QUIZBATTLE SISTEM TAKTIS</span>
 <div className="flex gap-6">
 <a className="font-['Space_Grotesk'] text-[10px] tracking-widest opacity-50 text-slate-600 hover:text-cyan-400 transition-all uppercase" href="#">Status</a>

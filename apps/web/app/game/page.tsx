@@ -34,6 +34,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '../../hooks/useAuth'
 import { useGame } from '../../context/GameContext'
 import { useGameEngine } from '../../hooks/useGameEngine'
+import { useSocket } from '../../hooks/useSocket'
 import type { GameReadyPayload } from '../../context/GameContext'
 
 // ── Shared Types ──────────────────────────────────────────────────────────────
@@ -323,6 +324,8 @@ export default function QuizBattleRoomPage() {
   // Use a ref to ensure initialization only happens once (avoids StrictMode double execution bugs)
   const hasInitialized = useRef(false)
 
+  const { socket } = useSocket()
+
   useEffect(() => {
     if (hasInitialized.current) return
     hasInitialized.current = true
@@ -334,13 +337,23 @@ export default function QuizBattleRoomPage() {
     }
     try {
       setGameData(JSON.parse(raw))
-      // Keep in sessionStorage until game finishes or user unmounts intentionally,
-      // but remove it when they are fully loaded so a browser refresh kicks them out.
       sessionStorage.removeItem('quizGameData')
+      
+      // Mark as busy
+      if (socket) {
+        socket.emit('toggle_presence', { busy: true, reason: 'In game' })
+      }
     } catch {
       router.replace('/game/lobby')
     }
-  }, [router])
+
+    return () => {
+      // Mark as available when unmounting
+      if (socket) {
+        socket.emit('toggle_presence', { busy: false })
+      }
+    }
+  }, [router, socket])
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.push('/auth/login')
