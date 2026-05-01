@@ -29,10 +29,33 @@ const ensureDbConnected = async () => {
   return dbInitPromise;
 };
 
-// 2. Origin Configuration
-const allowedOrigins = process.env.CLIENT_URL 
+// 2. Dynamic Origin Configuration
+const rawOrigins = process.env.CLIENT_URL 
   ? process.env.CLIENT_URL.split(',') 
   : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
+const allowedOrigins = rawOrigins.map(o => o.trim().replace(/\/$/, ""));
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Log origin untuk debugging di Vercel Logs
+    console.log('[CORS] Incoming Request Origin:', origin);
+
+    // Izinkan request tanpa origin (seperti Postman atau server-to-server)
+    if (!origin) return callback(null, true);
+
+    const sanitizedOrigin = origin.replace(/\/$/, "");
+    if (allowedOrigins.includes(sanitizedOrigin)) {
+      callback(null, true);
+    } else {
+      console.error(`[CORS] Rejected Origin: ${origin}. Allowed:`, allowedOrigins);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
 
 // 3. Conditional Socket.IO (Disabled on Vercel Serverless)
 const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL;
@@ -42,11 +65,7 @@ if (!isVercel) {
   // Only create httpServer and io if NOT on Vercel
   const httpServer = createServer(app);
   io = new SocketIOServer(httpServer, {
-    cors: {
-      origin: allowedOrigins,
-      credentials: true,
-      methods: ['GET', 'POST'],
-    },
+    cors: corsOptions, // Gunakan opsi yang sama untuk konsistensi
     transports: ['websocket', 'polling'],
   });
   setupSocketHandlers(io);
@@ -60,11 +79,7 @@ if (!isVercel) {
 }
 
 // 4. Standard Middleware
-app.use(cors({
-  origin: allowedOrigins,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  credentials: true,
-}));
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
