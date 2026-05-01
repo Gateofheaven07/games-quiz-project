@@ -161,7 +161,7 @@ export default function LobbyPage() {
           <p style={{ fontFamily:"'Inter',sans-serif", fontWeight:600, fontSize:'0.875rem', color:'var(--c-outline)', marginBottom:16, textTransform:'uppercase', letterSpacing:'0.08em' }}>
             Pilih Kategori
           </p>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12 }}>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {CATEGORIES.map(cat => (
               <button
                 key={cat.id}
@@ -224,7 +224,7 @@ export default function LobbyPage() {
                   <p style={{ fontFamily:"'Inter',sans-serif", fontWeight:600, fontSize:'0.8125rem', color:'var(--c-outline)', marginBottom:12, textTransform:'uppercase', letterSpacing:'0.08em' }}>
                     Tingkat Kesulitan Bot
                   </p>
-                  <div style={{ display:'flex', gap:10 }}>
+                  <div className="flex flex-col sm:flex-row gap-3">
                     {(Object.entries(BOT_DIFFICULTY_INFO) as [BotDifficulty, typeof BOT_DIFFICULTY_INFO[BotDifficulty]][]).map(([key, info]) => (
                       <button
                         key={key}
@@ -280,8 +280,8 @@ export default function LobbyPage() {
                     Buat room dan bagikan kode ke teman:
                   </p>
                   {privateRoomCode ? (
-                    <div style={{ display:'flex', gap:8 }}>
-                      <div style={{ flex:1, background:'rgba(0,209,255,0.1)', border:'1px solid rgba(0,209,255,0.3)', borderRadius:10, padding:'12px 16px', fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1.5rem', letterSpacing:'0.3em', color:'#00d1ff', textAlign:'center' }}>
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                      <div className="flex-1 bg-[rgba(0,209,255,0.1)] border border-[rgba(0,209,255,0.3)] rounded-[10px] p-3 font-['Space_Grotesk'] font-bold text-2xl tracking-[0.3em] text-[#00d1ff] text-center">
                         {privateRoomCode}
                       </div>
                       <button onClick={handleCopyCode} style={{ background:'rgba(0,209,255,0.15)', border:'1px solid rgba(0,209,255,0.3)', borderRadius:10, padding:'12px 20px', cursor:'pointer', color:'#00d1ff', fontFamily:"'Inter',sans-serif", fontWeight:600, fontSize:'0.875rem', whiteSpace:'nowrap' }}>

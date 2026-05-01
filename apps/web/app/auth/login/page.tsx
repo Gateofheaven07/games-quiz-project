@@ -177,7 +177,7 @@ export default function LoginPage() {
           </div>
 
           {/* Footer Links */}
-          <div className="mt-6 flex justify-center gap-12">
+          <div className="mt-6 flex flex-wrap justify-center gap-4 sm:gap-12">
             <Link href="#" className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#dde3e7] transition-colors uppercase">STATUS: AKTIF</Link>
             <Link href="#" className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#dde3e7] transition-colors uppercase">PROTOKOL PRIVASI</Link>
             <Link href="#" className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#dde3e7] transition-colors uppercase">PUSAT BANTUAN</Link>

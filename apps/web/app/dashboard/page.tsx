@@ -41,18 +41,7 @@ function Sidebar({ active, userStats }: { active: string; userStats?: UserStats 
   ]
 
   return (
-    <aside
-      style={{
-        width: 260,
-        minWidth: 260,
-        backgroundColor: 'var(--c-surface-low)',
-        borderRight: '1px solid var(--c-outline-variant)',
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '24px 16px',
-        gap: 8,
-      }}
-    >
+    <aside className="hidden md:flex flex-col w-[260px] min-w-[260px] bg-[var(--c-surface-low)] border-r border-[var(--c-outline-variant)] py-6 px-4 gap-2 z-20 relative">
       {/* Logo */}
       <div style={{ marginBottom: 32, paddingInline: 8 }}>
         <h1
@@ -144,6 +133,55 @@ function Sidebar({ active, userStats }: { active: string; userStats?: UserStats 
         Keluar
       </button>
     </aside>
+  )
+}
+
+function MobileNav({ active, handleLogout }: { active: string; handleLogout: () => void }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const navItems = [
+    { icon: 'dashboard',      label: 'Dashboard',     href: '/dashboard' },
+    { icon: 'swords',         label: 'Arena',         href: '/game/lobby' },
+    { icon: 'sports_esports', label: 'Arkade',        href: '/game/crossword' },
+    { icon: 'group',          label: 'Teman',         href: '/friends' },
+    { icon: 'leaderboard',    label: 'Peringkat',     href: '/leaderboard' },
+    { icon: 'person',         label: 'Profil',        href: '/profile' },
+  ]
+
+  return (
+    <div className="md:hidden flex items-center justify-between p-4 bg-[var(--c-surface-low)] border-b border-[var(--c-outline-variant)] sticky top-0 z-50">
+      <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] font-['Space_Grotesk']">
+        ⚡ QuizBattle
+      </h1>
+      <button onClick={() => setIsOpen(!isOpen)} className="p-2 text-[var(--c-on-surface)]">
+        <span className="material-symbols-rounded">{isOpen ? 'close' : 'menu'}</span>
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 bg-[var(--c-surface-low)] border-b border-[var(--c-outline-variant)] flex flex-col p-4 gap-2 shadow-xl">
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`nav-item ${active === item.label ? 'active' : ''}`}
+              onClick={() => setIsOpen(false)}
+            >
+              <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>
+                {item.icon}
+              </span>
+              {item.label}
+            </Link>
+          ))}
+          <div className="h-px w-full bg-[var(--c-outline-variant)] my-2"></div>
+          <button 
+            onClick={handleLogout} 
+            className="nav-item text-left text-[#ffb4ab]" 
+          >
+            <span className="material-symbols-rounded" style={{ fontSize: '1.25rem' }}>logout</span>
+            Keluar
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -312,7 +350,7 @@ export default function DashboardPage() {
   const [battlePassHovered, setBattlePassHovered] = useState(false)
   const [userStats, setUserStats] = useState<UserStats | null>(null)
   const router = useRouter()
-  const { isAuthenticated, isLoading, user, getAuthClient } = useAuth()
+  const { isAuthenticated, isLoading, user, getAuthClient, logout } = useAuth()
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -350,7 +388,7 @@ export default function DashboardPage() {
   if (isLoading || !isAuthenticated) return null
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--c-bg)', position: 'relative' }}>
+    <div className="flex flex-col md:flex-row min-h-screen bg-[var(--c-bg)] relative">
       {/* Font imports */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap');
@@ -363,34 +401,34 @@ export default function DashboardPage() {
 
       {/* Sidebar */}
       <Sidebar active="Dashboard" userStats={userStats} />
+      
+      {/* Mobile Nav */}
+      <MobileNav active="Dashboard" handleLogout={() => {
+        logout()
+        router.push('/auth/login')
+      }} />
 
       {/* Main content */}
-      <main style={{ flex: 1, overflowY: 'auto', padding: 32, position: 'relative', zIndex: 1 }}>
+      <main className="flex-1 overflow-y-auto p-4 md:p-8 relative z-10 w-full">
 
         {/* Welcome header */}
         <div style={{ marginBottom: 32 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
             <div>
               <p className="label-caps" style={{ color: 'var(--c-primary-container)', marginBottom: 4 }}>
                 ⚡ Selamat datang kembali
               </p>
               <h2
-                style={{
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: '2rem',
-                  fontWeight: 700,
-                  color: 'var(--c-on-surface)',
-                  letterSpacing: '-0.01em',
-                }}
+                className="text-2xl sm:text-[2rem] font-bold font-['Space_Grotesk'] text-[var(--c-on-surface)] tracking-tight"
               >
                 {user?.username || 'OPERATOR_01'}
               </h2>
-              <p style={{ color: 'var(--c-on-surface-variant)', marginTop: 4, fontSize: '0.9375rem' }}>
+              <p className="text-sm sm:text-[0.9375rem] text-[var(--c-on-surface-variant)] mt-1">
                 Efisiensi tempur Anda naik{' '}
                 <span style={{ color: '#4aff91', fontWeight: 600 }}>+12%</span> minggu ini. Siap untuk pertempuran berikutnya?
               </p>
             </div>
-            <button className="btn-primary" style={{ gap: 8 }}>
+            <button className="btn-primary w-full sm:w-auto justify-center" style={{ gap: 8 }}>
               <span className="material-symbols-rounded">swords</span>
               Pertarungan Cepat
             </button>
@@ -398,7 +436,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats row */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <StatCard
             label="Skor Pertempuran"
             value={userStats ? userStats.totalScore.toLocaleString() : '0'}
@@ -422,21 +460,14 @@ export default function DashboardPage() {
 
         {/* Game Modes */}
         <div style={{ marginBottom: 32 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <h3
-              style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontWeight: 700,
-                fontSize: '1.125rem',
-                color: 'var(--c-on-surface)',
-              }}
-            >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-['Space_Grotesk'] font-bold text-lg text-[var(--c-on-surface)]">
               Mode Permainan
             </h3>
             <span className="badge badge-live">3 Ruang Aktif</span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <GameModeCard
               icon="swords"
               title="Kuis Pertempuran"
@@ -463,7 +494,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Bottom row: leaderboard + battle pass */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
           {/* Weekly Top Players */}
           <div className="glass-panel" style={{ padding: 24 }}>

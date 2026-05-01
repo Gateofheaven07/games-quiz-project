@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { Zap, Trophy, Users } from 'lucide-react';
+import { Zap, Trophy, Users, Menu, X } from 'lucide-react';
 
 export default function HomePage() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   // We read auth state only to adapt the UI (navbar buttons), NOT to redirect
   const { isAuthenticated, isLoading, user } = useAuth();
 
@@ -23,28 +25,36 @@ export default function HomePage() {
 
       {/* Navigation */}
       <nav className="relative z-20 glass-panel border-b border-[#3c494e]/30">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#00d1ff] to-[#cf5cff] rounded-lg flex items-center justify-center neon-glow-primary icon-box">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-[#00d1ff] to-[#cf5cff] rounded-lg flex items-center justify-center neon-glow-primary icon-box">
               <span
-                className="material-symbols-outlined text-[#0e1417] text-2xl"
+                className="material-symbols-outlined text-[#0e1417] text-xl sm:text-2xl"
                 style={{ fontVariationSettings: "'FILL' 1" }}
               >
                 swords
               </span>
             </div>
-            <h1 className="text-3xl font-bold text-[#a4e6ff] italic tracking-tighter">QuizBattle</h1>
+            <h1 className="text-[1.125rem] sm:text-2xl font-bold text-[#a4e6ff] italic tracking-tighter leading-none">QuizBattle</h1>
           </div>
 
-          {/* Adaptive navbar buttons based on auth state */}
-          <div className="flex gap-4 items-center">
+          {/* Hamburger button for mobile */}
+          <div className="md:hidden flex items-center">
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-[#a4e6ff] hover:text-white p-2"
+            >
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+
+          {/* Desktop navbar buttons */}
+          <div className="hidden md:flex gap-4 items-center">
             {isLoading ? (
-              /* Show a subtle placeholder while checking auth */
               <div className="h-9 w-32 rounded-lg bg-[#1a2227] animate-pulse" />
             ) : isAuthenticated ? (
-              /* User is logged in → show their name + go to dashboard */
               <>
-                <span className="font-bold text-[10px] tracking-widest text-[#859399] uppercase hidden sm:block">
+                <span className="font-bold text-[10px] tracking-widest text-[#859399] uppercase">
                   {user?.username}
                 </span>
                 <Link
@@ -56,7 +66,6 @@ export default function HomePage() {
                 </Link>
               </>
             ) : (
-              /* User is not logged in → show Sign In + Register */
               <>
                 <Link
                   href="/auth/login"
@@ -74,26 +83,76 @@ export default function HomePage() {
             )}
           </div>
         </div>
+
+        {/* Mobile Menu Sidebar Overlay */}
+        <div 
+          className={`md:hidden absolute top-[100%] left-0 w-full bg-[#090f12]/95 backdrop-blur-xl border-b border-[#3c494e]/30 shadow-2xl z-50 p-6 flex flex-col gap-4 transition-all duration-300 ease-out origin-top ${
+            isMobileMenuOpen 
+              ? 'opacity-100 scale-y-100 pointer-events-auto' 
+              : 'opacity-0 scale-y-95 pointer-events-none'
+          }`}
+        >
+          {isLoading ? (
+            <div className="h-9 w-full rounded-lg bg-[#1a2227] animate-pulse" />
+          ) : isAuthenticated ? (
+            <>
+              <div className="flex items-center gap-3 px-2 mb-2">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#00d1ff] to-[#cf5cff] flex items-center justify-center text-[#0e1417] font-bold">
+                  {user?.username?.[0]?.toUpperCase() || 'U'}
+                </div>
+                <div>
+                  <p className="text-xs text-[#859399] uppercase tracking-widest">Operator</p>
+                  <p className="font-bold text-[#dde3e7]">{user?.username}</p>
+                </div>
+              </div>
+              <Link
+                href="/dashboard"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full py-3 rounded-lg font-bold text-xs tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-base">dashboard</span>
+                Masuk ke Dashboard
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/auth/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full py-3 rounded-lg font-bold text-xs tracking-widest text-[#a4e6ff] border border-[#00d1ff]/30 hover:bg-[#00d1ff]/10 transition-all uppercase flex items-center justify-center"
+              >
+                Masuk
+              </Link>
+              <Link
+                href="/auth/register"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full py-3 rounded-lg font-bold text-xs tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary active:scale-95 transition-all flex items-center justify-center"
+              >
+                Daftar
+              </Link>
+            </>
+          )}
+        </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="relative z-10 max-w-6xl mx-auto px-6 py-32 text-center flex flex-col items-center">
+      <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-32 text-center flex flex-col items-center">
         <div className="inline-block glass-panel px-4 py-1 rounded-full mb-6 border border-[#00d1ff]/30">
           <span className="font-bold text-[10px] tracking-widest text-[#00d1ff] uppercase">V.2.0.4-STABLE ONLINE</span>
         </div>
-        <h2 className="text-5xl md:text-7xl font-bold text-[#dde3e7] mb-6 leading-tight">
+        <h2 className="text-4xl sm:text-5xl md:text-7xl font-bold text-[#dde3e7] mb-4 sm:mb-6 leading-tight">
           MASUK KE <br className="md:hidden" />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00d1ff] to-[#cf5cff]">ARENA.</span>
         </h2>
-        <p className="text-lg md:text-xl text-[#bbc9cf] mb-12 max-w-2xl mx-auto">
+        <p className="text-base sm:text-lg md:text-xl text-[#bbc9cf] mb-8 sm:mb-12 max-w-2xl mx-auto px-2">
           Bergabunglah dalam pertukaran pengetahuan taktis terbaik. Tingkatkan peringkat, kuasai leaderboard, dan buktikan keunggulan kognitifmu.
         </p>
         <Link
           href={isAuthenticated ? '/dashboard' : '/auth/register'}
-          className="px-10 py-5 rounded-lg font-bold text-sm tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all flex items-center justify-center gap-4"
+          className="px-6 sm:px-10 py-3 sm:py-5 rounded-lg font-bold text-xs sm:text-sm tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all flex items-center justify-center gap-2 sm:gap-4 w-full sm:w-auto"
         >
           <span>{isAuthenticated ? 'Masuk ke Arena' : 'Mulai Sekarang'}</span>
-          <span className="material-symbols-outlined text-2xl">{isAuthenticated ? 'swords' : 'rocket_launch'}</span>
+          <span className="material-symbols-outlined text-xl sm:text-2xl">{isAuthenticated ? 'swords' : 'rocket_launch'}</span>
         </Link>
       </section>
 
@@ -137,15 +196,15 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="relative z-10 border-y border-[#3c494e]/50 py-24 mt-12 bg-gradient-to-r from-[#00d1ff]/5 to-[#cf5cff]/5">
-        <div className="max-w-4xl mx-auto text-center px-6">
-          <h3 className="text-4xl font-bold text-[#dde3e7] mb-6">SIAP BERTARUNG?</h3>
-          <p className="text-xl text-[#bbc9cf] mb-10">
+      <section className="relative z-10 border-y border-[#3c494e]/50 py-16 sm:py-24 mt-8 sm:mt-12 bg-gradient-to-r from-[#00d1ff]/5 to-[#cf5cff]/5">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6">
+          <h3 className="text-3xl sm:text-4xl font-bold text-[#dde3e7] mb-4 sm:mb-6">SIAP BERTARUNG?</h3>
+          <p className="text-base sm:text-xl text-[#bbc9cf] mb-8 sm:mb-10">
             Daftar sekarang dan mulailah bersaing dengan operator dari seluruh dunia.
           </p>
           <Link
             href={isAuthenticated ? '/dashboard' : '/auth/register'}
-            className="px-12 py-5 inline-block rounded-lg font-bold text-sm tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all"
+            className="px-8 sm:px-12 py-4 sm:py-5 w-full sm:w-auto inline-block rounded-lg font-bold text-xs sm:text-sm tracking-widest text-[#0e1417] uppercase bg-gradient-to-r from-[#00d1ff] to-[#cf5cff] neon-glow-primary hover:neon-glow-hover active:scale-95 transition-all"
           >
             {isAuthenticated ? 'MASUK KE ARENA' : 'INISIALISASI OPERATOR ANDA'}
           </Link>
@@ -154,11 +213,11 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="relative z-10 glass-panel border-t border-[#3c494e]/30 py-8">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="font-bold text-[10px] tracking-widest text-[#859399] uppercase">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="font-bold text-[10px] tracking-widest text-[#859399] uppercase text-center md:text-left">
             © 2024 QUIZBATTLE SISTEM TAKTIS
           </div>
-          <div className="flex gap-8">
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-8">
             <span className="font-bold text-[10px] tracking-widest text-[#859399] hover:text-[#00d1ff] transition-colors cursor-pointer uppercase">
               STATUS: AKTIF
             </span>
