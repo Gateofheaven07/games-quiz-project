@@ -15,23 +15,44 @@ import { setupSocketHandlers } from './lib/socketHandlers.js';
 dotenv.config();
 
 const app: Express = express();
-const httpServer = createServer(app);
 
-// NOTE: Socket.io will NOT work on Vercel Serverless Functions.
-// It requires a persistent server or a dedicated WebSocket provider.
-// This setup is kept for local development compatibility.
-const io = new SocketIOServer(httpServer, {
-  cors: {
-    origin: process.env.CLIENT_URL || ['http://localhost:3000', 'http://127.0.0.1:3000'],
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
-});
+// 1. Initialize DB with a Singleton Promise to prevent race conditions in Serverless
+let dbInitPromise: Promise<void> | null = null;
 
-const PORT = process.env.PORT || 3001;
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const ensureDbConnected = async () => {
+  if (!dbInitPromise) {
+    dbInitPromise = initialize().catch((err) => {
+      dbInitPromise = null; // Reset on failure so next request can retry
+      throw err;
+    });
+  }
+  return dbInitPromise;
+};
 
-// Middleware
+// 2. Conditional Socket.IO (Disabled on Vercel)
+const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL;
+let io: SocketIOServer | null = null;
+
+if (!isVercel) {
+  // Only create httpServer and io if NOT on Vercel
+  const httpServer = createServer(app);
+  io = new SocketIOServer(httpServer, {
+    cors: {
+      origin: process.env.CLIENT_URL || ['http://localhost:3000', 'http://127.0.0.1:3000'],
+      credentials: true,
+    },
+  });
+  setupSocketHandlers(io);
+
+  const PORT = process.env.PORT || 3001;
+  ensureDbConnected().then(() => {
+    httpServer.listen(PORT, () => {
+      console.log(`[Server] Local dev server running on http://localhost:${PORT}`);
+    });
+  });
+}
+
+// 3. Standard Middleware
 app.use(cors({
   origin: process.env.CLIENT_URL
     ? process.env.CLIENT_URL.split(',')
@@ -42,34 +63,32 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Middleware to ensure DB is initialized (crucial for Serverless)
-let isInitialized = false;
+// 4. DB Initialization Middleware (Race-condition safe)
 app.use(async (req, res, next) => {
-  if (!isInitialized) {
-    try {
-      await initialize();
-      isInitialized = true;
-    } catch (err) {
-      console.error('[Server] DB Initialization failed:', err);
-      return res.status(500).json({ error: 'Database initialization failed' });
-    }
+  try {
+    await ensureDbConnected();
+    next();
+  } catch (err) {
+    console.error('[Server] DB Initialization failed during request:', err);
+    res.status(500).json({ 
+      error: 'Database connection error',
+      message: process.env.NODE_ENV === 'development' ? String(err) : undefined 
+    });
   }
-  next();
 });
 
-// Root route — confirms server is alive
+// Root route
 app.get('/', (_req, res) => {
   res.json({ 
     status: 'Server is running', 
-    message: 'WebSocket available at /socket.io/ (Local only)', 
-    environment: NODE_ENV,
+    mode: isVercel ? 'Serverless (Vercel)' : 'Persistent (Local)',
     timestamp: new Date().toISOString() 
   });
 });
 
 // Health check
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok' });
 });
 
 // API Routes
@@ -79,26 +98,7 @@ app.use('/api/quiz', quizRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/friends', friendsRoutes);
 
-// Setup Socket.IO handlers (Works locally, not on Vercel)
-setupSocketHandlers(io);
-
-// Wrap app for serverless as requested
-const handler = serverless(app);
-
-// Start listener only if not running on Vercel
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-  initialize().then(() => {
-    httpServer.listen(PORT, () => {
-      console.log(`[Server] Running on http://localhost:${PORT} in ${NODE_ENV} mode`);
-      console.log(`[Server] WebSocket endpoint: ws://localhost:${PORT}`);
-    });
-  }).catch(err => {
-    console.error('[Server] Failed to start:', err);
-  });
-}
-
-// Export the app (for Vercel's default Express support)
+// Export for Vercel
 export default app;
-
-// Export the serverless handler (as requested)
-export { handler };
+// Export handler for serverless-http compatibility if needed
+export const handler = serverless(app);

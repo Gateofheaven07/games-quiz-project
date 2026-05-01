@@ -37,7 +37,8 @@ export async function initialize(): Promise<void> {
     console.log('[DB] Connected successfully', result.rows[0]);
   } catch (error) {
     console.error('[DB] Failed to connect', error);
-    process.exit(1);
+    // DO NOT process.exit(1) in serverless, just throw
+    throw error;
   }
 }
 
