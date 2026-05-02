@@ -138,55 +138,47 @@ const PlayerPanel = memo(function PlayerPanel({
 
   return (
     <div
-      className="glass-panel"
+      className="glass-panel w-full flex-1 p-3 md:p-5 flex flex-col gap-2 md:gap-3"
       style={{
-        flex: 1,
-        padding: 20,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 12,
         border: isUser ? '1px solid rgba(0,209,255,0.3)' : '1px solid rgba(255,255,255,0.08)',
         boxShadow: isUser ? '0 0 24px rgba(0,209,255,0.12)' : 'none',
       }}
     >
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexDirection: align === 'right' ? 'row-reverse' : 'row' }}>
+      <div className={`flex items-center gap-2 md:gap-3 ${align === 'right' ? 'flex-row-reverse text-right' : 'flex-row text-left'}`}>
         <div
+          className="w-8 h-8 md:w-12 md:h-12 shrink-0 rounded-full flex items-center justify-center font-bold text-sm md:text-base border-2 border-white/15 text-[#003543]"
           style={{
-            width: 48, height: 48, borderRadius: '50%',
             background: isUser
               ? 'linear-gradient(135deg, #00d1ff, #cf5cff)'
               : 'linear-gradient(135deg, #cf5cff, #feb127)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontFamily: "'Space Grotesk', sans-serif",
-            fontWeight: 700, fontSize: '1rem', color: '#003543',
-            border: '2px solid rgba(255,255,255,0.15)',
           }}
         >
           {player.avatar}
         </div>
-        <div style={{ textAlign: align === 'right' ? 'right' : 'left' }}>
-          <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '0.9375rem', color: isUser ? '#00d1ff' : 'var(--c-on-surface)' }}>
+        <div className="min-w-0">
+          <p className="font-bold text-[0.7rem] sm:text-xs md:text-[0.9375rem] truncate leading-tight" style={{ fontFamily: "'Space Grotesk', sans-serif", color: isUser ? '#00d1ff' : 'var(--c-on-surface)' }}>
             {player.name}
           </p>
-          <p className="label-caps" style={{ color: 'var(--c-outline)', fontSize: '0.625rem' }}>
-            LVL {player.level} {player.rank}
+          <p className="label-caps text-[0.45rem] md:text-[0.625rem] truncate" style={{ color: 'var(--c-outline)' }}>
+            LVL {player.level} <span className="hidden sm:inline">{player.rank}</span>
           </p>
         </div>
       </div>
 
       {/* Score */}
-      <div style={{ textAlign: align === 'right' ? 'right' : 'left' }}>
-        <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '2rem', color: statusColor, lineHeight: 1, transition: 'color 0.3s ease' }}>
+      <div className={align === 'right' ? 'text-right' : 'text-left'}>
+        <p className="font-bold text-lg sm:text-xl md:text-3xl leading-none transition-colors duration-300" style={{ fontFamily: "'Space Grotesk', sans-serif", color: statusColor }}>
           {player.score.toLocaleString()}
         </p>
-        <p className="label-caps" style={{ color: 'var(--c-outline)', fontSize: '0.6rem', marginTop: 2 }}>poin</p>
+        <p className="label-caps text-[0.45rem] md:text-[0.6rem] mt-0.5 md:mt-1" style={{ color: 'var(--c-outline)' }}>poin</p>
       </div>
 
       {/* Status */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: align === 'right' ? 'flex-end' : 'flex-start', gap: 6 }}>
-        <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: statusColor, boxShadow: `0 0 8px ${statusColor}`, animation: player.status === 'berpikir' ? 'pulse-live 1s infinite' : 'none' }} />
-        <span className="label-caps" style={{ color: statusColor, fontSize: '0.6rem' }}>
+      <div className={`flex items-center gap-1.5 ${align === 'right' ? 'justify-end' : 'justify-start'}`}>
+        <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full shrink-0" style={{ backgroundColor: statusColor, boxShadow: `0 0 8px ${statusColor}`, animation: player.status === 'berpikir' ? 'pulse-live 1s infinite' : 'none' }} />
+        <span className="label-caps text-[0.45rem] md:text-[0.6rem] truncate" style={{ color: statusColor }}>
           {player.status.toUpperCase()}
         </span>
       </div>
@@ -317,6 +309,7 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
 
   // ── Slow state: game data (set once) ───────────────────────────────────────
   const [gameData, setGameData] = useState<GameReadyPayload | null>(null)
+  const [isSurrenderModalOpen, setIsSurrenderModalOpen] = useState(false)
 
   // Sync with context if we receive game_ready from a rejoin
   useEffect(() => {
@@ -622,7 +615,7 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
       >
         <div className="flex items-center gap-2 md:gap-4 w-full md:w-auto justify-between md:justify-start order-1 md:order-none">
           <button 
-            onClick={() => { resetMatchmaking(); router.push('/dashboard'); }}
+            onClick={() => setIsSurrenderModalOpen(true)}
             className="flex items-center gap-2 text-none shrink-0 hover:bg-white/5 p-1 rounded-lg transition-colors"
           >
             <span className="material-symbols-rounded text-lg md:text-xl" style={{ color: 'var(--c-outline)' }}>arrow_back</span>
@@ -639,7 +632,7 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
           </button>
 
           <button 
-            onClick={() => { resetMatchmaking(); router.push('/dashboard'); }}
+            onClick={() => setIsSurrenderModalOpen(true)}
             className="btn-danger md:hidden text-[0.65rem] px-3 py-1.5 shrink-0"
           >
             MENYERAH
@@ -664,7 +657,7 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
 
         <div className="hidden md:block order-2 md:order-none">
           <button 
-            onClick={() => { resetMatchmaking(); router.push('/dashboard'); }}
+            onClick={() => setIsSurrenderModalOpen(true)}
             className="btn-danger text-xs px-4 py-2"
           >
             MENYERAH
@@ -687,20 +680,20 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
         </div>
 
         {/* Players vs Timer */}
-        <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center mb-6 md:mb-8 w-full">
+        <div className="flex flex-row gap-2 md:gap-6 items-center justify-between mb-6 md:mb-8 w-full">
           {/* PlayerPanel re-renders only when score/status changes */}
-          <div className="w-full md:w-auto md:flex-1">
+          <div className="w-full md:w-auto flex-1 min-w-0">
             <PlayerPanel player={userPlayer} align="left" isUser />
           </div>
 
           {/* Timer widget — TimerArc and TimerDisplay update via DOM refs ONLY */}
-          <div className="flex flex-row md:flex-col items-center justify-center gap-4 md:gap-2 shrink-0 my-2 md:my-0">
-            <div style={{ position: 'relative', width: 80, height: 80 }} className="md:w-[96px] md:h-[96px]">
+          <div className="flex flex-col items-center justify-center shrink-0">
+            <div style={{ position: 'relative' }} className="w-16 h-16 md:w-[96px] md:h-[96px]">
               {/*
                 TimerArc renders ONCE and never re-renders.
                 useGameEngine mutates its SVG attributes directly via timerArcRef.
               */}
-              <div className="absolute inset-0 transform scale-[0.83] md:scale-100 origin-top-left">
+              <div className="absolute inset-0 transform scale-[0.66] md:scale-100 origin-top-left">
                 <TimerArc total={TIMER_DURATION} arcRef={timerArcRef} />
               </div>
 
@@ -717,21 +710,19 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
                 */}
                 <div className="scale-75 md:scale-100 origin-center flex flex-col items-center">
                   <TimerDisplay initial={timeLeft} displayRef={timerDisplayRef} />
-                  <span className="label-caps" style={{ fontSize: '0.5rem', color: 'var(--c-outline)' }}>DETIK</span>
+                  <span className="label-caps" style={{ fontSize: '0.45rem', color: 'var(--c-outline)' }}>DETIK</span>
                 </div>
               </div>
             </div>
             <span
-              style={{
-                fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
-                fontSize: '0.875rem', color: 'var(--c-outline)', letterSpacing: '0.1em',
-              }}
+              className="mt-1 font-bold text-[0.65rem] md:text-[0.875rem] tracking-widest text-white/50"
+              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
             >
               VS
             </span>
           </div>
 
-          <div className="w-full md:w-auto md:flex-1">
+          <div className="w-full md:w-auto flex-1 min-w-0">
             <PlayerPanel player={opponentPlayer} align="right" isUser={false} />
           </div>
         </div>
@@ -774,6 +765,42 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
           ))}
         </div>
       </footer>
+
+      {/* ── Surrender Modal ── */}
+      {isSurrenderModalOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#0b0e14]/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="glass-panel p-6 max-w-sm w-full text-center border-red-500/30 animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 mx-auto bg-red-500/10 text-red-400 rounded-full flex items-center justify-center mb-4 border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]">
+              <span className="material-symbols-rounded text-3xl">warning</span>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              Menyerah?
+            </h3>
+            <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+              Apakah Anda yakin ingin menyerah? Anda akan dianggap kalah pada pertandingan ini.
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setIsSurrenderModalOpen(false)}
+                className="flex-1 py-2.5 rounded-lg border border-white/10 hover:bg-white/5 text-slate-300 font-bold text-xs uppercase tracking-wider transition-colors"
+              >
+                Batal
+              </button>
+              <button 
+                onClick={() => {
+                  setIsSurrenderModalOpen(false);
+                  if (socket) {
+                    socket.emit('game:surrender', { roomId });
+                  }
+                }}
+                className="flex-1 py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-red-500/20 hover:scale-[1.02] active:scale-[0.98]"
+              >
+                Ya, Menyerah
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

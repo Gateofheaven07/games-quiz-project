@@ -686,6 +686,17 @@ export function setupSocketHandlers(io: any) {
       }
     });
 
+    socket.on('game:surrender', (data: { roomId: string }) => {
+      try {
+        if (!socket.userId || !data.roomId) return;
+        
+        console.log(`[Socket] User ${socket.userId} surrendered in room ${data.roomId}`);
+        GameManager.playerSurrendered(data.roomId, socket.userId, io);
+      } catch (err) {
+        console.error('[Socket] Surrender error:', err);
+      }
+    });
+
     socket.on('game:rejoin', async (data: { roomId: string }) => {
       try {
         if (!socket.userId) return;

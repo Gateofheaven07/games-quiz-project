@@ -672,4 +672,106 @@ export class GameManager {
       this.finishRoom(roomId, io);
     }
   }
+
+  static playerSurrendered(roomId: string, surrenderingUserId: string, io: any) {
+    const roomData = rooms.get(roomId);
+    if (!roomData) return;
+    if (roomData.room.status === 'finished') return;
+
+    roomData.room.status = 'finished';
+
+    const p1 = roomData.room.player1;
+    const p2 = roomData.room.player2;
+
+    const p1Score = roomData.playerScores.get(p1) || 0;
+    const p2Score = p2 ? (roomData.playerScores.get(p2) || 0) : 0;
+    const p1Time  = roomData.playerTimeSpent.get(p1) || 30000;
+    const p2Time  = p2 ? (roomData.playerTimeSpent.get(p2) || 30000) : 30000;
+
+    // The winner is the player who DID NOT surrender
+    let winnerId: string | null = null;
+    if (p2) {
+      winnerId = surrenderingUserId === p1 ? p2 : p1;
+    } else {
+      // Should not happen, but if someone surrenders before p2 joins...
+      winnerId = p1; // or null
+    }
+
+    // 1. Instantly notify clients
+    io.to(roomId).emit('game:finished', {
+      message: 'Lawan Menyerah!',
+      results: {
+        p1: { userId: p1, score: p1Score, time: p1Time, isWinner: winnerId === p1, isDraw: false },
+        p2: p2 ? { userId: p2, score: p2Score, time: p2Time, isWinner: winnerId === p2, isDraw: false } : null,
+      },
+      winnerId,
+      isDraw: false,
+    });
+
+    this.endRoom(roomId);
+
+    // 2. Perform DB operations
+    (async () => {
+      try {
+        const game = await prisma.game.findUnique({ where: { roomId } });
+        if (game) {
+          await prisma.$transaction(async (tx) => {
+            await tx.game.update({
+              where: { id: game.id },
+              data:  { status: GameStatus.FINISHED, endedAt: new Date(), winnerId, isDraw: false },
+            });
+
+            const resultsData = [
+              { userId: p1, gameId: game.id, score: p1Score, finalScore: p1Score, isWinner: winnerId === p1, isDraw: false, timeSpentMs: p1Time },
+              ...(p2 && !roomData.isVsBot ? [{ userId: p2, gameId: game.id, score: p2Score, finalScore: p2Score, isWinner: winnerId === p2, isDraw: false, timeSpentMs: p2Time }] : []),
+            ];
+
+            await tx.gameResult.createMany({ data: resultsData });
+
+            const calculateImpact = (isBotMode: boolean, score: number, isWinner: boolean, isDrawGame: boolean) => {
+              if (isBotMode) return { scoreImpact: 0, winImpact: 0, lossImpact: 0, xpImpact: 5 };
+              return {
+                scoreImpact: score + (isWinner ? 50 : 10),
+                winImpact: isWinner ? 1 : 0,
+                lossImpact: !isWinner && !isDrawGame ? 1 : 0,
+                xpImpact: score + (isWinner ? 50 : 10)
+              };
+            };
+
+            const updatePlayerStats = async (uid: string, score: number, winner: boolean) => {
+              if (uid.startsWith('bot-')) return;
+              const user = await tx.user.findUnique({ where: { id: uid }, select: { totalScore: true, level: true, wins: true, losses: true } });
+              if (!user) return;
+
+              const isBotMode = roomData.isVsBot ?? false;
+              const impact = calculateImpact(isBotMode, score, winner, false);
+
+              const newTotalScore = user.totalScore + impact.scoreImpact;
+              const newWins = (user.wins || 0) + impact.winImpact;
+              const newLosses = (user.losses || 0) + impact.lossImpact;
+              const newLevel = Math.floor(Math.sqrt((user.totalScore + impact.xpImpact) / 100)) + 1;
+
+              await tx.user.update({
+                where: { id: uid },
+                data: { totalScore: newTotalScore, level: newLevel, wins: newWins, losses: newLosses }
+              });
+            };
+
+            await updatePlayerStats(p1, p1Score, winnerId === p1);
+            if (p2 && !roomData.isVsBot) {
+              await updatePlayerStats(p2, p2Score, winnerId === p2);
+            }
+
+            await tx.room.update({
+              where: { id: roomId },
+              data:  { status: RoomStatus.FINISHED },
+            });
+          });
+          console.log('[GameManager] Game surrender results saved for room:', roomId);
+        }
+      } catch (err) {
+        console.error('[GameManager] Error saving surrender results for room:', roomId, err);
+      }
+    })();
+  }
 }
