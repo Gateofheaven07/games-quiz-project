@@ -276,41 +276,18 @@ export function useGameEngine({
   useEffect(() => {
     if (!socket || !userId || !gameRoom) return;
 
-    const handlePlayerAnswered = (data: any) => {
-      console.log('[GameEngine] Player answered broadcast received:', data);
+    const handleSyncScores = (data: { scores: Record<string, number> }) => {
+      if (!myPlayerId) return;
+      console.log('🔄 SYNC SCORES:', data, 'MyID:', myPlayerId, 'OppID:', opponentId);
       
-      // Update scores for both players from server data
-      // Determine which score is mine and which is opponent's
-      const myId = userId;
-      // In the server broadcast, we get p1Score and p2Score. 
-      // We need to know which one matches which player ID.
-      // However, the current server implementation of 'game:player_answered' sends p1Score/p2Score.
-      // Let's check how the server calculates p1/p2. 
-      // It uses GameManager.getRoom(roomId).player1.
+      const myNewScore = data.scores[myPlayerId] || 0;
+      const opponentNewScore = opponentId ? (data.scores[opponentId] || 0) : 0;
       
-      const p1Id = gameRoom?.players?.[0]?.userId;
-      const isPlayer1 = myId === p1Id;
-      
-      const newMyScore = isPlayer1 ? data.p1Score : data.p2Score;
-      const newOpponentScore = isPlayer1 ? data.p2Score : data.p1Score;
-
       dispatch({ 
         type: 'SYNC_SCORES', 
         payload: { 
-          playerScore: newMyScore, 
-          opponentScore: newOpponentScore 
-        } 
-      });
-    };
-
-    const handleAnswerResult = (data: any) => {
-      console.log('[GameEngine] Private answer result received:', data);
-      // Even though we update optimistically, we sync with server's score truth
-      dispatch({ 
-        type: 'SYNC_SCORES', 
-        payload: { 
-          playerScore: data.myScore, 
-          opponentScore: data.opponentScore 
+          playerScore: myNewScore, 
+          opponentScore: opponentNewScore 
         } 
       });
     };
@@ -327,35 +304,15 @@ export function useGameEngine({
       dispatch({ type: 'GAME_OVER', payload: data });
     };
 
-    const handleUpdateScore = (data: { playerId: string; newScore: number; pointsGained?: number }) => {
-      console.log('🔴 SKOR MASUK:', data, 'MyID:', myPlayerId, 'OppID:', opponentId);
-      
-      if (data.playerId === myPlayerId) {
-        dispatch({ 
-          type: 'UPDATE_SCORE', 
-          payload: { isMe: true, newScore: data.newScore } 
-        });
-      } else if (data.playerId === opponentId) {
-        dispatch({ 
-          type: 'UPDATE_SCORE', 
-          payload: { isMe: false, newScore: data.newScore } 
-        });
-      }
-    };
-
     // Register listeners
-    on('update_score',          handleUpdateScore);
-    on('game:player_answered',  handlePlayerAnswered);
-    on('game:answer_result',    handleAnswerResult);
+    on('sync_scores',           handleSyncScores);
     on('game:finished',         handleGameFinished);
     on('game:results',          handleGameFinished);
     on('game:surrender_result', handleGameFinished);
     on('game:finish',           handleGameFinished);
 
     return () => {
-      off('update_score',          handleUpdateScore);
-      off('game:player_answered',  handlePlayerAnswered);
-      off('game:answer_result',    handleAnswerResult);
+      off('sync_scores',           handleSyncScores);
       off('game:finished',         handleGameFinished);
       off('game:results',          handleGameFinished);
       off('game:surrender_result', handleGameFinished);

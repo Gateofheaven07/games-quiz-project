@@ -39,11 +39,12 @@ export async function submitAnswerHandler(socket: AuthenticatedSocket, io: any, 
       newScore: result.newScore
     });
 
-    // BROADCAST: Update skor ke SELURUH pemain di room agar tersinkronisasi
-    io.to(data.roomId).emit('update_score', { 
-      playerId: socket.userId, 
-      newScore: result.newScore,
-      pointsGained: result.scoreEarned
+    // 1. Ambil state skor terbaru dari SELURUH pemain di room (Single Source of Truth)
+    const allScores = await GameService.getRoomScores(data.roomId);
+
+    // 2. BROADCAST: Kirim object skor lengkap ke seluruh isi room
+    io.to(data.roomId).emit('sync_scores', { 
+      scores: allScores
     });
 
     // Tetap kirim event lama jika ada listener lain yang bergantung padanya
@@ -51,6 +52,7 @@ export async function submitAnswerHandler(socket: AuthenticatedSocket, io: any, 
       userId: socket.userId,
       isCorrect: result.isCorrect,
       scoreEarned: result.scoreEarned,
+      scores: allScores // Opsional: tambahkan data skor ke sini juga
     });
 
   } catch (error: any) {

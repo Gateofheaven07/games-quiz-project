@@ -5,6 +5,7 @@ import prisma from './prisma.js';
 import { enqueue, remove, isWaiting, getQueueStats } from './matchmakingQueue.js';
 import { BotDifficulty, BOT_DIFFICULTY_CONFIGS } from './bot.types.js';
 import { startBotSession } from './botEngine.js';
+import { submitAnswerHandler } from '../websocket/events/submitAnswer.js';
 
 // Track online users: userId → socketId
 const onlineUsers = new Map<string, string>();
@@ -650,41 +651,8 @@ export function setupSocketHandlers(io: any) {
     // GAMEPLAY
     // ─────────────────────────────────────────────────────────────────────────
 
-    socket.on('game:submit_answer', async (data: { answer: number; questionIndex: number }) => {
-      try {
-        if (!socket.userId) return;
-        const roomId = GameManager.getUserRoom(socket.userId);
-        if (!roomId) return;
-
-        const { answer, questionIndex } = data;
-        const questions = GameManager.getRoomQuestions(roomId);
-        const question  = questions[questionIndex];
-        if (!question) return;
-
-        const isCorrect  = question.correctAnswer === answer;
-        const scoreEarned = isCorrect ? 10 : 0;
-
-        const result = GameManager.submitAnswer(roomId, socket.userId, answer, scoreEarned);
-        if (!result) return;
-
-        socket.emit('game:answer_result', {
-          isCorrect,
-          scoreEarned,
-          correctAnswer: question.correctAnswer,
-          myScore: socket.userId === GameManager.getRoom(roomId)?.player1 ? result.p1Score : result.p2Score,
-          opponentScore: socket.userId === GameManager.getRoom(roomId)?.player1 ? result.p2Score : result.p1Score,
-        });
-
-        io.to(roomId).emit('game:player_answered', {
-          userId: socket.userId,
-          isCorrect,
-          scoreEarned,
-          p1Score: result.p1Score,
-          p2Score: result.p2Score,
-        });
-      } catch (err) {
-        console.error('[Socket] Answer error:', err);
-      }
+    socket.on('game:submit_answer', async (data: { answer: number; questionIndex: number; roomId: string; gameId: string; questionId: string; timeSpentMs?: number }) => {
+      await submitAnswerHandler(socket, io, data);
     });
 
     socket.on('game:purge', () => {

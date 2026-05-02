@@ -486,7 +486,7 @@ export class GameManager {
   static submitAnswer(
     roomId: string,
     userId: string,
-    _answer: number,
+    _answer: any,
     scoreEarned: number
   ): { p1Score: number; p2Score: number } | null {
     const roomData = rooms.get(roomId);
@@ -503,6 +503,17 @@ export class GameManager {
       p1Score: roomData.playerScores.get(p1) || 0,
       p2Score: p2 ? (roomData.playerScores.get(p2) || 0) : 0,
     };
+  }
+
+  static getRoomScoresMap(roomId: string): Record<string, number> {
+    const roomData = rooms.get(roomId);
+    if (!roomData) return {};
+    
+    const scores: Record<string, number> = {};
+    roomData.playerScores.forEach((score, uid) => {
+      scores[uid] = score;
+    });
+    return scores;
   }
 
   static getRoom(roomId: string): GameRoom | null {

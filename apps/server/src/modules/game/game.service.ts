@@ -3,6 +3,7 @@ import { GameMode, GameStatus, RoomStatus } from '@prisma/client';
 import { GameEngine } from './game.engine.js';
 import { AnswerPayload, AnswerResult, StartGameResult } from './game.types.js';
 import { fetchAndTranslate } from '../../lib/trivia.js';
+import { GameManager } from '../../lib/gameManager.js';
 
 export class GameService {
   /**
@@ -48,6 +49,9 @@ export class GameService {
         where: { userId_roomId: { userId, roomId } },
         data: { score: { increment: scoreEarned } },
       });
+
+      // SYNC: Update GameManager's in-memory state so finishRoom stays correct
+      GameManager.submitAnswer(roomId, userId, answer as any, scoreEarned);
     }
 
     // 4. Ambil skor terbaru untuk sinkronisasi real-time
@@ -62,6 +66,25 @@ export class GameService {
       correctAnswer: gameQuestion.question.answer,
       newScore: updatedPlayer?.score || 0,
     };
+  }
+
+  /**
+   * Ambil semua skor player dalam satu room.
+   * Digunakan untuk sinkronisasi Single Source of Truth.
+   * @param roomId ID room
+   */
+  static async getRoomScores(roomId: string): Promise<Record<string, number>> {
+    const players = await prisma.roomPlayer.findMany({
+      where: { roomId },
+      select: { userId: true, score: true },
+    });
+
+    const scores: Record<string, number> = {};
+    players.forEach((p) => {
+      scores[p.userId] = p.score;
+    });
+
+    return scores;
   }
 
   /**

@@ -88,12 +88,17 @@ function scheduleBotAnswer(opts: {
   // Update skor Bot di GameManager (memanfaatkan method yang sama dgn human)
   GameManager.submitAnswer(roomId, botUserId, chosenAnswer, scoreEarned);
 
+  // Single Source of Truth sync
+  const allScores = GameManager.getRoomScoresMap(roomId);
+  io.to(roomId).emit('sync_scores', { scores: allScores });
+
   // Emit event yang SAMA dengan human player — Abstraction Layer
   io.to(roomId).emit('game:player_answered', {
     userId:      botUserId,
     isCorrect,
     scoreEarned,
     isBot:       true, // informasi tambahan optional untuk UI
+    scores:      allScores
   });
 
   console.log('[BotEngine] Bot answered Q%d:', questionIndex, { isCorrect, scoreEarned, roomId });
