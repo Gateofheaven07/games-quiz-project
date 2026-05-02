@@ -50,6 +50,8 @@ export interface GameEngineReturn {
   handleAnswer:    (idx: number) => void;
   forceEndGame:    (loserId: string, reason: string) => void;
   handleOpponentSurrender: (data: any) => void;
+  myProfile:       any;
+  opponentProfile: any;
 }
 
 // ── Reducer Setup ────────────────────────────────────────────────────────────
@@ -263,8 +265,12 @@ export function useGameEngine({
     });
   }, [updateTimerDOM]);
 
+  // Find current user and opponent from the players array
+  const myProfile = gameRoom?.players?.find((p: any) => p.userId === userId);
+  const opponentProfile = gameRoom?.players?.find((p: any) => p.userId !== userId);
+
   const myPlayerId = userId;
-  const opponentId = gameRoom?.player1 === userId ? gameRoom?.player2 : gameRoom?.player1;
+  const opponentId = opponentProfile?.userId;
 
   // ── Socket event listeners ─────────────────────────────────────────────────
   useEffect(() => {
@@ -275,7 +281,16 @@ export function useGameEngine({
       
       // Update scores for both players from server data
       // Determine which score is mine and which is opponent's
-      const isPlayer1 = userId === gameRoom.player1;
+      const myId = userId;
+      // In the server broadcast, we get p1Score and p2Score. 
+      // We need to know which one matches which player ID.
+      // However, the current server implementation of 'game:player_answered' sends p1Score/p2Score.
+      // Let's check how the server calculates p1/p2. 
+      // It uses GameManager.getRoom(roomId).player1.
+      
+      const p1Id = gameRoom?.players?.[0]?.userId;
+      const isPlayer1 = myId === p1Id;
+      
       const newMyScore = isPlayer1 ? data.p1Score : data.p2Score;
       const newOpponentScore = isPlayer1 ? data.p2Score : data.p1Score;
 
@@ -466,6 +481,8 @@ export function useGameEngine({
         } 
       });
     },
-    handleOpponentSurrender
+    handleOpponentSurrender,
+    myProfile,
+    opponentProfile
   };
 }

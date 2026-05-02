@@ -305,14 +305,19 @@ export function setupSocketHandlers(io: any) {
         const questions = await GameManager.loadQuestionsForRoom(roomId, result.categoryId);
 
         // 7. Tahap 2 Final: Emit Game Ready (Trigger simultaneous redirect)
+        const [p1Data, p2Data] = await Promise.all([
+          prisma.user.findUnique({ where: { id: invite.senderId }, select: { id: true, username: true, level: true } }),
+          prisma.user.findUnique({ where: { id: socket.userId }, select: { id: true, username: true, level: true } })
+        ]);
+
         io.to(roomId).emit('matchmaking:game_ready', {
           roomId,
           categoryId: result.categoryId,
           questions,
-          players: {
-            player1: { userId: invite.senderId, username: result.hostUsername },
-            player2: { userId: socket.userId, username: socket.username },
-          },
+          players: [
+            { userId: p1Data?.id || invite.senderId, username: p1Data?.username || result.hostUsername, level: p1Data?.level || 1 },
+            { userId: p2Data?.id || socket.userId, username: p2Data?.username || socket.username, level: p2Data?.level || 1 },
+          ],
         });
 
         console.log(`[Battle] Phase 2: Room Active and Game Ready for ${invite.senderId} and ${socket.userId} (Room: ${roomId})`);
@@ -438,14 +443,19 @@ export function setupSocketHandlers(io: any) {
         const questions = await GameManager.loadQuestionsForRoom(roomId, categoryId);
 
         // Emit full game data to both players → frontend navigates to /game
+        const [p1Data, p2Data] = await Promise.all([
+          prisma.user.findUnique({ where: { id: socket.userId }, select: { id: true, username: true, level: true } }),
+          prisma.user.findUnique({ where: { id: opponent.userId }, select: { id: true, username: true, level: true } })
+        ]);
+
         io.to(roomId).emit('matchmaking:game_ready', {
           roomId,
           categoryId,
           questions,        // sanitized (no correctAnswer)
-          players: {
-            player1: { userId: socket.userId,   username: socket.username },
-            player2: { userId: opponent.userId, username: opponent.username },
-          },
+          players: [
+            { userId: p1Data?.id || socket.userId, username: p1Data?.username || socket.username, level: p1Data?.level || 1 },
+            { userId: p2Data?.id || opponent.userId, username: p2Data?.username || opponent.username, level: p2Data?.level || 1 },
+          ],
         });
 
         console.log('[Matchmaking] Game ready:', { roomId, categoryId });
@@ -520,17 +530,19 @@ export function setupSocketHandlers(io: any) {
         // Fetch & translate soal (proses yang sama dengan mode Human)
         const questions = await GameManager.loadQuestionsForRoom(roomId, categoryId);
 
-        // Emit game_ready — interface SAMA dengan mode Human (Abstraction Layer)
+        // Emit game_ready — interface SAMA with mode Human (Abstraction Layer)
+        const p1Data = await prisma.user.findUnique({ where: { id: socket.userId }, select: { id: true, username: true, level: true } });
+
         socket.emit('matchmaking:game_ready', {
           roomId,
           categoryId,
           questions,
           isVsBot:    true,
           difficulty,
-          players: {
-            player1: { userId: socket.userId, username: socket.username },
-            player2: { userId: botUserId,     username: `QuizBot [${config.label}]`, isBot: true },
-          },
+          players: [
+            { userId: p1Data?.id || socket.userId, username: p1Data?.username || socket.username, level: p1Data?.level || 1 },
+            { userId: botUserId, username: `QuizBot [${config.label}]`, isBot: true, level: config.label === 'Sulit' ? 99 : config.label === 'Sedang' ? 10 : 1 },
+          ],
         });
 
         // Jalankan Bot AI engine — Bot akan auto-jawab soal dengan delay
@@ -611,14 +623,20 @@ export function setupSocketHandlers(io: any) {
 
         const questions = await GameManager.loadQuestionsForRoom(roomId, categoryId);
 
+        // Fetch levels for both players
+        const [p1Data, p2Data] = await Promise.all([
+          prisma.user.findUnique({ where: { id: hostUserId }, select: { id: true, username: true, level: true } }),
+          prisma.user.findUnique({ where: { id: socket.userId }, select: { id: true, username: true, level: true } })
+        ]);
+
         io.to(roomId).emit('matchmaking:game_ready', {
           roomId,
           categoryId,
           questions,
-          players: {
-            player1: { userId: hostUserId,    username: hostUsername },
-            player2: { userId: socket.userId, username: socket.username },
-          },
+          players: [
+            { userId: hostUserId,    username: p1Data?.username || hostUsername, level: p1Data?.level || 1 },
+            { userId: socket.userId, username: p2Data?.username || socket.username, level: p2Data?.level || 1 },
+          ],
         });
 
         console.log('[Matchmaking] Private room joined, game ready:', { roomId });
@@ -713,14 +731,19 @@ export function setupSocketHandlers(io: any) {
           
           // Emit full game data to the rejoining player so their UI can catch up
           const questions = GameManager.getRoomQuestions(roomId);
+          const [p1Data, p2Data] = await Promise.all([
+            prisma.user.findUnique({ where: { id: room.player1 }, select: { id: true, username: true, level: true } }),
+            room.player2 ? prisma.user.findUnique({ where: { id: room.player2 }, select: { id: true, username: true, level: true } }) : Promise.resolve(null)
+          ]);
+
           socket.emit('matchmaking:game_ready', {
             roomId,
             categoryId: GameManager.getRoomCategoryId(roomId) || 9,
             questions,
-            players: {
-              player1: { userId: room.player1, username: '' }, // Frontend uses sessionStorage for now, but this is a fallback
-              player2: { userId: room.player2, username: '' },
-            },
+            players: [
+              { userId: room.player1, username: p1Data?.username || '', level: p1Data?.level || 1 },
+              { userId: room.player2 || '', username: p2Data?.username || '', level: p2Data?.level || 1 },
+            ],
           });
         }
       } catch (err) {

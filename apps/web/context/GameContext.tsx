@@ -63,6 +63,7 @@ export interface Question {
 export interface PlayerInfo {
   userId:   string;
   username: string;
+  level:    number;
   isBot?:   boolean;
 }
 
@@ -72,10 +73,7 @@ export interface GameReadyPayload {
   questions:  Question[];
   isVsBot?:   boolean;
   difficulty?: BotDifficulty;
-  players: {
-    player1: PlayerInfo;
-    player2: PlayerInfo;
-  };
+  players:    PlayerInfo[];
 }
 
 export type MatchmakingStatus =
@@ -182,7 +180,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
     const onOpponentFound = (data: { opponentId: string; opponentUsername: string; isBot?: boolean }) => {
       console.log('[GameContext] Opponent found:', data);
-      setOpponentInfo({ userId: data.opponentId, username: data.opponentUsername, isBot: data.isBot });
+      setOpponentInfo({ userId: data.opponentId, username: data.opponentUsername, isBot: data.isBot, level: 1 });
       setMatchmakingStatus('MATCHMAKING_OR_WAITING');
     };
 
@@ -193,7 +191,21 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
     const onGameReady = (data: GameReadyPayload) => {
       console.log('[GameContext] Game ready:', data.roomId, '| isVsBot:', data.isVsBot);
+      
+      // Cleanup previous state before starting new game
+      setOpponentInfo(null);
+      
+      // Set new data
       setGameData(data);
+      
+      // If we have an array of players, extract the opponent early for convenience
+      if (Array.isArray(data.players) && token) {
+        // We need the current user's ID to find the opponent. 
+        // We can get it from the token payload if we had it, but GameContext doesn't store it explicitly.
+        // However, useGameEngine will handle the filtering.
+        // For GameContext's opponentInfo state, we'll try to find it.
+      }
+      
       setMatchmakingStatus('PLAYING');
     };
 

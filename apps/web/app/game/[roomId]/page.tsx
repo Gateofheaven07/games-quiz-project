@@ -427,8 +427,7 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
   const gameRoom = useMemo(() => gameData
     ? {
         id:       gameData.roomId,
-        player1:  gameData.players.player1.userId,
-        player2:  gameData.players.player2.userId,
+        players:  gameData.players, // Now an array
         status:   'active' as const,
         questions: gameData.questions,
       }
@@ -453,6 +452,8 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
     revealedCorrect,
     handleAnswer,
     forceEndGame,
+    myProfile,
+    opponentProfile
   } = useGameEngine({
     userId:        user?.id,
     gameRoom,
@@ -469,22 +470,22 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
 
   // ── Memoized player objects (only rebuild when score/status changes) ────────
   const userPlayer = useMemo<PlayerData>(() => ({
-    name:   user?.username || 'PLAYER',
-    avatar: user?.username ? user.username[0].toUpperCase() : 'P',
+    name:   myProfile?.username || user?.username || 'PLAYER',
+    avatar: (myProfile?.username || user?.username || 'P')[0].toUpperCase(),
     score:  playerScore,
     status: answerState === 'idle' ? 'berpikir' : answerState === 'selected' ? 'menjawab' : answerState,
     rank:   'CHALLENGER',
-    level:  user?.level || 1,
-  }), [user, playerScore, answerState])
+    level:  myProfile?.level || user?.level || 1,
+  }), [user, myProfile, playerScore, answerState])
 
   const opponentPlayer = useMemo<PlayerData>(() => ({
-    name:   gameData?.players.player2.username || (isVsBot ? 'QuizBot' : 'OPPONENT'),
-    avatar: gameData?.players.player2.isBot ? '🤖' : (gameData?.players.player2.username?.[0]?.toUpperCase() || 'O'),
+    name:   opponentProfile?.username || (isVsBot ? 'QuizBot' : 'Mencari...'),
+    avatar: opponentProfile?.isBot ? '🤖' : (opponentProfile?.username?.[0]?.toUpperCase() || 'O'),
     score:  opponentScore,
     status: 'berpikir',
     rank:   isVsBot ? 'BOT AI' : 'CHALLENGER',
-    level:  isVsBot ? 0 : 1,
-  }), [opponentScore, isVsBot, gameData])
+    level:  opponentProfile?.level || (isVsBot ? 0 : 1),
+  }), [opponentScore, isVsBot, opponentProfile])
 
   // Stable callback for AnswerGrid — won't change unless gameRoom changes
   const stableHandleAnswer = useCallback(handleAnswer, [handleAnswer])
