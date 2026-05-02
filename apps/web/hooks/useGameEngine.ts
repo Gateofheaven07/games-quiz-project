@@ -277,12 +277,12 @@ export function useGameEngine({
     if (!socket || !userId || !gameRoom) return;
 
     const handlePlayerAnswered = (data: { userId: string; isCorrect: boolean; scoreEarned: number }) => {
-      console.log('[GameEngine] 📥 Pemain menjawab:', data, 'MyID:', myPlayerId);
+      console.log('[GameEngine] 📥 Update Skor dari Server:', data);
       
-      // Jika yang menjawab adalah diri sendiri, abaikan (karena UI sudah diupdate optimistik)
+      // Jika yang mendapat skor adalah diri sendiri, abaikan (UI kita sudah update secara optimistik)
       if (data.userId === myPlayerId) return;
 
-      // Jika lawan yang menjawab, trigger reducer OPPONENT_ANSWERED
+      // Jika lawan yang mendapat skor, tambahkan ke state opponentScore
       dispatch({
         type: 'OPPONENT_ANSWERED',
         payload: { scoreEarned: data.scoreEarned }
@@ -315,7 +315,7 @@ export function useGameEngine({
       off('game:surrender_result', handleGameFinished);
       off('game:finish',           handleGameFinished);
     };
-  }, [on, off, isVsBot, socket, userId, myPlayerId, opponentId, gameRoom, handleOpponentSurrender]);
+  }, [on, off, socket, userId, myPlayerId, gameRoom, handleOpponentSurrender]);
 
   // ── Graceful Fallback for Results (Offline-first) ─────────────────────────
   useEffect(() => {
