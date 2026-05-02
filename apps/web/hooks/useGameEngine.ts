@@ -48,6 +48,7 @@ export interface GameEngineReturn {
   gameResults:     any | null;
   revealedCorrect: number;
   handleAnswer:    (idx: number) => void;
+  forceEndGame:    (loserId: string, reason: string) => void;
 }
 
 // ── Reducer Setup ────────────────────────────────────────────────────────────
@@ -358,5 +359,30 @@ export function useGameEngine({
     gameResults: state.gameResults,
     revealedCorrect: state.revealedCorrect,
     handleAnswer,
+    forceEndGame: (loserId: string, reason: string) => {
+      console.log('[GameEngine] Force ending game. Loser:', loserId, 'Reason:', reason);
+      
+      // 1. Sync stop timer visuals
+      gameEndedRef.current = true;
+      updateTimerDOM(0);
+      
+      // 2. Determine winner locally
+      const winnerId = loserId === userId ? 'opponent' : userId;
+      
+      // 3. Dispatch GAME_OVER with local results (Optimistic)
+      dispatch({ 
+        type: 'GAME_OVER', 
+        payload: {
+          message: reason,
+          winnerId,
+          results: {
+            p1: { userId, score: state.playerScore, isWinner: winnerId === userId, pointsGained: winnerId === userId ? 50 : 10 },
+            p2: { score: state.opponentScore, isWinner: winnerId === 'opponent', pointsGained: winnerId === 'opponent' ? 50 : 10 },
+          },
+          isSurrender: true,
+          isLocal: true,
+        } 
+      });
+    }
   };
 }

@@ -34,7 +34,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../hooks/useAuth'
 import { useGame } from '../../../context/GameContext'
 import { useGameEngine } from '../../../hooks/useGameEngine'
-import { useSocket } from '../../../hooks/useSocket'
+import { toast } from 'sonner'
 import type { GameReadyPayload } from '../../../context/GameContext'
 
 // ── Shared Types ──────────────────────────────────────────────────────────────
@@ -305,7 +305,15 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
 
   const router = useRouter()
   const { isAuthenticated, isLoading, user } = useAuth()
-  const { submitAnswer, finishGame, on, off, gameData: contextGameData, resetMatchmaking } = useGame()
+  const { 
+    socket,
+    submitAnswer, 
+    finishGame, 
+    on, 
+    off, 
+    gameData: contextGameData, 
+    resetMatchmaking 
+  } = useGame()
 
   // ── Slow state: game data (set once) ───────────────────────────────────────
   const [gameData, setGameData] = useState<GameReadyPayload | null>(null)
@@ -325,7 +333,7 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
   // Use a ref to ensure initialization only happens once (avoids StrictMode double execution bugs)
   const hasInitialized = useRef(false)
 
-  const { socket } = useSocket()
+  // useGame now provides the singleton socket, ensuring sync across the app.
 
   // FORCE RECONNECT & REJOIN LOGIC
   useEffect(() => {
@@ -349,6 +357,22 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
       socket.off('connect', onConnect);
     };
   }, [socket, roomId]);
+
+  // ── Surrender Notification Listener ──
+  useEffect(() => {
+    const handleSurrender = (data: any) => {
+      // If I am the winner because someone else surrendered
+      if (data.winnerId === user?.id) {
+        toast.success('Lawan Menyerah!', {
+          description: 'Anda memenangkan pertandingan ini!',
+          icon: '🏆',
+          duration: 5000,
+        });
+      }
+    };
+    on('game:surrender_result', handleSurrender);
+    return () => off('game:surrender_result', handleSurrender);
+  }, [on, off, user?.id]);
 
   useEffect(() => {
     if (hasInitialized.current) return
@@ -420,8 +444,9 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
     opponentScore,
     status,
     gameResults,
-    handleAnswer,
     revealedCorrect,
+    handleAnswer,
+    forceEndGame,
   } = useGameEngine({
     userId:        user?.id,
     gameRoom,
@@ -812,9 +837,18 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
                   setIsSurrenderModalOpen(false);
                   if (socket) {
                     console.log('[Game] Emitting surrender for room:', roomId);
+                    
+                    // 1. Notify user immediately
+                    toast.error('Menyerah dari pertandingan...', {
+                      description: 'Skor Anda telah didaftarkan sebagai kekalahan.',
+                      icon: '💀'
+                    });
+
+                    // 2. Local Graceful Shutdown (Stop timers, set state)
+                    forceEndGame(user?.id || 'me', 'Anda Menyerah');
+
+                    // 3. Inform Server
                     socket.emit('game:surrender', { roomId });
-                    // Optional: optimistic state change to show we are waiting for server
-                    // but usually the server response is fast enough.
                   }
                 }}
                 className="flex-1 py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-red-500/20 hover:scale-[1.02] active:scale-[0.98]"

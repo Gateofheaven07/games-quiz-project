@@ -4,6 +4,7 @@ import './globals.css'
 import { GameProvider } from '../context/GameContext'
 import { NotificationProvider } from '../context/NotificationContext'
 import { GlobalInviteModal } from '../components/GlobalInviteModal'
+import { Toaster } from '../components/ui/sonner'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -41,6 +42,7 @@ export default function RootLayout({
           <NotificationProvider>
             {children}
             <GlobalInviteModal />
+            <Toaster position="top-right" richColors />
           </NotificationProvider>
         </GameProvider>
       </body>

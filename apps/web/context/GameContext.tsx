@@ -337,7 +337,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const value: GameContextValue = {
     isConnected,
-    socket: socketRef.current,
+    socket,
     matchmakingStatus,
     matchmakingError,
     gameData,
