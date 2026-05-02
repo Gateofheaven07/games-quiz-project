@@ -42,7 +42,8 @@ export async function submitAnswerHandler(socket: AuthenticatedSocket, io: any, 
     // BROADCAST: Update skor ke SELURUH pemain di room agar tersinkronisasi
     io.to(data.roomId).emit('update_score', { 
       playerId: socket.userId, 
-      newScore: result.newScore 
+      newScore: result.newScore,
+      pointsGained: result.scoreEarned
     });
 
     // Tetap kirim event lama jika ada listener lain yang bergantung padanya

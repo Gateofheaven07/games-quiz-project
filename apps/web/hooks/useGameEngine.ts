@@ -71,7 +71,7 @@ type Action =
   | { type: 'ANSWER_SUBMITTED'; payload: { answer: number; isCorrect: boolean; correctAnswer: number; scoreEarned: number } }
   | { type: 'OPPONENT_ANSWERED'; payload: { scoreEarned: number } }
   | { type: 'NEXT_QUESTION'; payload: { totalRounds: number } }
-  | { type: 'UPDATE_SCORE'; payload: { playerId: string; newScore: number; userId: string } }
+  | { type: 'UPDATE_SCORE'; payload: { isMe: boolean; newScore: number } }
   | { type: 'CALCULATE_FINAL_SCORE' }
   | { type: 'GAME_OVER'; payload?: any };
 
@@ -106,11 +106,10 @@ function gameReducer(state: GameState, action: Action): GameState {
       };
 
     case 'UPDATE_SCORE':
-      const isMe = action.payload.playerId === action.payload.userId;
       return {
         ...state,
-        playerScore: isMe ? action.payload.newScore : state.playerScore,
-        opponentScore: isMe ? state.opponentScore : action.payload.newScore,
+        playerScore: action.payload.isMe ? action.payload.newScore : state.playerScore,
+        opponentScore: action.payload.isMe ? state.opponentScore : action.payload.newScore,
       };
 
     case 'NEXT_QUESTION':
@@ -264,6 +263,9 @@ export function useGameEngine({
     });
   }, [updateTimerDOM]);
 
+  const myPlayerId = userId;
+  const opponentId = gameRoom?.player1 === userId ? gameRoom?.player2 : gameRoom?.player1;
+
   // ── Socket event listeners ─────────────────────────────────────────────────
   useEffect(() => {
     if (!socket || !userId || !gameRoom) return;
@@ -310,16 +312,20 @@ export function useGameEngine({
       dispatch({ type: 'GAME_OVER', payload: data });
     };
 
-    const handleUpdateScore = (data: { playerId: string; newScore: number }) => {
-      console.log('[GameEngine] Score update received:', data);
-      dispatch({ 
-        type: 'UPDATE_SCORE', 
-        payload: { 
-          playerId: data.playerId, 
-          newScore: data.newScore,
-          userId: userId || ''
-        } 
-      });
+    const handleUpdateScore = (data: { playerId: string; newScore: number; pointsGained?: number }) => {
+      console.log('🔴 SKOR MASUK:', data, 'MyID:', myPlayerId, 'OppID:', opponentId);
+      
+      if (data.playerId === myPlayerId) {
+        dispatch({ 
+          type: 'UPDATE_SCORE', 
+          payload: { isMe: true, newScore: data.newScore } 
+        });
+      } else if (data.playerId === opponentId) {
+        dispatch({ 
+          type: 'UPDATE_SCORE', 
+          payload: { isMe: false, newScore: data.newScore } 
+        });
+      }
     };
 
     // Register listeners
@@ -340,7 +346,7 @@ export function useGameEngine({
       off('game:surrender_result', handleGameFinished);
       off('game:finish',           handleGameFinished);
     };
-  }, [on, off, isVsBot, socket, userId, gameRoom, handleOpponentSurrender]);
+  }, [on, off, isVsBot, socket, userId, myPlayerId, opponentId, gameRoom, handleOpponentSurrender]);
 
   // ── Graceful Fallback for Results (Offline-first) ─────────────────────────
   useEffect(() => {
