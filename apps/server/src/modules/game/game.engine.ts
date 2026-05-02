@@ -51,19 +51,19 @@ export class GameEngine {
     if (players.length === 0) return null;
 
     let winner = players[0];
+    let isDraw = false;
     
-    for (const player of players) {
-      if (player.score > winner.score) {
-        winner = player;
+    for (let i = 1; i < players.length; i++) {
+      if (players[i].score > winner.score) {
+        winner = players[i];
+        isDraw = false;
+      } else if (players[i].score === winner.score) {
+        isDraw = true;
       }
     }
 
-    // Jika seri (bisa dikembangkan lebih lanjut)
-    const topScorers = players.filter(p => p.score === winner.score);
-    if (topScorers.length > 1) {
-      // Logic seri bisa ditangani di sini (sementara kembalikan salah satu)
-      return topScorers[0];
-    }
+    // Jika terjadi seri pada skor tertinggi, kembalikan null (Indikasi Draw)
+    if (isDraw) return null;
 
     return winner;
   }

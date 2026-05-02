@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './useAuth';
-import { SOCKET_URL } from '../lib/socketSingleton';
+import { getSocket, destroySocket, SOCKET_URL } from '../lib/socketSingleton';
 
 // SOCKET_URL imported from lib/socketSingleton
 
@@ -73,21 +73,14 @@ export const useSocket = () => {
   const [opponentInfo,      setOpponentInfo]       = useState<PlayerInfo | null>(null);
   const [privateRoomCode,   setPrivateRoomCode]    = useState<string | null>(null);
 
-  // ── Connect once when authenticated ────────────────────────────────────────
+  // ── Sync with singleton ────────────────────────────────────────────────────
   useEffect(() => {
     if (!isAuthenticated || !token) return;
 
-    const socket = io(SOCKET_URL, {
-      auth:               { token },
-      transports:         ['websocket'],   // Skip polling — direct WebSocket upgrade
-      reconnection:       true,
-      reconnectionDelay:  1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: 10,
-    });
-
+    const socket = getSocket(token);
     socketRef.current = socket;
     setSocket(socket);
+    setIsConnected(socket.connected);
     setMatchmakingStatus('connecting');
 
     // ── Core connection events ─────────────────────────────────────────────
@@ -158,7 +151,21 @@ export const useSocket = () => {
     });
 
     return () => {
-      socket.disconnect();
+      // Cleanup: HANYA lepas listener — JANGAN disconnect socket!
+      // Instance singleton hanya diputus saat logout.
+      socket.off('connect');
+      socket.off('connection_success');
+      socket.off('disconnect');
+      socket.off('connect_error');
+      socket.off('matchmaking:searching');
+      socket.off('matchmaking:opponent_found');
+      socket.off('matchmaking:preparing');
+      socket.off('matchmaking:game_ready');
+      socket.off('matchmaking:room_created');
+      socket.off('matchmaking:cancelled');
+      socket.off('matchmaking:error');
+      socket.off('matchmaking:room_not_found');
+      
       socketRef.current = null;
       setSocket(null);
     };

@@ -31,7 +31,7 @@ interface UseGameEngineProps {
   timerArcRef?:     React.RefObject<SVGCircleElement | null>;
 }
 
-export type GameStatus = 'IDLE' | 'INITIALIZING_BOARD' | 'PLAYING' | 'GAME_OVER';
+export type GameStatus = 'IDLE' | 'INITIALIZING_BOARD' | 'PLAYING' | 'EVALUATING' | 'CALCULATING_FINAL_SCORE' | 'GAME_OVER';
 
 export interface GameEngineReturn {
   currentQ:        number;
@@ -67,6 +67,7 @@ type Action =
   | { type: 'ANSWER_SUBMITTED'; payload: { answer: number; isCorrect: boolean; correctAnswer: number; scoreEarned: number } }
   | { type: 'OPPONENT_ANSWERED'; payload: { scoreEarned: number } }
   | { type: 'NEXT_QUESTION'; payload: { totalRounds: number } }
+  | { type: 'CALCULATE_FINAL_SCORE' }
   | { type: 'GAME_OVER'; payload?: any };
 
 function gameReducer(state: GameState, action: Action): GameState {
@@ -76,8 +77,10 @@ function gameReducer(state: GameState, action: Action): GameState {
 
     case 'ANSWER_SUBMITTED':
       // Optimistic UI: Update both Visual (colors) and Data (score) instantly
+      // Transition to EVALUATING to stop the timer and show feedback
       return {
         ...state,
+        status: 'EVALUATING',
         selectedAnswer: action.payload.answer,
         answerState: action.payload.isCorrect ? 'benar' : 'salah',
         revealedCorrect: action.payload.correctAnswer,
@@ -93,15 +96,25 @@ function gameReducer(state: GameState, action: Action): GameState {
     case 'NEXT_QUESTION':
       return {
         ...state,
+        status: 'PLAYING',
         currentQ: Math.min(state.currentQ + 1, action.payload.totalRounds - 1),
         selectedAnswer: null,
         answerState: 'idle',
         revealedCorrect: -1,
       };
 
+    case 'CALCULATE_FINAL_SCORE':
+      // Transition to calculation state, stopping gameplay but waiting for server
+      if (state.status === 'GAME_OVER') return state;
+      return {
+        ...state,
+        status: 'CALCULATING_FINAL_SCORE',
+      };
+
     case 'GAME_OVER':
-      // STRICT TRANSITION VALIDATION: Only allow GAME_OVER from PLAYING
-      if (state.status !== 'PLAYING') {
+      // STRICT TRANSITION VALIDATION: Only allow GAME_OVER from relevant states
+      const validSources: GameStatus[] = ['PLAYING', 'EVALUATING', 'CALCULATING_FINAL_SCORE'];
+      if (!validSources.includes(state.status)) {
         console.warn(`[FSM] Invalid transition attempt: ${state.status} -> GAME_OVER. Rejected.`);
         return state;
       }
@@ -187,6 +200,7 @@ export function useGameEngine({
 
   // ── Timer: RAF-based countdown (zero React re-renders) ─────────────────────
   useEffect(() => {
+    // Only run timer if status is PLAYING. If status changes to EVALUATING or CALCULATING, timer stops.
     if (state.status !== 'PLAYING' || gameEndedRef.current) return;
 
     let rafId:       number;
@@ -203,7 +217,7 @@ export function useGameEngine({
 
         if (timeLeftRef.current <= 0) {
           gameEndedRef.current = true;
-          dispatch({ type: 'GAME_OVER' });
+          dispatch({ type: 'CALCULATE_FINAL_SCORE' });
           finishGame();
           return;
         }
@@ -213,7 +227,7 @@ export function useGameEngine({
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [gameRoom?.status, updateTimerDOM]);
+  }, [state.status, updateTimerDOM]);
 
   // ── Socket event listeners ─────────────────────────────────────────────────
   useEffect(() => {
@@ -229,6 +243,7 @@ export function useGameEngine({
     };
 
     const handleGameFinished = (data: any) => {
+      console.log('[GameEngine] Received game:finished from server', data);
       gameEndedRef.current = true;
       dispatch({ type: 'GAME_OVER', payload: data });
     };
@@ -236,18 +251,21 @@ export function useGameEngine({
     // Note: We ignore game:answer_result here because Optimistic UI handles it instantly!
     on('game:player_answered', handlePlayerAnswered);
     on('game:finished',        handleGameFinished);
+    on('game:results',         handleGameFinished); // Support both event names
 
     return () => {
       off('game:player_answered', handlePlayerAnswered);
       off('game:finished',        handleGameFinished);
+      off('game:results',         handleGameFinished);
     };
   }, [on, off, userId, router, isVsBot]);
 
   // ── Graceful Fallback for Results (Offline-first) ─────────────────────────
   useEffect(() => {
-    if (state.status === 'GAME_OVER' && !state.gameResults) {
+    // If we are stuck in calculation state for too long, force local results
+    if (state.status === 'CALCULATING_FINAL_SCORE' && !state.gameResults) {
       const fallbackTimer = setTimeout(() => {
-        console.warn('[GameEngine] Server timeout. Using local fallback for game results.');
+        console.warn('[GameEngine] Server results timeout. Forcing local winner calculation.');
         
         let winnerId: string | null = null;
         let isDraw = false;
@@ -257,16 +275,17 @@ export function useGameEngine({
         else isDraw = true;
 
         const fallbackData = {
-          message: 'Skor Lokal (Server Terputus)',
+          message: 'Skor Lokal (Server Timeout)',
           results: {
             p1: { userId, score: state.playerScore, isWinner: winnerId === userId, isDraw },
             p2: { score: state.opponentScore, isWinner: winnerId === 'opponent', isDraw },
           },
           winnerId,
           isDraw,
+          isLocal: true,
         };
         dispatch({ type: 'GAME_OVER', payload: fallbackData });
-      }, 5000);
+      }, 4000); // 4 seconds timeout
 
       return () => clearTimeout(fallbackTimer);
     }
@@ -275,42 +294,48 @@ export function useGameEngine({
   // ── Answer handler (Optimistic UI) ─────────────────────────────────────────
   const handleAnswer = useCallback(
     (idx: number) => {
-      if (state.answerState !== 'idle' || !gameRoom) return;
+      if (state.status !== 'PLAYING' || state.answerState !== 'idle' || !gameRoom) return;
 
       const question = gameRoom.questions[state.currentQ];
       const isCorrect = question.correctAnswer === idx;
       const scoreEarned = isCorrect ? 10 : 0;
 
-      // 1. Instantly update UI (Optimistic UI)
+      // 1. Instantly update UI (Optimistic UI) & Stop Timer via FSM change
       dispatch({
         type: 'ANSWER_SUBMITTED',
         payload: { answer: idx, isCorrect, correctAnswer: question.correctAnswer, scoreEarned }
       });
 
-      // 2. Send to server (Fire and forget, server will broadcast to opponent)
+      // 2. Send to server (Fire and forget)
       submitAnswer(idx, state.currentQ);
 
-      // 3. Setup transition to next question after visual delay
+      // 3. Setup transition to next question after visual delay (EVALUATING state)
       setTimeout(() => {
         if (gameEndedRef.current) return;
         
-        if (state.currentQ === totalRounds - 1) {
-          // Last question answered! Stop timer and tell server we are done.
+        const isLastQuestion = state.currentQ === totalRounds - 1;
+        
+        if (isLastQuestion) {
+          console.log('[GameEngine] Last question answered. Moving to calculation phase.');
           gameEndedRef.current = true;
-          dispatch({ type: 'GAME_OVER' });
+          
+          // Clear any remaining timer visuals
+          updateTimerDOM(0);
+          
+          dispatch({ type: 'CALCULATE_FINAL_SCORE' });
           finishGame();
           return;
         }
 
-        // Reset timer
+        // Reset timer values for next question
         timeLeftRef.current = totalDuration;
         updateTimerDOM(totalDuration);
 
-        // Move to next question and cleanup UI state
+        // Move to next question and set status back to PLAYING
         dispatch({ type: 'NEXT_QUESTION', payload: { totalRounds } });
       }, 1500);
     },
-    [state.answerState, state.currentQ, gameRoom, submitAnswer, finishGame, totalRounds, totalDuration, updateTimerDOM]
+    [state.status, state.answerState, state.currentQ, gameRoom, submitAnswer, finishGame, totalRounds, totalDuration, updateTimerDOM]
   );
 
   return {

@@ -99,9 +99,9 @@ export default function NotificationsPage() {
     if (!token) return;
     const socket = getSocket(token);
     socket.emit('matchmaking:join_room', { roomCode });
-    // Assuming the server replies with matchmaking:game_ready, it will navigate natively 
-    // or we can manually push to /game if needed, but normally socket handles it
-    router.push('/game');
+    // Redirect to lobby where GameContext listener will handle matchmaking:game_ready
+    // and seamlessly transition the player to /game/[roomId] with proper sessionStorage
+    router.push('/game/lobby');
   };
 
   const handleDeclineInvite = (notificationId: string) => {

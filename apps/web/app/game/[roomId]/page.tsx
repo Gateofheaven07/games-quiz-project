@@ -27,7 +27,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, memo, use } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -307,7 +307,8 @@ const AnswerGrid = memo(function AnswerGrid({
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN PAGE
 // ─────────────────────────────────────────────────────────────────────────────
-export default function QuizBattleRoomPage({ params }: { params: { roomId: string } }) {
+export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomId: string }> }) {
+  const { roomId } = use(params)
   const TIMER_DURATION = 30
 
   const router = useRouter()
@@ -343,18 +344,18 @@ export default function QuizBattleRoomPage({ params }: { params: { roomId: strin
     
     // Attempt to rejoin if already connected
     if (socket.connected) {
-      socket.emit('game:rejoin', { roomId: params.roomId });
+      socket.emit('game:rejoin', { roomId });
     }
     
     const onConnect = () => {
-      socket.emit('game:rejoin', { roomId: params.roomId });
+      socket.emit('game:rejoin', { roomId });
     };
     
     socket.on('connect', onConnect);
     return () => {
       socket.off('connect', onConnect);
     };
-  }, [socket, params.roomId]);
+  }, [socket, roomId]);
 
   useEffect(() => {
     if (hasInitialized.current) return
@@ -487,30 +488,35 @@ export default function QuizBattleRoomPage({ params }: { params: { roomId: strin
   }
 
   // ── Final Results Screen ───────────────────────────────────────────────────
+  if (status === 'CALCULATING_FINAL_SCORE' || (status === 'GAME_OVER' && !gameResults)) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--c-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="bg-orb bg-orb-blue" style={{ top: -200, left: -100 }} />
+        <div className="bg-orb bg-orb-purple" style={{ bottom: -100, right: -100 }} />
+        <div style={{ width: 48, height: 48, border: '4px solid rgba(0,209,255,0.2)', borderTopColor: '#00d1ff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", color: 'var(--c-on-surface)', marginTop: 24 }}>Menghitung Skor Akhir...</h2>
+        <p style={{ color: 'var(--c-outline)', marginTop: 8 }}>Sinkronisasi data dengan server</p>
+      </div>
+    )
+  }
+
   if (status === 'GAME_OVER') {
-    if (!gameResults) {
-      return (
-        <div style={{ minHeight: '100vh', backgroundColor: 'var(--c-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="bg-orb bg-orb-blue" style={{ top: -200, left: -100 }} />
-          <div className="bg-orb bg-orb-purple" style={{ bottom: -100, right: -100 }} />
-          <div style={{ width: 48, height: 48, border: '4px solid rgba(0,209,255,0.2)', borderTopColor: '#00d1ff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-          <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", color: 'var(--c-on-surface)', marginTop: 24 }}>Menghitung Skor Akhir...</h2>
-        </div>
-      )
-    }
 
     const isWinner = gameResults.winnerId === user?.id
     const isDraw = gameResults.isDraw
 
     let resultTitle = 'KAMU MENANG!'
     let titleColor = '#00d1ff'
+    let resultIcon = '🏆'
     
     if (isDraw) {
-      resultTitle = 'SERI!'
+      resultTitle = 'HASIL SEIMBANG!'
       titleColor = '#feb127'
+      resultIcon = '🤝'
     } else if (!isWinner) {
       resultTitle = 'KAMU KALAH!'
       titleColor = '#ff4545'
+      resultIcon = '💀'
     }
 
     return (
@@ -528,15 +534,30 @@ export default function QuizBattleRoomPage({ params }: { params: { roomId: strin
             initial={{ scale: 0 }} 
             animate={{ scale: 1 }} 
             transition={{ delay: 0.3, type: 'spring', bounce: 0.6 }}
-            style={{ fontSize: '4rem', marginBottom: -10 }}
+            style={{ fontSize: '5rem', marginBottom: 10 }}
           >
-            {isWinner ? '🏆' : isDraw ? '🤝' : '💀'}
+            {resultIcon}
           </motion.div>
-          <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '3rem', color: titleColor, textAlign: 'center', textShadow: `0 0 20px ${titleColor}80` }}>
-            {isVsBot ? 'MODE LATIHAN SELESAI' : resultTitle}
+          
+          <h1 style={{ 
+            fontFamily: "'Space Grotesk', sans-serif", 
+            fontSize: isDraw ? '2.5rem' : '3rem', 
+            color: titleColor, 
+            textAlign: 'center', 
+            textShadow: `0 0 30px ${titleColor}60`,
+            letterSpacing: '0.05em',
+            lineHeight: 1
+          }}>
+            {isVsBot ? (isDraw ? 'LATIHAN SEIMBANG' : 'MODE LATIHAN SELESAI') : resultTitle}
           </h1>
           
-          <div className="glass-panel" style={{ width: '100%', padding: 32, marginTop: 32, display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {isDraw && (
+            <p style={{ color: 'var(--c-outline)', marginTop: 12, fontSize: '0.9rem', textAlign: 'center' }}>
+              Pertandingan yang luar biasa! Kalian berdua memiliki skor yang sama.
+            </p>
+          )}
+          
+          <div className="glass-panel" style={{ width: '100%', padding: 32, marginTop: 32, display: 'flex', flexDirection: 'column', gap: 20, border: `1px solid ${titleColor}30` }}>
             {isVsBot ? (
               <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <span style={{ color: 'var(--c-on-surface)', fontSize: '1.2rem' }}>

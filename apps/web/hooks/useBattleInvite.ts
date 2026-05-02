@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSocket } from './useSocket'
 import { useToast } from './use-toast'
+import { useRouter } from 'next/navigation'
 
 export function useBattleInvite() {
+  const router = useRouter()
   const { socket } = useSocket()
   const { toast } = useToast()
   
@@ -160,7 +162,8 @@ export function useBattleInvite() {
       notificationId: incomingInvite.id 
     })
     clearIncoming()
-  }, [socket, incomingInvite, clearIncoming])
+    router.push('/game/lobby')
+  }, [socket, incomingInvite, clearIncoming, router])
 
   const declineInvite = useCallback(() => {
     if (!socket || !incomingInvite) return
