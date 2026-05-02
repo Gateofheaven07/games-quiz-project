@@ -67,6 +67,7 @@ type GameState = {
 
 type Action =
   | { type: 'START_GAME' }
+  | { type: 'SYNC_SCORES'; payload: { playerScore: number; opponentScore: number } }
   | { type: 'ANSWER_SUBMITTED'; payload: { answer: number; isCorrect: boolean; correctAnswer: number; scoreEarned: number } }
   | { type: 'OPPONENT_ANSWERED'; payload: { scoreEarned: number } }
   | { type: 'NEXT_QUESTION'; payload: { totalRounds: number } }
@@ -77,6 +78,13 @@ function gameReducer(state: GameState, action: Action): GameState {
   switch (action.type) {
     case 'START_GAME':
       return { ...state, status: 'PLAYING' };
+
+    case 'SYNC_SCORES':
+      return {
+        ...state,
+        playerScore: action.payload.playerScore,
+        opponentScore: action.payload.opponentScore,
+      };
 
     case 'ANSWER_SUBMITTED':
       // Optimistic UI: Update both Visual (colors) and Data (score) instantly
@@ -249,21 +257,41 @@ export function useGameEngine({
 
   // ── Socket event listeners ─────────────────────────────────────────────────
   useEffect(() => {
+    if (!socket || !userId || !gameRoom) return;
+
     const handlePlayerAnswered = (data: any) => {
-      if (data.userId === userId) return; // Ignored: own event
-      if (opponentAnswerPendingRef.current) return;
+      console.log('[GameEngine] Player answered broadcast received:', data);
       
-      opponentAnswerPendingRef.current = true;
-      requestAnimationFrame(() => {
-        dispatch({ type: 'OPPONENT_ANSWERED', payload: { scoreEarned: data.scoreEarned || 0 } });
-        opponentAnswerPendingRef.current = false;
+      // Update scores for both players from server data
+      // Determine which score is mine and which is opponent's
+      const isPlayer1 = userId === gameRoom.player1;
+      const newMyScore = isPlayer1 ? data.p1Score : data.p2Score;
+      const newOpponentScore = isPlayer1 ? data.p2Score : data.p1Score;
+
+      dispatch({ 
+        type: 'SYNC_SCORES', 
+        payload: { 
+          playerScore: newMyScore, 
+          opponentScore: newOpponentScore 
+        } 
+      });
+    };
+
+    const handleAnswerResult = (data: any) => {
+      console.log('[GameEngine] Private answer result received:', data);
+      // Even though we update optimistically, we sync with server's score truth
+      dispatch({ 
+        type: 'SYNC_SCORES', 
+        payload: { 
+          playerScore: data.myScore, 
+          opponentScore: data.opponentScore 
+        } 
       });
     };
 
     const handleGameFinished = (data: any) => {
-      console.log('[GameEngine] Received game:finished from server', data);
+      console.log('[GameEngine] Received game termination from server:', data);
       
-      // If the reason is surrender, we handle it specifically to ensure immediate transition
       if (data.reason === 'surrender') {
         handleOpponentSurrender(data);
         return;
@@ -273,22 +301,23 @@ export function useGameEngine({
       dispatch({ type: 'GAME_OVER', payload: data });
     };
 
-    // Note: We ignore game:answer_result here because Optimistic UI handles it instantly!
-    // Support multiple event names for game completion to ensure robustness
+    // Register listeners
     on('game:player_answered',  handlePlayerAnswered);
+    on('game:answer_result',    handleAnswerResult);
     on('game:finished',         handleGameFinished);
     on('game:results',          handleGameFinished);
     on('game:surrender_result', handleGameFinished);
-    on('game:finish',           handleGameFinished); // Added for compatibility
+    on('game:finish',           handleGameFinished);
 
     return () => {
       off('game:player_answered',  handlePlayerAnswered);
+      off('game:answer_result',    handleAnswerResult);
       off('game:finished',         handleGameFinished);
       off('game:results',          handleGameFinished);
       off('game:surrender_result', handleGameFinished);
       off('game:finish',           handleGameFinished);
     };
-  }, [on, off, isVsBot, socket]);
+  }, [on, off, isVsBot, socket, userId, gameRoom, handleOpponentSurrender]);
 
   // ── Graceful Fallback for Results (Offline-first) ─────────────────────────
   useEffect(() => {

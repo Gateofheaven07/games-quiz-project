@@ -488,14 +488,21 @@ export class GameManager {
     userId: string,
     _answer: number,
     scoreEarned: number
-  ): boolean {
+  ): { p1Score: number; p2Score: number } | null {
     const roomData = rooms.get(roomId);
-    if (!roomData) return false;
+    if (!roomData) return null;
 
     const current = roomData.playerScores.get(userId) || 0;
     roomData.playerScores.set(userId, current + scoreEarned);
     roomData.playerTimeSpent.set(userId, Date.now() - roomData.startedAt);
-    return true;
+
+    const p1 = roomData.room.player1;
+    const p2 = roomData.room.player2;
+
+    return {
+      p1Score: roomData.playerScores.get(p1) || 0,
+      p2Score: p2 ? (roomData.playerScores.get(p2) || 0) : 0,
+    };
   }
 
   static getRoom(roomId: string): GameRoom | null {

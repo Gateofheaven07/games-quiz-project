@@ -646,18 +646,23 @@ export function setupSocketHandlers(io: any) {
         const isCorrect  = question.correctAnswer === answer;
         const scoreEarned = isCorrect ? 10 : 0;
 
-        GameManager.submitAnswer(roomId, socket.userId, answer, scoreEarned);
+        const result = GameManager.submitAnswer(roomId, socket.userId, answer, scoreEarned);
+        if (!result) return;
 
         socket.emit('game:answer_result', {
           isCorrect,
           scoreEarned,
           correctAnswer: question.correctAnswer,
+          myScore: socket.userId === GameManager.getRoom(roomId)?.player1 ? result.p1Score : result.p2Score,
+          opponentScore: socket.userId === GameManager.getRoom(roomId)?.player1 ? result.p2Score : result.p1Score,
         });
 
         io.to(roomId).emit('game:player_answered', {
           userId: socket.userId,
           isCorrect,
           scoreEarned,
+          p1Score: result.p1Score,
+          p2Score: result.p2Score,
         });
       } catch (err) {
         console.error('[Socket] Answer error:', err);
