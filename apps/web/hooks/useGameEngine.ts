@@ -29,6 +29,7 @@ interface UseGameEngineProps {
   isVsBot?:       boolean;
   timerDisplayRef?: React.RefObject<HTMLElement | null>;
   timerArcRef?:     React.RefObject<SVGCircleElement | null>;
+  socket?:          any;
 }
 
 export type GameStatus = 'IDLE' | 'INITIALIZING_BOARD' | 'PLAYING' | 'EVALUATING' | 'CALCULATING_FINAL_SCORE' | 'GAME_OVER';
@@ -154,6 +155,7 @@ export function useGameEngine({
   isVsBot         = false,
   timerDisplayRef,
   timerArcRef,
+  socket,
 }: UseGameEngineProps): GameEngineReturn {
   const router = useRouter();
 
@@ -262,7 +264,7 @@ export function useGameEngine({
       off('game:results',          handleGameFinished);
       off('game:surrender_result', handleGameFinished);
     };
-  }, [on, off, userId, router, isVsBot]);
+  }, [on, off, userId, router, isVsBot, socket]);
 
   // ── Graceful Fallback for Results (Offline-first) ─────────────────────────
   useEffect(() => {

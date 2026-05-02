@@ -433,6 +433,7 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
     isVsBot,
     timerDisplayRef,
     timerArcRef,
+    socket,
   })
 
   // ── Memoized player objects (only rebuild when score/status changes) ────────
@@ -574,11 +575,20 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
               </div>
             ) : (
               <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <span style={{ color: 'var(--c-on-surface)', fontSize: '1.2rem' }}>Skor Kamu</span>
-                  <span style={{ color: '#00d1ff', fontSize: '1.5rem', fontWeight: 'bold' }}>{playerScore}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: 'var(--c-on-surface)', fontSize: '1.2rem' }}>Skor Kamu</span>
+                    <span style={{ color: '#00d1ff', fontSize: '1.5rem', fontWeight: 'bold' }}>{playerScore}</span>
+                  </div>
+                  {gameResults.results?.p1?.pointsGained !== undefined && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <span style={{ color: '#4aff91', fontSize: '0.8rem', fontWeight: 600 }}>
+                        +{user?.id === gameResults.results.p1.userId ? gameResults.results.p1.pointsGained : gameResults.results.p2?.pointsGained} Total Poin
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
                   <span style={{ color: 'var(--c-outline)', fontSize: '1.1rem' }}>Skor {opponentPlayer.name}</span>
                   <span style={{ color: '#cf5cff', fontSize: '1.3rem', fontWeight: 'bold' }}>{opponentScore}</span>
                 </div>

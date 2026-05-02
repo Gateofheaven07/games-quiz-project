@@ -124,6 +124,7 @@ const GameContext = createContext<GameContextValue | null>(null);
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const { token, isAuthenticated } = useAuth();
   const socketRef = useRef<Socket | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   const [isConnected,       setIsConnected]       = useState(false);
   const [matchmakingStatus, setMatchmakingStatus] = useState<MatchmakingStatus>('IDLE');
@@ -134,19 +135,23 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   // ── Setup socket listeners (idempotent) ────────────────────────────────────
   useEffect(() => {
-    if (!isAuthenticated || !token) return;
+    if (!isAuthenticated || !token) {
+      setSocket(null);
+      return;
+    }
 
     // Gunakan singleton — tidak membuat koneksi baru jika sudah ada
-    const socket = getSocket(token);
-    socketRef.current = socket;
+    const s = getSocket(token);
+    socketRef.current = s;
+    setSocket(s);
 
     // Sync state dengan kondisi socket saat ini
-    setIsConnected(socket.connected);
+    setIsConnected(s.connected);
     setMatchmakingStatus('IDLE');
 
     // ── Core events ─────────────────────────────────────────────────────────
     const onConnect = () => {
-      console.log('[GameContext] Socket connected:', socket.id);
+      console.log('[GameContext] Socket connected:', s.id);
       setIsConnected(true);
       setMatchmakingStatus('IDLE');
     };
@@ -212,34 +217,34 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     };
 
     // Daftarkan semua listener
-    socket.on('connect',                    onConnect);
-    socket.on('connection_success',         onConnectionSuccess);
-    socket.on('disconnect',                 onDisconnect);
-    socket.on('connect_error',              onConnectError);
-    socket.on('matchmaking:searching',      onSearching);
-    socket.on('matchmaking:opponent_found', onOpponentFound);
-    socket.on('matchmaking:preparing',      onPreparing);
-    socket.on('matchmaking:game_ready',     onGameReady);
-    socket.on('matchmaking:room_created',   onRoomCreated);
-    socket.on('matchmaking:cancelled',      onCancelled);
-    socket.on('matchmaking:error',          onMatchmakingError);
-    socket.on('matchmaking:room_not_found', onRoomNotFound);
+    s.on('connect',                    onConnect);
+    s.on('connection_success',         onConnectionSuccess);
+    s.on('disconnect',                 onDisconnect);
+    s.on('connect_error',              onConnectError);
+    s.on('matchmaking:searching',      onSearching);
+    s.on('matchmaking:opponent_found', onOpponentFound);
+    s.on('matchmaking:preparing',      onPreparing);
+    s.on('matchmaking:game_ready',     onGameReady);
+    s.on('matchmaking:room_created',   onRoomCreated);
+    s.on('matchmaking:cancelled',      onCancelled);
+    s.on('matchmaking:error',          onMatchmakingError);
+    s.on('matchmaking:room_not_found', onRoomNotFound);
 
     // Cleanup: HANYA lepas listener — JANGAN disconnect socket!
     // Socket singleton hanya diputus saat logout.
     return () => {
-      socket.off('connect',                    onConnect);
-      socket.off('connection_success',         onConnectionSuccess);
-      socket.off('disconnect',                 onDisconnect);
-      socket.off('connect_error',              onConnectError);
-      socket.off('matchmaking:searching',      onSearching);
-      socket.off('matchmaking:opponent_found', onOpponentFound);
-      socket.off('matchmaking:preparing',      onPreparing);
-      socket.off('matchmaking:game_ready',     onGameReady);
-      socket.off('matchmaking:room_created',   onRoomCreated);
-      socket.off('matchmaking:cancelled',      onCancelled);
-      socket.off('matchmaking:error',          onMatchmakingError);
-      socket.off('matchmaking:room_not_found', onRoomNotFound);
+      s.off('connect',                    onConnect);
+      s.off('connection_success',         onConnectionSuccess);
+      s.off('disconnect',                 onDisconnect);
+      s.off('connect_error',              onConnectError);
+      s.off('matchmaking:searching',      onSearching);
+      s.off('matchmaking:opponent_found', onOpponentFound);
+      s.off('matchmaking:preparing',      onPreparing);
+      s.off('matchmaking:game_ready',     onGameReady);
+      s.off('matchmaking:room_created',   onRoomCreated);
+      s.off('matchmaking:cancelled',      onCancelled);
+      s.off('matchmaking:error',          onMatchmakingError);
+      s.off('matchmaking:room_not_found', onRoomNotFound);
     };
   }, [isAuthenticated, token]);
 

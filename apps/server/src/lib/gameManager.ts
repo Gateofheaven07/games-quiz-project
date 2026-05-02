@@ -701,8 +701,22 @@ export class GameManager {
     const resultsPayload = {
       message: 'Lawan Menyerah!',
       results: {
-        p1: { userId: p1, score: p1Score, time: p1Time, isWinner: winnerId === p1, isDraw: false },
-        p2: p2 ? { userId: p2, score: p2Score, time: p2Time, isWinner: winnerId === p2, isDraw: false } : null,
+        p1: { 
+          userId: p1, 
+          score: p1Score, 
+          time: p1Time, 
+          isWinner: winnerId === p1, 
+          isDraw: false,
+          pointsGained: winnerId === p1 ? (p1Score + 50) : (p1Score + 10)
+        },
+        p2: p2 ? { 
+          userId: p2, 
+          score: p2Score, 
+          time: p2Time, 
+          isWinner: winnerId === p2, 
+          isDraw: false,
+          pointsGained: winnerId === p2 ? (p2Score + 50) : (p2Score + 10)
+        } : null,
       },
       winnerId,
       isDraw: false,
