@@ -328,12 +328,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   // ── Generic event helpers (untuk useGameEngine) ────────────────────────────
 
   const on = useCallback((event: string, handler: (...args: any[]) => void) => {
-    socketRef.current?.on(event, handler);
-  }, []);
+    socket?.on(event, handler);
+  }, [socket]);
 
   const off = useCallback((event: string, handler: (...args: any[]) => void) => {
-    socketRef.current?.off(event, handler);
-  }, []);
+    socket?.off(event, handler);
+  }, [socket]);
 
   const value: GameContextValue = {
     isConnected,

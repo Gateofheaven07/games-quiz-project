@@ -258,14 +258,16 @@ export function useGameEngine({
     on('game:finished',         handleGameFinished);
     on('game:results',          handleGameFinished);
     on('game:surrender_result', handleGameFinished);
+    on('game:finish',           handleGameFinished); // Added for compatibility
 
     return () => {
       off('game:player_answered',  handlePlayerAnswered);
       off('game:finished',         handleGameFinished);
       off('game:results',          handleGameFinished);
       off('game:surrender_result', handleGameFinished);
+      off('game:finish',           handleGameFinished);
     };
-  }, [on, off, userId, router, isVsBot, socket]);
+  }, [on, off, isVsBot, socket]);
 
   // ── Graceful Fallback for Results (Offline-first) ─────────────────────────
   useEffect(() => {

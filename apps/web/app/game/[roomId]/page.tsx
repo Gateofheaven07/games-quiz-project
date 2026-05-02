@@ -371,7 +371,13 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
       }
     };
     on('game:surrender_result', handleSurrender);
-    return () => off('game:surrender_result', handleSurrender);
+    on('game:finished',         handleSurrender);
+    on('game:finish',           handleSurrender);
+    return () => {
+      off('game:surrender_result', handleSurrender);
+      off('game:finished',         handleSurrender);
+      off('game:finish',           handleSurrender);
+    };
   }, [on, off, user?.id]);
 
   useEffect(() => {
