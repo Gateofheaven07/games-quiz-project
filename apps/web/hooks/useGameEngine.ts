@@ -276,19 +276,16 @@ export function useGameEngine({
   useEffect(() => {
     if (!socket || !userId || !gameRoom) return;
 
-    const handleSyncScores = (data: { scores: Record<string, number> }) => {
-      if (!myPlayerId) return;
-      console.log('🔄 SYNC SCORES:', data, 'MyID:', myPlayerId, 'OppID:', opponentId);
+    const handlePlayerAnswered = (data: { userId: string; isCorrect: boolean; scoreEarned: number }) => {
+      console.log('[GameEngine] 📥 Pemain menjawab:', data, 'MyID:', myPlayerId);
       
-      const myNewScore = data.scores[myPlayerId] || 0;
-      const opponentNewScore = opponentId ? (data.scores[opponentId] || 0) : 0;
-      
-      dispatch({ 
-        type: 'SYNC_SCORES', 
-        payload: { 
-          playerScore: myNewScore, 
-          opponentScore: opponentNewScore 
-        } 
+      // Jika yang menjawab adalah diri sendiri, abaikan (karena UI sudah diupdate optimistik)
+      if (data.userId === myPlayerId) return;
+
+      // Jika lawan yang menjawab, trigger reducer OPPONENT_ANSWERED
+      dispatch({
+        type: 'OPPONENT_ANSWERED',
+        payload: { scoreEarned: data.scoreEarned }
       });
     };
 
@@ -305,14 +302,14 @@ export function useGameEngine({
     };
 
     // Register listeners
-    on('sync_scores',           handleSyncScores);
+    on('game:player_answered',  handlePlayerAnswered);
     on('game:finished',         handleGameFinished);
     on('game:results',          handleGameFinished);
     on('game:surrender_result', handleGameFinished);
     on('game:finish',           handleGameFinished);
 
     return () => {
-      off('sync_scores',           handleSyncScores);
+      off('game:player_answered',  handlePlayerAnswered);
       off('game:finished',         handleGameFinished);
       off('game:results',          handleGameFinished);
       off('game:surrender_result', handleGameFinished);
