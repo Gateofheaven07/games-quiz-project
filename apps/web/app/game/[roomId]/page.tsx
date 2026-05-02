@@ -615,44 +615,61 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
 
       {/* ── Top bar — STATIC, never re-renders during gameplay ── */}
       <nav
+        className="flex flex-wrap md:flex-nowrap items-center justify-between px-3 md:px-6 py-2 md:py-0 min-h-[64px] gap-2 md:gap-0 sticky top-0 z-50 border-b border-white/10"
         style={{
           backgroundColor: 'rgba(14,20,23,0.8)', backdropFilter: 'blur(20px)',
-          borderBottom: '1px solid var(--c-outline-variant)',
-          padding: '0 24px', height: 64,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          position: 'sticky', top: 0, zIndex: 100,
         }}
       >
-        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-          <span className="material-symbols-rounded" style={{ color: 'var(--c-outline)', fontSize: '1.25rem' }}>arrow_back</span>
-          <span
-            style={{
-              fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: '1.25rem',
-              background: 'linear-gradient(135deg, #00d1ff, #cf5cff)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            }}
+        <div className="flex items-center gap-2 md:gap-4 w-full md:w-auto justify-between md:justify-start order-1 md:order-none">
+          <button 
+            onClick={() => { resetMatchmaking(); router.push('/dashboard'); }}
+            className="flex items-center gap-2 text-none shrink-0 hover:bg-white/5 p-1 rounded-lg transition-colors"
           >
-            ⚡ QuizBattle
-          </span>
-        </Link>
+            <span className="material-symbols-rounded text-lg md:text-xl" style={{ color: 'var(--c-outline)' }}>arrow_back</span>
+            <span
+              className="hidden sm:inline-block font-bold text-lg"
+              style={{
+                fontFamily: "'Space Grotesk', sans-serif",
+                background: 'linear-gradient(135deg, #00d1ff, #cf5cff)',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              }}
+            >
+              ⚡ QuizBattle
+            </span>
+          </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <button 
+            onClick={() => { resetMatchmaking(); router.push('/dashboard'); }}
+            className="btn-danger md:hidden text-[0.65rem] px-3 py-1.5 shrink-0"
+          >
+            MENYERAH
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between md:justify-center gap-2 md:gap-4 order-3 md:order-none w-full md:w-auto bg-white/5 md:bg-transparent py-1.5 px-2 md:px-0 rounded-lg md:rounded-none">
           {isVsBot ? (
-            <span className="badge" style={{ background: 'rgba(74,255,145,0.15)', color: '#4aff91', border: '1px solid rgba(74,255,145,0.3)', padding: '4px 12px', borderRadius: 6, fontSize: '0.6875rem', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, letterSpacing: '0.06em' }}>
-              🤖 MODE LATIHAN
+            <span className="badge" style={{ background: 'rgba(74,255,145,0.15)', color: '#4aff91', border: '1px solid rgba(74,255,145,0.3)', padding: '2px 8px', borderRadius: 6, fontSize: '0.6rem', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, letterSpacing: '0.06em' }}>
+              🤖 LATIHAN
             </span>
           ) : (
-            <span className="badge badge-live">PERTANDINGAN LANGSUNG</span>
+            <span className="badge badge-live text-[0.6rem] md:text-[0.6875rem] px-2 md:px-3">PERTANDINGAN LANGSUNG</span>
           )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span className="material-symbols-rounded" style={{ color: 'var(--c-outline)', fontSize: '1rem' }}>bolt</span>
-            <span className="label-caps" style={{ color: 'var(--c-on-surface-variant)', fontSize: '0.6875rem' }}>
-              RONDE {round} / {totalRounds}
+          <div className="flex items-center gap-1 md:gap-2">
+            <span className="material-symbols-rounded text-sm md:text-base" style={{ color: 'var(--c-outline)' }}>bolt</span>
+            <span className="label-caps text-[0.6rem] md:text-[0.6875rem]" style={{ color: 'var(--c-on-surface-variant)' }}>
+              RONDE {round}/{totalRounds}
             </span>
           </div>
         </div>
 
-        <button className="btn-danger" style={{ padding: '0.5rem 1rem' }}>Menyerah</button>
+        <div className="hidden md:block order-2 md:order-none">
+          <button 
+            onClick={() => { resetMatchmaking(); router.push('/dashboard'); }}
+            className="btn-danger text-xs px-4 py-2"
+          >
+            MENYERAH
+          </button>
+        </div>
       </nav>
 
       {/* ── Main battle area ── */}
@@ -670,18 +687,22 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
         </div>
 
         {/* Players vs Timer */}
-        <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 32 }}>
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center mb-6 md:mb-8 w-full">
           {/* PlayerPanel re-renders only when score/status changes */}
-          <PlayerPanel player={userPlayer} align="left" isUser />
+          <div className="w-full md:w-auto md:flex-1">
+            <PlayerPanel player={userPlayer} align="left" isUser />
+          </div>
 
           {/* Timer widget — TimerArc and TimerDisplay update via DOM refs ONLY */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-            <div style={{ position: 'relative', width: 96, height: 96 }}>
+          <div className="flex flex-row md:flex-col items-center justify-center gap-4 md:gap-2 shrink-0 my-2 md:my-0">
+            <div style={{ position: 'relative', width: 80, height: 80 }} className="md:w-[96px] md:h-[96px]">
               {/*
                 TimerArc renders ONCE and never re-renders.
                 useGameEngine mutates its SVG attributes directly via timerArcRef.
               */}
-              <TimerArc total={TIMER_DURATION} arcRef={timerArcRef} />
+              <div className="absolute inset-0 transform scale-[0.83] md:scale-100 origin-top-left">
+                <TimerArc total={TIMER_DURATION} arcRef={timerArcRef} />
+              </div>
 
               {/* Center content */}
               <div
@@ -694,8 +715,10 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
                   TimerDisplay renders ONCE.
                   useGameEngine writes textContent directly via timerDisplayRef.
                 */}
-                <TimerDisplay initial={timeLeft} displayRef={timerDisplayRef} />
-                <span className="label-caps" style={{ fontSize: '0.5rem', color: 'var(--c-outline)' }}>DETIK</span>
+                <div className="scale-75 md:scale-100 origin-center flex flex-col items-center">
+                  <TimerDisplay initial={timeLeft} displayRef={timerDisplayRef} />
+                  <span className="label-caps" style={{ fontSize: '0.5rem', color: 'var(--c-outline)' }}>DETIK</span>
+                </div>
               </div>
             </div>
             <span
@@ -708,7 +731,9 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
             </span>
           </div>
 
-          <PlayerPanel player={opponentPlayer} align="right" isUser={false} />
+          <div className="w-full md:w-auto md:flex-1">
+            <PlayerPanel player={opponentPlayer} align="right" isUser={false} />
+          </div>
         </div>
 
         {/* Question card — re-renders once per question */}
