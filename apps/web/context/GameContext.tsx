@@ -69,6 +69,7 @@ export interface PlayerInfo {
 
 export interface GameReadyPayload {
   roomId:     string;
+  gameId?:    string;
   categoryId: number;
   questions:  Question[];
   isVsBot?:   boolean;
@@ -107,7 +108,7 @@ interface GameContextValue {
   resetMatchmaking:   () => void;
 
   // Gameplay actions
-  submitAnswer:       (answer: number, questionIndex: number) => void;
+  submitAnswer:       (data: { answer: number; questionIndex: number; roomId: string; gameId: string; questionId: string; timeSpentMs?: number }) => void;
   finishGame:         () => void;
 
   // Generic event helpers for useGameEngine
@@ -327,8 +328,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   // ── Gameplay actions ───────────────────────────────────────────────────────
 
-  const submitAnswer = useCallback((answer: number, questionIndex: number) => {
-    socketRef.current?.emit('game:submit_answer', { answer, questionIndex });
+  const submitAnswer = useCallback((data: { answer: number; questionIndex: number; roomId: string; gameId: string; questionId: string; timeSpentMs?: number }) => {
+    socketRef.current?.emit('game:submit_answer', data);
   }, []);
 
   const finishGame = useCallback(() => {

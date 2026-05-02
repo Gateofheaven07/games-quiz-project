@@ -21,7 +21,7 @@ import { useRouter } from 'next/navigation';
 interface UseGameEngineProps {
   userId?:        string;
   gameRoom:       any;
-  submitAnswer:   (answer: number, questionIndex: number) => void;
+  submitAnswer:   (data: { answer: number; questionIndex: number; roomId: string; gameId: string; questionId: string; timeSpentMs?: number }) => void;
   finishGame:     () => void;
   on:             (event: string, callback: (...args: any[]) => void) => void;
   off:            (event: string, callback: (...args: any[]) => void) => void;
@@ -277,15 +277,20 @@ export function useGameEngine({
     if (!socket || !userId || !gameRoom) return;
 
     const handlePlayerAnswered = (data: { userId: string; isCorrect: boolean; scoreEarned: number }) => {
-      console.log('[GameEngine] 📥 Update Skor dari Server:', data);
-      
-      // Jika yang mendapat skor adalah diri sendiri, abaikan (UI kita sudah update secara optimistik)
-      if (data.userId === myPlayerId) return;
+      console.log('[GameEngine] 📥 Player answered (delta):', data);
+      // We still handle this for individual UI effects (toasts, animations) if needed
+      // but scores will be synced via handleSyncScores
+    };
 
-      // Jika lawan yang mendapat skor, tambahkan ke state opponentScore
+    const handleSyncScores = (data: { scores: Record<string, number> }) => {
+      console.log('[GameEngine] 🔄 Authoritative Sync Scores:', data);
+      const scores = data.scores;
+      const playerScore = scores[userId] || 0;
+      const opponentScore = opponentId ? (scores[opponentId] || 0) : 0;
+
       dispatch({
-        type: 'OPPONENT_ANSWERED',
-        payload: { scoreEarned: data.scoreEarned }
+        type: 'SYNC_SCORES',
+        payload: { playerScore, opponentScore }
       });
     };
 
@@ -303,6 +308,7 @@ export function useGameEngine({
 
     // Register listeners
     on('game:player_answered',  handlePlayerAnswered);
+    on('sync_scores',           handleSyncScores);
     on('game:finished',         handleGameFinished);
     on('game:results',          handleGameFinished);
     on('game:surrender_result', handleGameFinished);
@@ -310,6 +316,7 @@ export function useGameEngine({
 
     return () => {
       off('game:player_answered',  handlePlayerAnswered);
+      off('sync_scores',           handleSyncScores);
       off('game:finished',         handleGameFinished);
       off('game:results',          handleGameFinished);
       off('game:surrender_result', handleGameFinished);
@@ -364,7 +371,15 @@ export function useGameEngine({
       });
 
       // 2. Send to server (Fire and forget)
-      submitAnswer(idx, state.currentQ);
+      // Provide full metadata for server lookup
+      submitAnswer({
+        answer: idx,
+        questionIndex: state.currentQ,
+        roomId: gameRoom.id,
+        gameId: gameRoom.gameId, // Added in GameContext.gameData
+        questionId: question.id,  // This is now the REAL UUID from DB
+        timeSpentMs: totalDuration * 1000 - timeLeftRef.current * 1000
+      });
 
       // 3. Setup transition to next question after visual delay (EVALUATING state)
       setTimeout(() => {

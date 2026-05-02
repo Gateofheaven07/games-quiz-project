@@ -313,6 +313,7 @@ export function setupSocketHandlers(io: any) {
 
         io.to(roomId).emit('matchmaking:game_ready', {
           roomId,
+          gameId: GameManager.getRoomGameId(roomId),
           categoryId: result.categoryId,
           questions,
           players: [
@@ -451,6 +452,7 @@ export function setupSocketHandlers(io: any) {
 
         io.to(roomId).emit('matchmaking:game_ready', {
           roomId,
+          gameId: GameManager.getRoomGameId(roomId),
           categoryId,
           questions,        // sanitized (no correctAnswer)
           players: [
@@ -536,6 +538,7 @@ export function setupSocketHandlers(io: any) {
 
         socket.emit('matchmaking:game_ready', {
           roomId,
+          gameId: GameManager.getRoomGameId(roomId),
           categoryId,
           questions,
           isVsBot:    true,
@@ -632,6 +635,7 @@ export function setupSocketHandlers(io: any) {
 
         io.to(roomId).emit('matchmaking:game_ready', {
           roomId,
+          gameId: GameManager.getRoomGameId(roomId),
           categoryId,
           questions,
           players: [
@@ -706,6 +710,7 @@ export function setupSocketHandlers(io: any) {
 
           socket.emit('matchmaking:game_ready', {
             roomId,
+            gameId: GameManager.getRoomGameId(roomId),
             categoryId: GameManager.getRoomCategoryId(roomId) || 9,
             questions,
             players: [

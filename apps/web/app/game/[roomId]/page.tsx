@@ -427,6 +427,7 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
   const gameRoom = useMemo(() => gameData
     ? {
         id:       gameData.roomId,
+        gameId:   gameData.gameId,
         players:  gameData.players, // Now an array
         status:   'active' as const,
         questions: gameData.questions,

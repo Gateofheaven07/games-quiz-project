@@ -16,6 +16,7 @@ interface RoomData {
   isPrivate:       boolean;
   roomCode:        string;
   playersFinished: Set<string>;
+  gameId?:          string;
   // Bot metadata (undefined for human rooms)
   isVsBot?:       boolean;
   botDifficulty?: BotDifficulty;
@@ -85,7 +86,7 @@ export class GameManager {
       data: [{ roomId, userId: player1Id }, { roomId, userId: player2Id }],
     });
 
-    await prisma.game.create({
+    const game = await prisma.game.create({
       data: {
         roomId,
         mode:      GameMode.QUIZ,
@@ -93,6 +94,9 @@ export class GameManager {
         startedAt: new Date(),
       },
     });
+
+    const roomData = rooms.get(roomId);
+    if (roomData) roomData.gameId = game.id;
 
     console.log('[GameManager] Match room created:', { roomId, player1Id, player2Id, categoryId });
     return roomId;
@@ -153,7 +157,7 @@ export class GameManager {
 
     await prisma.roomPlayer.create({ data: { roomId, userId: playerId } });
 
-    await prisma.game.create({
+    const game = await prisma.game.create({
       data: {
         roomId,
         mode:          GameMode.QUIZ,
@@ -164,6 +168,9 @@ export class GameManager {
         gameCategory:  GameCategory.PRACTICE,
       },
     });
+
+    const roomData = rooms.get(roomId);
+    if (roomData) roomData.gameId = game.id;
 
     console.log('[GameManager] Bot room created:', { roomId, playerId, difficulty, botUserId });
     return { roomId, botUserId };
@@ -293,7 +300,7 @@ export class GameManager {
 
     await prisma.roomPlayer.create({ data: { roomId, userId: joinerUserId } });
 
-    await prisma.game.create({
+    const game = await prisma.game.create({
       data: {
         roomId,
         mode:      GameMode.QUIZ,
@@ -301,6 +308,8 @@ export class GameManager {
         startedAt: new Date(),
       },
     });
+
+    roomData.gameId = game.id;
 
     return {
       roomId,
@@ -436,7 +445,7 @@ export class GameManager {
 
     await prisma.roomPlayer.create({ data: { roomId, userId: joinerUserId } });
 
-    await prisma.game.create({
+    const game = await prisma.game.create({
       data: {
         roomId,
         mode:      GameMode.QUIZ,
@@ -444,6 +453,8 @@ export class GameManager {
         startedAt: new Date(),
       },
     });
+
+    roomData.gameId = game.id;
 
     return {
       roomId,
@@ -466,18 +477,45 @@ export class GameManager {
     if (!roomData) throw new Error('Room not found: ' + roomId);
 
     const translated = await fetchAndTranslate(categoryId, 10);
-    const questions: Question[] = translated.map((tq, i) => ({
-      id:            i.toString(),
-      text:          tq.question,
-      options:       tq.options,
-      correctAnswer: tq.options.indexOf(tq.correctAnswer),
-      category:      tq.categoryId.toString(),
-      difficulty:    'medium',
+    
+    // 1. Simpan Soal ke DB (Question Table) agar GameService bisa menemukannya
+    const dbQuestions = await Promise.all(
+      translated.map((tq) =>
+        prisma.question.create({
+          data: {
+            question: tq.question,
+            options: tq.options,
+            answer: tq.options.indexOf(tq.correctAnswer).toString(), // Store index as string to match Prisma schema
+            category: tq.categoryId.toString(),
+            difficulty: 'medium',
+          },
+        })
+      )
+    );
+
+    // 2. Hubungkan Soal ke Game (GameQuestion) jika gameId tersedia
+    if (roomData.gameId) {
+      await prisma.gameQuestion.createMany({
+        data: dbQuestions.map((q, i) => ({
+          gameId: roomData.gameId!,
+          questionId: q.id,
+          order: i + 1,
+        })),
+      });
+    }
+
+    // 3. Reconstruct Question objects untuk dikirim ke client
+    const questions: Question[] = dbQuestions.map((q) => ({
+      id:            q.id,
+      text:          q.question,
+      options:       q.options as string[],
+      correctAnswer: Number(q.answer),
+      category:      q.category || '',
+      difficulty:    (q.difficulty as 'easy' | 'medium' | 'hard') || 'medium',
     }));
 
     roomData.questions = questions;
 
-    // Return full version to allow Optimistic UI in client
     return questions;
   }
 
@@ -518,6 +556,10 @@ export class GameManager {
 
   static getRoom(roomId: string): GameRoom | null {
     return rooms.get(roomId)?.room || null;
+  }
+
+  static getRoomGameId(roomId: string): string | null {
+    return rooms.get(roomId)?.gameId || null;
   }
 
   static getRoomCategoryId(roomId: string): number | null {
