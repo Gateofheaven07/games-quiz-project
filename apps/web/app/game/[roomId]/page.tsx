@@ -491,40 +491,8 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
 
   if (isLoading || !isAuthenticated) return null
 
-  // ── Loading / waiting state ────────────────────────────────────────────────
-  if (!question) {
-    return (
-      <div
-        style={{
-          minHeight: '100vh', backgroundColor: 'var(--c-bg)',
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-          position: 'relative', overflow: 'hidden',
-        }}
-      >
-        <div className="bg-orb bg-orb-blue" style={{ top: -200, left: -100 }} />
-        <div className="bg-orb bg-orb-purple" style={{ bottom: -100, right: -100 }} />
-        <div className="glass-panel" style={{ padding: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
-          <div
-            style={{
-              width: 48, height: 48,
-              border: '4px solid rgba(0,209,255,0.2)', borderTopColor: '#00d1ff',
-              borderRadius: '50%', animation: 'spin 1s linear infinite',
-            }}
-          />
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", color: 'var(--c-on-surface)' }}>
-            {!gameRoom ? 'Menghubungkan ke Server...' : 'Menunggu Pertandingan...'}
-          </h2>
-          <p style={{ color: 'var(--c-outline)' }}>
-            Mencari lawan dan menyiapkan pertanyaan. Harap tunggu!
-          </p>
-        </div>
-      </div>
-    )
-  }
-
   // ── Final Results Screen ───────────────────────────────────────────────────
+  // ── Calculating / Syncing Screen ──────────────────────────────────────────
   if (status === 'CALCULATING_FINAL_SCORE' || (status === 'GAME_OVER' && !gameResults)) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: 'var(--c-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -537,10 +505,10 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
     )
   }
 
+  // ── Final Results Screen ───────────────────────────────────────────────────
   if (status === 'GAME_OVER') {
-
-    const isWinner = gameResults.winnerId === user?.id
-    const isDraw = gameResults.isDraw
+    const isWinner = gameResults?.winnerId === user?.id
+    const isDraw = gameResults?.isDraw
 
     let resultTitle = 'KAMU MENANG!'
     let titleColor = '#00d1ff'
@@ -588,7 +556,7 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
             {isVsBot ? (isDraw ? 'LATIHAN SEIMBANG' : 'MODE LATIHAN SELESAI') : resultTitle}
           </h1>
           
-          {gameResults.reason === 'surrender' && (
+          {gameResults?.reason === 'surrender' && (
             <p style={{ color: '#4aff91', marginTop: 12, fontSize: '1rem', fontWeight: 600, textAlign: 'center' }}>
               {isWinner ? 'Lawan telah menyerah. Kamu menang secara mutlak!' : 'Anda telah menyerah dari pertandingan.'}
             </p>
@@ -617,7 +585,7 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
                     <span style={{ color: 'var(--c-on-surface)', fontSize: '1.2rem' }}>Skor Kamu</span>
                     <span style={{ color: '#00d1ff', fontSize: '1.5rem', fontWeight: 'bold' }}>{playerScore}</span>
                   </div>
-                  {gameResults.results?.p1?.pointsGained !== undefined && (
+                  {gameResults?.results?.p1?.pointsGained !== undefined && (
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                       <span style={{ color: '#4aff91', fontSize: '0.8rem', fontWeight: 600 }}>
                         +{user?.id === gameResults.results.p1.userId ? gameResults.results.p1.pointsGained : gameResults.results.p2?.pointsGained} Total Poin
@@ -643,6 +611,40 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
             Kembali ke Lobby
           </motion.button>
         </motion.div>
+      </div>
+    )
+  }
+
+
+  // ── Loading / waiting state ────────────────────────────────────────────────
+  if (!question) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh', backgroundColor: 'var(--c-bg)',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          position: 'relative', overflow: 'hidden',
+        }}
+      >
+        <div className="bg-orb bg-orb-blue" style={{ top: -200, left: -100 }} />
+        <div className="bg-orb bg-orb-purple" style={{ bottom: -100, right: -100 }} />
+        <div className="glass-panel" style={{ padding: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+          <div
+            style={{
+              width: 48, height: 48,
+              border: '4px solid rgba(0,209,255,0.2)', borderTopColor: '#00d1ff',
+              borderRadius: '50%', animation: 'spin 1s linear infinite',
+            }}
+          />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", color: 'var(--c-on-surface)' }}>
+            {!gameRoom ? 'Menghubungkan ke Server...' : 'Menunggu Pertandingan...'}
+          </h2>
+          <p style={{ color: 'var(--c-outline)' }}>
+            Mencari lawan dan menyiapkan pertanyaan. Harap tunggu!
+          </p>
+        </div>
       </div>
     )
   }
@@ -850,17 +852,11 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
                   if (socket) {
                     console.log('[Game] Emitting surrender for room:', roomId);
                     
-                    // 1. Notify user immediately
-                    toast.error('Menyerah dari pertandingan...', {
-                      description: 'Skor Anda telah didaftarkan sebagai kekalahan.',
-                      icon: '💀'
-                    });
-
-                    // 2. Local Graceful Shutdown (Stop timers, set state)
-                    forceEndGame(user?.id || 'me', 'Anda Menyerah');
-
-                    // 3. Inform Server
+                    // 2. Inform Server (Let server response trigger local state update to prevent race conditions)
                     socket.emit('game:surrender', { roomId });
+
+                    // 3. Optional: Add a small delay or loading state if needed, 
+                    // but usually server response is fast enough.
                   }
                 }}
                 className="flex-1 py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-red-500/20 hover:scale-[1.02] active:scale-[0.98]"

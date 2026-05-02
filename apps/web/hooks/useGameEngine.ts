@@ -115,16 +115,11 @@ function gameReducer(state: GameState, action: Action): GameState {
       };
 
     case 'GAME_OVER':
-      // Relaxed transition validation: allow GAME_OVER from almost any active state
-      // to handle forced exits, surrenders, and re-connection races.
-      const validSources: GameStatus[] = ['INITIALIZING_BOARD', 'PLAYING', 'EVALUATING', 'CALCULATING_FINAL_SCORE'];
-      if (!validSources.includes(state.status)) {
-        console.warn(`[FSM] Invalid transition attempt: ${state.status} -> GAME_OVER. Rejected.`);
-        return state;
-      }
+      // Force game over regardless of current state
       return {
         ...state,
         status: 'GAME_OVER',
+        currentQ: -1, // Force out of bounds to clear question logic
         gameResults: action.payload || state.gameResults,
       };
 
@@ -235,14 +230,14 @@ export function useGameEngine({
   }, [state.status, updateTimerDOM]);
 
   // ── Answer handler (Optimistic UI) ─────────────────────────────────────────
-  const handleOpponentSurrender = useCallback((data: any) => {
-    console.log('[GameEngine] Opponent surrendered. Syncing state.', data);
+    const handleOpponentSurrender = useCallback((data: any) => {
+    console.log('[GameEngine] HARD-FIX: Force game over due to surrender', data);
     
-    // 1. Stop everything
+    // 1. Stop animation loop and timer immediately
     gameEndedRef.current = true;
     updateTimerDOM(0);
     
-    // 2. Immediate transition to GAME_OVER with the provided payload
+    // 2. Force state transition to GAME_OVER
     dispatch({ 
       type: 'GAME_OVER', 
       payload: {
