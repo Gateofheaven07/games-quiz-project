@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../hooks/useAuth'
-import { useNotifications } from '../hooks/useNotifications'
+import { useNotificationContext } from '../context/NotificationContext'
 
 interface UserStats {
   totalScore: number;
@@ -25,7 +25,7 @@ function getRankLabel(score: number): string {
 export function AppSidebar({ active, userStats }: { active: string; userStats?: UserStats | null }) {
   const router = useRouter()
   const { logout, user } = useAuth()
-  const { unreadCount } = useNotifications()
+  const { unreadCount, friendRequestCount } = useNotificationContext()
 
   const handleLogout = () => {
     logout()
@@ -110,6 +110,12 @@ export function AppSidebar({ active, userStats }: { active: string; userStats?: 
                   {unreadCount}
                 </div>
               )}
+
+              {item.label === 'Teman' && friendRequestCount > 0 && (
+                <div className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-cyan-500 text-[10px] font-black text-white px-1 shadow-lg shadow-cyan-500/20 animate-pulse">
+                  {friendRequestCount}
+                </div>
+              )}
             </Link>
           );
         })}
@@ -140,7 +146,7 @@ export function AppMobileNav({ active }: { active: string }) {
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
   const { logout, user } = useAuth()
-  const { unreadCount } = useNotifications()
+  const { unreadCount, friendRequestCount } = useNotificationContext()
 
   const handleLogout = () => {
     logout()
@@ -169,11 +175,11 @@ export function AppMobileNav({ active }: { active: string }) {
         </div>
 
         <button 
-          onClick={() => setIsOpen(!isOpen)} 
+          onClick={() => { setIsOpen(!isOpen) }} 
           className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-white active:scale-90 transition-transform relative"
         >
           <span className="material-symbols-outlined">{isOpen ? 'close' : 'menu'}</span>
-          {!isOpen && unreadCount > 0 && (
+          {!isOpen && (unreadCount > 0 || friendRequestCount > 0) && (
             <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#0b0e14] shadow-sm"></span>
           )}
         </button>
@@ -227,6 +233,11 @@ export function AppMobileNav({ active }: { active: string }) {
                     {item.label === 'Notifikasi' && unreadCount > 0 && (
                       <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg shadow-red-500/20">
                         {unreadCount}
+                      </span>
+                    )}
+                    {item.label === 'Teman' && friendRequestCount > 0 && (
+                      <span className="bg-cyan-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg shadow-cyan-500/20">
+                        {friendRequestCount}
                       </span>
                     )}
                   </Link>

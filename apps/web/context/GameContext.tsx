@@ -302,6 +302,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setPrivateRoomCode(null);
     // Kembalikan presence ke normal
     socketRef.current?.emit('toggle_presence', { busy: false });
+    // Tinggalkan room
+    socketRef.current?.emit('leave_room');
     // Force purge on backend
     socketRef.current?.emit('game:purge');
   }, []);

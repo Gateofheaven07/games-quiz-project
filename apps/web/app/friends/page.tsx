@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../hooks/useAuth'
+import { useNotificationContext } from '../../context/NotificationContext'
 import axios from 'axios'
 import { io, Socket } from 'socket.io-client'
 import { SOCKET_URL } from '../../lib/socketSingleton'
@@ -46,11 +47,19 @@ interface ChatMessage {
 export default function FriendsPage() {
   const router = useRouter()
   const { isAuthenticated, isLoading, user, getAuthClient, logout } = useAuth()
+  const { setFriendRequestCount } = useNotificationContext()
   
   const [friends, setFriends] = useState<Friend[]>([])
   const [requests, setRequests] = useState<RequestItem[]>([])
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
+
+  // Reset notification count when entering this page
+  useEffect(() => {
+    if (isAuthenticated) {
+      setFriendRequestCount(0)
+    }
+  }, [isAuthenticated, setFriendRequestCount])
 
   // Modals state
   const [showAddModal, setShowAddModal] = useState(false)
@@ -119,6 +128,15 @@ export default function FriendsPage() {
         if (prev.some(m => m.id === message.id)) return prev
         return [...prev, message]
       })
+    })
+
+    newSocket.on('friend:request', (request: RequestItem) => {
+      setRequests(prev => {
+        if (prev.some(r => r.id === request.id)) return prev
+        return [request, ...prev]
+      })
+      // Since we are on the friends page, we can keep the global count at 0
+      setFriendRequestCount(0)
     })
 
     setSocket(newSocket)

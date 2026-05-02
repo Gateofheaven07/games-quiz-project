@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
 import './globals.css'
 import { GameProvider } from '../context/GameContext'
+import { NotificationProvider } from '../context/NotificationContext'
 import { GlobalInviteModal } from '../components/GlobalInviteModal'
 
 const inter = Inter({
@@ -37,8 +38,10 @@ export default function RootLayout({
           persisten — tidak terputus saat perpindahan rute (router.push).
         */}
         <GameProvider>
-          {children}
-          <GlobalInviteModal />
+          <NotificationProvider>
+            {children}
+            <GlobalInviteModal />
+          </NotificationProvider>
         </GameProvider>
       </body>
     </html>

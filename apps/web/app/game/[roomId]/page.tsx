@@ -313,7 +313,7 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
 
   const router = useRouter()
   const { isAuthenticated, isLoading, user } = useAuth()
-  const { submitAnswer, finishGame, on, off, gameData: contextGameData } = useGame()
+  const { submitAnswer, finishGame, on, off, gameData: contextGameData, resetMatchmaking } = useGame()
 
   // ── Slow state: game data (set once) ───────────────────────────────────────
   const [gameData, setGameData] = useState<GameReadyPayload | null>(null)
@@ -381,8 +381,9 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
       if (socket) {
         socket.emit('toggle_presence', { busy: false })
       }
+      resetMatchmaking()
     }
-  }, [socket])
+  }, [socket, resetMatchmaking])
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.push('/auth/login')

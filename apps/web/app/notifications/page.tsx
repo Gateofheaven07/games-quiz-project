@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
+import { useNotificationContext } from '../../context/NotificationContext';
 import { AppSidebar, AppMobileNav } from '../../components/AppSidebar';
 import { getSocket } from '../../lib/socketSingleton';
 
@@ -30,6 +31,7 @@ interface Notification {
 export default function NotificationsPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading, getAuthClient, token } = useAuth();
+  const { setUnreadCount } = useNotificationContext();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [replyText, setReplyText] = useState<{ [key: string]: string }>({});
@@ -53,6 +55,7 @@ export default function NotificationsPage() {
         const unreadIds = notifs.filter((n: Notification) => n.status === 'UNREAD').map((n: Notification) => n.id);
         if (unreadIds.length > 0) {
           await client.post('/notifications/read', { notificationIds: unreadIds });
+          setUnreadCount(0);
         }
       } catch (err) {
         console.error('Failed to fetch notifications', err);

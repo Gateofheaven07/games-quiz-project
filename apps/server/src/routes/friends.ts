@@ -162,7 +162,18 @@ router.post('/request', async (req: AuthRequest, res: Response) => {
 
     const friendship = await prisma.friendship.create({
       data: { senderId: userId, receiverId: target.id, status: 'PENDING' },
+      include: { sender: { select: { id: true, username: true, level: true, wins: true } } }
     });
+
+    // Emit socket event to the receiver
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user:${target.id}`).emit('friend:request', {
+        id: friendship.id,
+        sender: friendship.sender,
+        createdAt: friendship.createdAt
+      });
+    }
 
     res.status(201).json({ success: true, data: { friendship, target } });
   } catch (error) {
