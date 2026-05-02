@@ -112,8 +112,9 @@ function gameReducer(state: GameState, action: Action): GameState {
       };
 
     case 'GAME_OVER':
-      // STRICT TRANSITION VALIDATION: Only allow GAME_OVER from relevant states
-      const validSources: GameStatus[] = ['PLAYING', 'EVALUATING', 'CALCULATING_FINAL_SCORE'];
+      // Relaxed transition validation: allow GAME_OVER from almost any active state
+      // to handle forced exits, surrenders, and re-connection races.
+      const validSources: GameStatus[] = ['INITIALIZING_BOARD', 'PLAYING', 'EVALUATING', 'CALCULATING_FINAL_SCORE'];
       if (!validSources.includes(state.status)) {
         console.warn(`[FSM] Invalid transition attempt: ${state.status} -> GAME_OVER. Rejected.`);
         return state;
@@ -249,14 +250,17 @@ export function useGameEngine({
     };
 
     // Note: We ignore game:answer_result here because Optimistic UI handles it instantly!
-    on('game:player_answered', handlePlayerAnswered);
-    on('game:finished',        handleGameFinished);
-    on('game:results',         handleGameFinished); // Support both event names
+    // Support multiple event names for game completion to ensure robustness
+    on('game:player_answered',  handlePlayerAnswered);
+    on('game:finished',         handleGameFinished);
+    on('game:results',          handleGameFinished);
+    on('game:surrender_result', handleGameFinished);
 
     return () => {
-      off('game:player_answered', handlePlayerAnswered);
-      off('game:finished',        handleGameFinished);
-      off('game:results',         handleGameFinished);
+      off('game:player_answered',  handlePlayerAnswered);
+      off('game:finished',         handleGameFinished);
+      off('game:results',          handleGameFinished);
+      off('game:surrender_result', handleGameFinished);
     };
   }, [on, off, userId, router, isVsBot]);
 

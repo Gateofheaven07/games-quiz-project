@@ -766,13 +766,11 @@ export function setupSocketHandlers(io: any) {
           const roomId = GameManager.getUserRoom(socket.userId);
           if (roomId) {
             socket.leave(roomId);
-            io.to(roomId).emit('game:player_disconnected', {
-              userId:   socket.userId,
-              username: socket.username,
-            });
-
-            // Mark this player as finished so the game isn't stuck waiting for them
-            GameManager.playerFinished(roomId, socket.userId, io);
+            
+            // Treat disconnection during an active game as a surrender/exit
+            // so the opponent is not left hanging.
+            console.log(`[Socket] Player ${socket.userId} disconnected during active game ${roomId}. Treating as surrender.`);
+            GameManager.playerSurrendered(roomId, socket.userId, io);
           }
         }
       } catch (err) {

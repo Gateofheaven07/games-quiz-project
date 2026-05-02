@@ -358,25 +358,36 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
     if (raw) {
       try {
         setGameData(JSON.parse(raw))
-        sessionStorage.removeItem('quizGameData')
+        // We keep it in session for one more tick in case of immediate crash, 
+        // but generally we want it gone so it doesn't leak.
+        // sessionStorage.removeItem('quizGameData') 
         
-        // Mark as busy
         if (socket) {
           socket.emit('toggle_presence', { busy: true, reason: 'In game' })
         }
-      } catch {
-        // failed to parse
+      } catch (err) {
+        console.error('Failed to parse game data', err)
       }
     }
 
+    // ── REFRESH FALLBACK ──
+    // If after 3 seconds we still don't have gameData, it means the state is lost
+    // (likely due to refresh). Redirect to dashboard with a warning.
+    const fallbackTimer = setTimeout(() => {
+      if (!gameData && !contextGameData) {
+        console.warn('[Game] State lost or room not found. Redirecting...');
+        router.push('/dashboard?error=session_lost')
+      }
+    }, 3500)
+
     return () => {
-      // Mark as available when unmounting
+      clearTimeout(fallbackTimer)
       if (socket) {
         socket.emit('toggle_presence', { busy: false })
       }
       resetMatchmaking()
     }
-  }, [socket, resetMatchmaking])
+  }, [socket, resetMatchmaking, gameData, contextGameData, router])
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.push('/auth/login')
@@ -790,7 +801,10 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
                 onClick={() => {
                   setIsSurrenderModalOpen(false);
                   if (socket) {
+                    console.log('[Game] Emitting surrender for room:', roomId);
                     socket.emit('game:surrender', { roomId });
+                    // Optional: optimistic state change to show we are waiting for server
+                    // but usually the server response is fast enough.
                   }
                 }}
                 className="flex-1 py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-red-500/20 hover:scale-[1.02] active:scale-[0.98]"

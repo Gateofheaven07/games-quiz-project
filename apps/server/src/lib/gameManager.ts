@@ -698,7 +698,7 @@ export class GameManager {
     }
 
     // 1. Instantly notify clients
-    io.to(roomId).emit('game:finished', {
+    const resultsPayload = {
       message: 'Lawan Menyerah!',
       results: {
         p1: { userId: p1, score: p1Score, time: p1Time, isWinner: winnerId === p1, isDraw: false },
@@ -706,7 +706,10 @@ export class GameManager {
       },
       winnerId,
       isDraw: false,
-    });
+    };
+
+    io.to(roomId).emit('game:finished', resultsPayload);
+    io.to(roomId).emit('game:surrender_result', resultsPayload);
 
     this.endRoom(roomId);
 
