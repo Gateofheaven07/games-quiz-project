@@ -50,10 +50,17 @@ export class GameService {
       });
     }
 
+    // 4. Ambil skor terbaru untuk sinkronisasi real-time
+    const updatedPlayer = await prisma.roomPlayer.findUnique({
+      where: { userId_roomId: { userId, roomId } },
+      select: { score: true },
+    });
+
     return {
       isCorrect,
       scoreEarned,
       correctAnswer: gameQuestion.question.answer,
+      newScore: updatedPlayer?.score || 0,
     };
   }
 

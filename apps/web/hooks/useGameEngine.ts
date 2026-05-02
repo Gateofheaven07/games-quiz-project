@@ -71,6 +71,7 @@ type Action =
   | { type: 'ANSWER_SUBMITTED'; payload: { answer: number; isCorrect: boolean; correctAnswer: number; scoreEarned: number } }
   | { type: 'OPPONENT_ANSWERED'; payload: { scoreEarned: number } }
   | { type: 'NEXT_QUESTION'; payload: { totalRounds: number } }
+  | { type: 'UPDATE_SCORE'; payload: { playerId: string; newScore: number; userId: string } }
   | { type: 'CALCULATE_FINAL_SCORE' }
   | { type: 'GAME_OVER'; payload?: any };
 
@@ -102,6 +103,14 @@ function gameReducer(state: GameState, action: Action): GameState {
       return {
         ...state,
         opponentScore: state.opponentScore + action.payload.scoreEarned,
+      };
+
+    case 'UPDATE_SCORE':
+      const isMe = action.payload.playerId === action.payload.userId;
+      return {
+        ...state,
+        playerScore: isMe ? action.payload.newScore : state.playerScore,
+        opponentScore: isMe ? state.opponentScore : action.payload.newScore,
       };
 
     case 'NEXT_QUESTION':
@@ -301,7 +310,20 @@ export function useGameEngine({
       dispatch({ type: 'GAME_OVER', payload: data });
     };
 
+    const handleUpdateScore = (data: { playerId: string; newScore: number }) => {
+      console.log('[GameEngine] Score update received:', data);
+      dispatch({ 
+        type: 'UPDATE_SCORE', 
+        payload: { 
+          playerId: data.playerId, 
+          newScore: data.newScore,
+          userId: userId || ''
+        } 
+      });
+    };
+
     // Register listeners
+    on('update_score',          handleUpdateScore);
     on('game:player_answered',  handlePlayerAnswered);
     on('game:answer_result',    handleAnswerResult);
     on('game:finished',         handleGameFinished);
@@ -310,6 +332,7 @@ export function useGameEngine({
     on('game:finish',           handleGameFinished);
 
     return () => {
+      off('update_score',          handleUpdateScore);
       off('game:player_answered',  handlePlayerAnswered);
       off('game:answer_result',    handleAnswerResult);
       off('game:finished',         handleGameFinished);

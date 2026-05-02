@@ -43,6 +43,7 @@ export interface AnswerResult {
   isCorrect: boolean;
   scoreEarned: number;
   correctAnswer: string;
+  newScore: number;
 }
 
 export interface StartGameResult {

@@ -35,11 +35,17 @@ export async function submitAnswerHandler(socket: AuthenticatedSocket, io: any, 
     socket.emit('game:answer_result', {
       isCorrect: result.isCorrect,
       scoreEarned: result.scoreEarned,
-      correctAnswer: result.correctAnswer // Bisa dikirim jika game mode memungkinkan
+      correctAnswer: result.correctAnswer,
+      newScore: result.newScore
     });
 
-    // Broadcast ke seluruh room bahwa pemain ini telah menjawab
-    // (Bisa juga kirim update skor terbaru, tergantung kebutuhan UI)
+    // BROADCAST: Update skor ke SELURUH pemain di room agar tersinkronisasi
+    io.to(data.roomId).emit('update_score', { 
+      playerId: socket.userId, 
+      newScore: result.newScore 
+    });
+
+    // Tetap kirim event lama jika ada listener lain yang bergantung padanya
     io.to(data.roomId).emit('game:player_answered', {
       userId: socket.userId,
       isCorrect: result.isCorrect,
