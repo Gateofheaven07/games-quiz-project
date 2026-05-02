@@ -588,6 +588,12 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
             {isVsBot ? (isDraw ? 'LATIHAN SEIMBANG' : 'MODE LATIHAN SELESAI') : resultTitle}
           </h1>
           
+          {gameResults.reason === 'surrender' && (
+            <p style={{ color: '#4aff91', marginTop: 12, fontSize: '1rem', fontWeight: 600, textAlign: 'center' }}>
+              {isWinner ? 'Lawan telah menyerah. Kamu menang secara mutlak!' : 'Anda telah menyerah dari pertandingan.'}
+            </p>
+          )}
+
           {isDraw && (
             <p style={{ color: 'var(--c-outline)', marginTop: 12, fontSize: '0.9rem', textAlign: 'center' }}>
               Pertandingan yang luar biasa! Kalian berdua memiliki skor yang sama.

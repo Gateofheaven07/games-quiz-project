@@ -49,6 +49,7 @@ export interface GameEngineReturn {
   revealedCorrect: number;
   handleAnswer:    (idx: number) => void;
   forceEndGame:    (loserId: string, reason: string) => void;
+  handleOpponentSurrender: (data: any) => void;
 }
 
 // ── Reducer Setup ────────────────────────────────────────────────────────────
@@ -233,6 +234,24 @@ export function useGameEngine({
     return () => cancelAnimationFrame(rafId);
   }, [state.status, updateTimerDOM]);
 
+  // ── Answer handler (Optimistic UI) ─────────────────────────────────────────
+  const handleOpponentSurrender = useCallback((data: any) => {
+    console.log('[GameEngine] Opponent surrendered. Syncing state.', data);
+    
+    // 1. Stop everything
+    gameEndedRef.current = true;
+    updateTimerDOM(0);
+    
+    // 2. Immediate transition to GAME_OVER with the provided payload
+    dispatch({ 
+      type: 'GAME_OVER', 
+      payload: {
+        ...data,
+        isSurrender: true
+      } 
+    });
+  }, [updateTimerDOM]);
+
   // ── Socket event listeners ─────────────────────────────────────────────────
   useEffect(() => {
     const handlePlayerAnswered = (data: any) => {
@@ -248,6 +267,13 @@ export function useGameEngine({
 
     const handleGameFinished = (data: any) => {
       console.log('[GameEngine] Received game:finished from server', data);
+      
+      // If the reason is surrender, we handle it specifically to ensure immediate transition
+      if (data.reason === 'surrender') {
+        handleOpponentSurrender(data);
+        return;
+      }
+
       gameEndedRef.current = true;
       dispatch({ type: 'GAME_OVER', payload: data });
     };
@@ -383,8 +409,10 @@ export function useGameEngine({
           },
           isSurrender: true,
           isLocal: true,
+          reason: 'surrender'
         } 
       });
-    }
+    },
+    handleOpponentSurrender
   };
 }

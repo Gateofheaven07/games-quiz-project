@@ -719,16 +719,15 @@ export class GameManager {
         } : null,
       },
       winnerId,
+      loserId: surrenderingUserId,
       isDraw: false,
+      reason: 'surrender'
     };
 
     // 1. Instantly notify ALL clients in the room
     io.to(roomId).emit('game:finished', resultsPayload);
     io.to(roomId).emit('game:surrender_result', resultsPayload);
-    io.to(roomId).emit('game:finish', { // Added for explicit compatibility
-      ...resultsPayload,
-      reason: 'surrender'
-    });
+    io.to(roomId).emit('game:finish', resultsPayload);
 
     this.endRoom(roomId);
 
