@@ -33,15 +33,19 @@ export function getSocket(token: string): Socket {
   }
 
   if (!_socket) {
-    console.log('[SocketSingleton] Creating new socket connection');
+    console.log('[SocketSingleton] Creating new socket connection to:', SOCKET_URL);
     _socket = io(SOCKET_URL, {
       auth:                 { token },
-      transports:           ['websocket'], // Dipaksa ke websocket untuk menghindari masalah proxy/tunnel
+      // ✅ Izinkan polling DULU sebagai fallback, lalu upgrade ke WebSocket.
+      // Ini wajib untuk Cloudflare Tunnel — WebSocket-only gagal karena
+      // Cloudflare perlu HTTP handshake sebelum upgrade ke WS.
+      transports:           ['polling', 'websocket'],
+      upgrade:              true,   // Eksplisit izinkan upgrade ke WebSocket
       reconnection:         true,
       reconnectionDelay:    1000,
       reconnectionDelayMax: 5000,
-      reconnectionAttempts: Infinity, // Terus mencoba reconnect
-      timeout:              20000,    // Waktu tunggu koneksi sebelum error
+      reconnectionAttempts: Infinity,
+      timeout:              20000,
     });
 
     _currentToken = token;

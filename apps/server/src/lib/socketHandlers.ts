@@ -700,7 +700,11 @@ export function setupSocketHandlers(io: any) {
         if (room && (room.player1 === socket.userId || room.player2 === socket.userId)) {
           socket.join(roomId);
           console.log(`[Socket] Player ${socket.userId} rejoined room ${roomId}`);
-          
+
+          // ✅ Kirim current scores SEGERA agar UI tidak stuck di skor lama
+          const currentScores = GameManager.getRoomScoresMap(roomId);
+          socket.emit('game:state_sync', { scores: currentScores });
+
           // Emit full game data to the rejoining player so their UI can catch up
           const questions = GameManager.getRoomQuestions(roomId);
           const [p1Data, p2Data] = await Promise.all([

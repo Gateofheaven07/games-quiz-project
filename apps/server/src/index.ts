@@ -64,12 +64,15 @@ const corsOptions: cors.CorsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 };
 
-// 3. Socket.IO Optimization (Prioritizing WebSocket for Cloudflare Tunnel)
+// 3. Socket.IO — Support polling + WebSocket (wajib untuk Cloudflare Tunnel)
+// Cloudflare Tunnel membutuhkan HTTP polling handshake sebelum upgrade ke WebSocket.
+// Jika server hanya menerima 'websocket', client yang coba polling akan gagal 400.
 const io = new SocketIOServer(httpServer, {
   cors: corsOptions,
-  transports: ['websocket'], // Force WebSocket to avoid Cloudflare HTTP long-polling overhead
-  pingInterval: 25000,       // Keep-alive for Cloudflare idle timeout
-  pingTimeout: 60000,        // Allow more time for client response
+  transports: ['polling', 'websocket'], // ✅ Mirror dengan konfigurasi client
+  pingInterval: 25000,                   // Keep-alive untuk Cloudflare idle timeout
+  pingTimeout:  60000,                   // Beri waktu lebih untuk client response
+  allowEIO3:    true,                    // Kompatibilitas dengan Socket.IO v3 client
 });
 
 setupSocketHandlers(io);
