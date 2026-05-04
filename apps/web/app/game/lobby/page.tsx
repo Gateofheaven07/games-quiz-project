@@ -52,6 +52,7 @@ export default function LobbyPage() {
   const [copied, setCopied]                       = useState(false)
   const [friends, setFriends]                     = useState<any[]>([])
   const [loadingFriends, setLoadingFriends]       = useState(false)
+  const [selectedLanguage, setSelectedLanguage]   = useState<'id' | 'en'>('id')
 
   const { onlineUsers, isOnline } = usePresence(friends)
   const { invitingId, sendInvite } = useBattleInvite()
@@ -91,17 +92,17 @@ export default function LobbyPage() {
 
   const handleFindMatch = () => {
     if (!isConnected) return
-    startQuickMatch(selectedCategory)
+    startQuickMatch(selectedCategory, selectedLanguage)
   }
 
   const handleFindBot = () => {
     if (!isConnected) return
-    startPracticeMatch(selectedCategory, selectedDifficulty)
+    startPracticeMatch(selectedCategory, selectedDifficulty, selectedLanguage)
   }
 
   const handleCreateInvite = () => {
     if (!isConnected) return
-    createInviteRoom(selectedCategory)
+    createInviteRoom(selectedCategory, selectedLanguage)
   }
 
   const handleJoinByCode = () => {
@@ -151,6 +152,9 @@ export default function LobbyPage() {
         .diff-btn.hard.active  { border-color:#ff4545; background:rgba(255,69,69,0.1);   box-shadow:0 0 16px rgba(255,69,69,0.2); }
         .code-input { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:12px 16px; font-family:'Space Grotesk',sans-serif; font-size:1.2rem; font-weight:700; letter-spacing:0.2em; color:var(--c-on-surface); text-align:center; width:100%; text-transform:uppercase; outline:none; }
         .code-input:focus { border-color:#00d1ff; box-shadow:0 0 0 2px rgba(0,209,255,0.15); }
+        .lang-btn { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:8px 16px; cursor:pointer; font-family:'Inter',sans-serif; font-size:0.875rem; font-weight:600; color:var(--c-outline); transition:all 0.2s; display:flex; align-items:center; gap:8px; }
+        .lang-btn:hover:not(.active) { background:rgba(255,255,255,0.08); color:var(--c-on-surface); }
+        .lang-btn.active { background:rgba(0,209,255,0.1); border-color:#00d1ff; color:#00d1ff; box-shadow:0 0 12px rgba(0,209,255,0.1); }
       `}</style>
 
       {/* Background orbs */}
@@ -186,6 +190,23 @@ export default function LobbyPage() {
           <p style={{ color:'var(--c-outline)', fontFamily:"'Inter',sans-serif", fontSize:'1rem' }}>
             Selamat datang, <strong style={{ color:'#00d1ff' }}>{user?.username}</strong>! Pilih kategori dan temukan lawanmu.
           </p>
+          
+          <div style={{ display:'flex', justifyContent:'center', gap:10, marginTop:16 }}>
+            <button 
+              className={`lang-btn${selectedLanguage === 'id' ? ' active' : ''}`} 
+              onClick={() => setSelectedLanguage('id')}
+              disabled={isSearching}
+            >
+              🇮🇩 Bahasa Indonesia
+            </button>
+            <button 
+              className={`lang-btn${selectedLanguage === 'en' ? ' active' : ''}`} 
+              onClick={() => setSelectedLanguage('en')}
+              disabled={isSearching}
+            >
+              🇺🇸 English
+            </button>
+          </div>
         </div>
 
         {/* Category Selector */}
@@ -327,7 +348,7 @@ export default function LobbyPage() {
                       </div>
                       
                       <button 
-                        onClick={() => sendInvite(friend.id, selectedCategory)}
+                        onClick={() => sendInvite(friend.id, selectedCategory, selectedLanguage)}
                         disabled={invitingId === friend.id}
                         className="btn-primary" 
                         style={{ 
@@ -412,7 +433,9 @@ export default function LobbyPage() {
             )}
 
             <p style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'1.1rem', color:'var(--c-on-surface)', marginBottom:8 }}>
-              {(isBotMode ? BOT_STATUS_MESSAGES[matchmakingStatus] : STATUS_MESSAGES[matchmakingStatus]) || ''}
+              {matchmakingStatus === 'INITIALIZING_BOARD' 
+                ? (selectedLanguage === 'en' ? 'Preparing English questions...' : 'Menerjemahkan soal ke Indonesia...')
+                : ((isBotMode ? BOT_STATUS_MESSAGES[matchmakingStatus] : STATUS_MESSAGES[matchmakingStatus]) || '')}
             </p>
 
             {isBotMode && (

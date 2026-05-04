@@ -100,10 +100,10 @@ interface GameContextValue {
   privateRoomCode:    string | null;
 
   // Matchmaking actions
-  findRandomMatch:    (categoryId: number) => void;
-  findBotMatch:       (categoryId: number, difficulty: BotDifficulty) => void;
+  findRandomMatch:    (categoryId: number, language?: string) => void;
+  findBotMatch:       (categoryId: number, difficulty: BotDifficulty, language?: string) => void;
   cancelMatchmaking:  () => void;
-  createInviteRoom:   (categoryId: number) => void;
+  createInviteRoom:   (categoryId: number, language?: string) => void;
   joinByCode:         (roomCode: string) => void;
   resetMatchmaking:   () => void;
 
@@ -263,11 +263,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   // ── Matchmaking actions ────────────────────────────────────────────────────
 
-  const findRandomMatch = useCallback((categoryId: number) => {
+  const findRandomMatch = useCallback((categoryId: number, language: string = 'id') => {
     const s = socketRef.current;
     if (!s?.connected) return;
     setMatchmakingError(null);
-    s.emit('matchmaking:find', { categoryId });
+    s.emit('matchmaking:find', { categoryId, language });
   }, []);
 
   /**
@@ -277,7 +277,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
    * server tahu user sedang busy dan tidak dimasukkan ke antrian matchmaking
    * publik — TANPA memutus socket.
    */
-  const findBotMatch = useCallback((categoryId: number, difficulty: BotDifficulty) => {
+  const findBotMatch = useCallback((categoryId: number, difficulty: BotDifficulty, language: string = 'id') => {
     const s = socketRef.current;
     if (!s?.connected) return;
     setMatchmakingError(null);
@@ -287,7 +287,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     console.log('[GameContext] Presence toggled: busy (bot_match)');
 
     setMatchmakingStatus('MATCHMAKING_OR_WAITING');
-    s.emit('matchmaking:find_bot', { categoryId, difficulty });
+    s.emit('matchmaking:find_bot', { categoryId, difficulty, language });
   }, []);
 
   const cancelMatchmaking = useCallback(() => {
@@ -298,11 +298,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     s.emit('matchmaking:cancel');
   }, []);
 
-  const createInviteRoom = useCallback((categoryId: number) => {
+  const createInviteRoom = useCallback((categoryId: number, language: string = 'id') => {
     const s = socketRef.current;
     if (!s?.connected) return;
     setMatchmakingError(null);
-    s.emit('matchmaking:invite_room', { categoryId });
+    s.emit('matchmaking:invite_room', { categoryId, language });
   }, []);
 
   const joinByCode = useCallback((roomCode: string) => {

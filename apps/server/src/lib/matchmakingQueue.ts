@@ -17,20 +17,21 @@ export interface WaitingPlayer {
   username: string;
   categoryId: number;
   enqueuedAt: number;
+  language: string;
 }
 
-// categoryId → queue of waiting players
-const queue = new Map<number, WaitingPlayer[]>();
+// categoryId:language → queue of waiting players
+const queue = new Map<string, WaitingPlayer[]>();
 
 /** Add a player to the queue. Returns an opponent if found, otherwise null. */
 export function enqueue(player: WaitingPlayer): WaitingPlayer | null {
-  const cat = player.categoryId;
+  const key = `${player.categoryId}:${player.language}`;
 
-  if (!queue.has(cat)) {
-    queue.set(cat, []);
+  if (!queue.has(key)) {
+    queue.set(key, []);
   }
 
-  const waiting = queue.get(cat)!;
+  const waiting = queue.get(key)!;
 
   // Guard: don't let the same socket join twice
   const alreadyIn = waiting.findIndex((p) => p.socketId === player.socketId);
@@ -69,10 +70,10 @@ export function isWaiting(socketId: string): boolean {
 }
 
 /** Debug helper */
-export function getQueueStats(): Record<number, number> {
-  const stats: Record<number, number> = {};
-  for (const [cat, players] of queue) {
-    stats[cat] = players.length;
+export function getQueueStats(): Record<string, number> {
+  const stats: Record<string, number> = {};
+  for (const [key, players] of queue) {
+    stats[key] = players.length;
   }
   return stats;
 }

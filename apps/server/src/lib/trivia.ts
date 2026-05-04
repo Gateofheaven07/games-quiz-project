@@ -17,7 +17,7 @@ export interface TranslatedQuestion {
   categoryId: number;
 }
 
-export async function fetchAndTranslate(categoryId: number, amount: number = 10): Promise<TranslatedQuestion[]> {
+export async function fetchAndTranslate(categoryId: number, amount: number = 10, language: string = 'id'): Promise<TranslatedQuestion[]> {
   try {
     const response = await fetch(`https://opentdb.com/api.php?amount=${amount}&category=${categoryId}&difficulty=medium&type=multiple`);
     const data = await response.json() as any;
@@ -27,6 +27,26 @@ export async function fetchAndTranslate(categoryId: number, amount: number = 10)
     }
 
     const translatedQuestions: TranslatedQuestion[] = [];
+
+    // If language is English, just decode HTML entities and skip translation
+    if (language === 'en') {
+      for (const item of data.results as TriviaQuestion[]) {
+        const question = he.decode(item.question);
+        const correctAnswer = he.decode(item.correct_answer);
+        const incorrectAnswers = item.incorrect_answers.map(ans => he.decode(ans));
+        
+        const options = [correctAnswer, ...incorrectAnswers];
+        options.sort(() => Math.random() - 0.5);
+
+        translatedQuestions.push({
+          question,
+          options,
+          correctAnswer,
+          categoryId,
+        });
+      }
+      return translatedQuestions;
+    }
 
     // Collect all strings to translate
     const textsToTranslate: string[] = [];

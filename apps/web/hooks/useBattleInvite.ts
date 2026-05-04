@@ -122,7 +122,7 @@ export function useBattleInvite() {
     }
   }, [invitingId])
 
-  const sendInvite = useCallback((receiverId: string, categoryId: number) => {
+  const sendInvite = useCallback((receiverId: string, categoryId: number, language: string = 'id') => {
     if (!socket) return
     setInvitingId(receiverId)
     
@@ -142,7 +142,7 @@ export function useBattleInvite() {
       })
     }, 15000)
 
-    socket.emit('battle:invite', { receiverId, categoryId }, (response: any) => {
+    socket.emit('battle:invite', { receiverId, categoryId, language }, (response: any) => {
       if (response && response.error) {
         if (inviteTimerRef.current) clearTimeout(inviteTimerRef.current)
         setInvitingId(null)

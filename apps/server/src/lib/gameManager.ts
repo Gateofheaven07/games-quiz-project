@@ -23,6 +23,7 @@ interface RoomData {
   botUserId?:     string;
   // Idempotency: mencegah satu player menjawab soal yang sama 2x (race condition)
   answeredQuestions: Map<string, Set<string>>; // questionId → Set<userId>
+  language?: string;
 }
 
 const rooms    = new Map<string, RoomData>();
@@ -45,7 +46,8 @@ export class GameManager {
   static async createMatchRoom(
     player1Id: string,
     player2Id: string,
-    categoryId: number
+    categoryId: number,
+    language: string = 'id'
   ): Promise<string> {
     const roomId   = uuidv4();
     const roomCode = roomId.substring(0, 6).toUpperCase();
@@ -74,6 +76,7 @@ export class GameManager {
       roomCode,
       playersFinished:  new Set(),
       answeredQuestions: new Map(),
+      language,
     });
 
     userRooms.set(player1Id, roomId);
@@ -114,7 +117,8 @@ export class GameManager {
   static async createBotRoom(
     playerId:   string,
     categoryId: number,
-    difficulty: BotDifficulty
+    difficulty: BotDifficulty,
+    language: string = 'id'
   ): Promise<{ roomId: string; botUserId: string }> {
     const roomId    = uuidv4();
     const roomCode  = roomId.substring(0, 6).toUpperCase();
@@ -149,6 +153,7 @@ export class GameManager {
       botDifficulty:    difficulty,
       botUserId,
       answeredQuestions: new Map(),
+      language,
     });
 
     userRooms.set(playerId, roomId);
@@ -188,7 +193,8 @@ export class GameManager {
   static async createReservedRoom(
     hostUserId: string,
     categoryId: number,
-    hostUsername: string = ''
+    hostUsername: string = '',
+    language: string = 'id'
   ): Promise<{ roomId: string; roomCode: string }> {
     const roomId   = uuidv4();
     const roomCode = roomId.substring(0, 6).toUpperCase();
@@ -216,6 +222,7 @@ export class GameManager {
       roomCode,
       playersFinished: new Set(),
       answeredQuestions: new Map(),
+      language,
     });
 
     userRooms.set(hostUserId, roomId);
@@ -332,7 +339,8 @@ export class GameManager {
   static async createPrivateRoom(
     hostUserId: string,
     categoryId: number,
-    hostUsername: string = ''
+    hostUsername: string = '',
+    language: string = 'id'
   ): Promise<{ roomId: string; roomCode: string }> {
     const roomId   = uuidv4();
     const roomCode = roomId.substring(0, 6).toUpperCase();
@@ -360,6 +368,7 @@ export class GameManager {
       roomCode,
       playersFinished: new Set(),
       answeredQuestions: new Map(),
+      language,
     });
 
     userRooms.set(hostUserId, roomId);
@@ -484,7 +493,7 @@ export class GameManager {
     const roomData = rooms.get(roomId);
     if (!roomData) throw new Error('Room not found: ' + roomId);
 
-    const translated = await fetchAndTranslate(categoryId, 10);
+    const translated = await fetchAndTranslate(categoryId, 10, roomData.language || 'id');
     
     // 1. Simpan Soal ke DB (Question Table) agar GameService bisa menemukannya
     const dbQuestions = await Promise.all(

@@ -166,10 +166,10 @@ export function setupSocketHandlers(io: any) {
     });
 
     // ── Battle Invites ────────────────────────────────────────────────────────
-    socket.on('battle:invite', async (data: { receiverId: string; categoryId: number }, callback?: (res: any) => void) => {
+    socket.on('battle:invite', async (data: { receiverId: string; categoryId: number; language?: string }, callback?: (res: any) => void) => {
       try {
         if (!socket.userId || !socket.username) return;
-        const { receiverId, categoryId } = data;
+        const { receiverId, categoryId, language = 'id' } = data;
         
         const sendError = (message: string) => {
           if (callback) callback({ error: message });
@@ -200,7 +200,8 @@ export function setupSocketHandlers(io: any) {
         const { roomId, roomCode } = await GameManager.createReservedRoom(
           socket.userId,
           categoryId,
-          socket.username
+          socket.username,
+          language
         );
 
         // 5. Create Notification Record
@@ -370,7 +371,7 @@ export function setupSocketHandlers(io: any) {
      *  • If opponent found → create room → fetch/translate questions → emit game_data_ready to both.
      *  • If not found   → emit matchmaking:searching.
      */
-    socket.on('matchmaking:find', async (data: { categoryId: number }) => {
+    socket.on('matchmaking:find', async (data: { categoryId: number; language?: string }) => {
       if (!socket.userId || !socket.username) {
         socket.emit('error', 'Not authenticated');
         return;
@@ -384,10 +385,12 @@ export function setupSocketHandlers(io: any) {
       }
 
       const categoryId = Number(data?.categoryId) || 9;
+      const language = data?.language || 'id';
 
       console.log('[Matchmaking] Player searching:', {
         userId: socket.userId,
         categoryId,
+        language,
         queueStats: getQueueStats(),
       });
 
@@ -397,6 +400,7 @@ export function setupSocketHandlers(io: any) {
         username:    socket.username,
         categoryId,
         enqueuedAt:  Date.now(),
+        language,
       });
 
       if (!opponent) {
@@ -428,7 +432,8 @@ export function setupSocketHandlers(io: any) {
         const roomId = await GameManager.createMatchRoom(
           socket.userId,
           opponent.userId,
-          categoryId
+          categoryId,
+          language
         );
 
         // Put both players into the Socket.io room
@@ -490,13 +495,14 @@ export function setupSocketHandlers(io: any) {
      *  • Mulai sesi Bot AI
      *  • Emit game_ready ke pemain
      */
-    socket.on('matchmaking:find_bot', async (data: { categoryId: number; difficulty: BotDifficulty }) => {
+    socket.on('matchmaking:find_bot', async (data: { categoryId: number; difficulty: BotDifficulty; language?: string }) => {
       if (!socket.userId || !socket.username) {
         socket.emit('error', 'Not authenticated');
         return;
       }
 
       const categoryId = Number(data?.categoryId) || 9;
+      const language = data?.language || 'id';
       const difficulty: BotDifficulty = (['EASY', 'MEDIUM', 'HARD'].includes(data?.difficulty))
         ? data.difficulty
         : 'MEDIUM';
@@ -520,7 +526,8 @@ export function setupSocketHandlers(io: any) {
         const { roomId, botUserId } = await GameManager.createBotRoom(
           socket.userId,
           categoryId,
-          difficulty
+          difficulty,
+          language
         );
 
         socket.join(roomId);
@@ -570,7 +577,7 @@ export function setupSocketHandlers(io: any) {
      * matchmaking:invite_room
      * Create a private room and return its code to share.
      */
-    socket.on('matchmaking:invite_room', async (data: { categoryId: number }) => {
+    socket.on('matchmaking:invite_room', async (data: { categoryId: number; language?: string }) => {
       if (!socket.userId || !socket.username) {
         socket.emit('error', 'Not authenticated');
         return;
@@ -578,9 +585,12 @@ export function setupSocketHandlers(io: any) {
 
       try {
         const categoryId = Number(data?.categoryId) || 9;
+        const language = data?.language || 'id';
         const { roomId, roomCode } = await GameManager.createPrivateRoom(
           socket.userId,
-          categoryId
+          categoryId,
+          socket.username || '',
+          language
         );
 
         socket.join(roomId);

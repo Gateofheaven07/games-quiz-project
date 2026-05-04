@@ -25,14 +25,14 @@ export function useGameInit() {
     }
   }, [resetMatchmaking, socket]);
 
-  const startQuickMatch = useCallback((categoryId: number) => {
+  const startQuickMatch = useCallback((categoryId: number, language?: string) => {
     initializeNewSession();
-    findRandomMatch(categoryId);
+    findRandomMatch(categoryId, language);
   }, [initializeNewSession, findRandomMatch]);
 
-  const startPracticeMatch = useCallback((categoryId: number, difficulty: any) => {
+  const startPracticeMatch = useCallback((categoryId: number, difficulty: any, language?: string) => {
     initializeNewSession();
-    findBotMatch(categoryId, difficulty);
+    findBotMatch(categoryId, difficulty, language);
   }, [initializeNewSession, findBotMatch]);
 
   return {
