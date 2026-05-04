@@ -40,33 +40,50 @@ export class GameService {
 
     console.log(`[GameService] processAnswer: userId=${userId}, answer=${answer}, correctAnswer=${gameQuestion.question.answer}, isCorrect=${isCorrect}, scoreEarned=${scoreEarned}`);
 
-    // 3. Selalu lakukan idempotency check di GameManager (terlepas dari scoreEarned)
-    //    Ini mencegah double-submit dan memastikan state in-memory sinkron
-    const scoreResult = GameManager.submitAnswer(roomId, userId, questionId, answer as any, scoreEarned);
-    
-    if (scoreResult === null) {
-      // Room tidak ditemukan di memory — skip DB update tapi tetap return result
-      console.warn(`[GameService] Room ${roomId} not found in memory, skipping DB update`);
-    } else if (scoreEarned > 0) {
-      // 3a. Cek dulu apakah RoomPlayer entry ada
+    // 3. Update skor — selalu update DB terlepas dari kondisi in-memory
+    //    Ini adalah "fallback-safe" design: DB adalah single source of truth
+    let newScore = 0;
+
+    if (scoreEarned > 0) {
+      // Cek dulu apakah RoomPlayer entry ada
       const roomPlayer = await prisma.roomPlayer.findUnique({
         where: { userId_roomId: { userId, roomId } },
       });
 
       if (!roomPlayer) {
-        console.warn(`[GameService] RoomPlayer not found: ${userId} in room ${roomId}`);
+        console.warn(`[GameService] RoomPlayer not found: ${userId} in room ${roomId}. Checking if we can create it...`);
+        // Coba create RoomPlayer jika tidak ada (misalnya room di-hydrate dari DB)
+        try {
+          await prisma.roomPlayer.create({ data: { userId, roomId, score: scoreEarned } });
+          newScore = scoreEarned;
+          console.log(`[GameService] Created RoomPlayer entry for ${userId} in room ${roomId} with score ${scoreEarned}`);
+        } catch (createErr: any) {
+          console.error(`[GameService] Failed to create RoomPlayer: ${createErr.message}`);
+        }
       } else {
-        await prisma.roomPlayer.update({
+        const updated = await prisma.roomPlayer.update({
           where: { userId_roomId: { userId, roomId } },
           data: { score: { increment: scoreEarned } },
+          select: { score: true },
         });
+        newScore = updated.score;
+        console.log(`[GameService] Updated DB score for ${userId}: ${newScore}`);
       }
+    } else {
+      // Jawaban salah — ambil skor terkini dari DB
+      const roomPlayer = await prisma.roomPlayer.findUnique({
+        where: { userId_roomId: { userId, roomId } },
+        select: { score: true },
+      });
+      newScore = roomPlayer?.score ?? 0;
     }
 
-    // 4. Gunakan skor in-memory dari GameManager sebagai sumber kebenaran
-    //    (lebih cepat daripada re-query DB, dan sudah di-update di atas)
-    const inMemoryScores = GameManager.getRoomScoresMap(roomId);
-    const newScore = inMemoryScores[userId] ?? 0;
+    // 4. Sync in-memory state jika room masih ada di memory
+    //    Jika tidak ada (sudah di-purge), in-memory diabaikan — DB adalah sumber kebenaran
+    const inMemoryResult = GameManager.submitAnswer(roomId, userId, questionId, answer as any, scoreEarned);
+    if (inMemoryResult === null) {
+      console.warn(`[GameService] Room ${roomId} not in memory — DB score updated directly (score: ${newScore})`);
+    }
 
     return {
       isCorrect,

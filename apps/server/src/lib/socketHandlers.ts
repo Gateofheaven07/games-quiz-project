@@ -6,6 +6,7 @@ import { enqueue, remove, isWaiting, getQueueStats } from './matchmakingQueue.js
 import { BotDifficulty, BOT_DIFFICULTY_CONFIGS } from './bot.types.js';
 import { startBotSession } from './botEngine.js';
 import { submitAnswerHandler } from '../websocket/events/submitAnswer.js';
+import { GameService } from '../modules/game/game.service.js';
 
 // Track online users: userId → socketId
 const onlineUsers = new Map<string, string>();
@@ -663,18 +664,28 @@ export function setupSocketHandlers(io: any) {
       try {
         if (!socket.userId) return;
         
-        // Remove from busy state
-        busyUsers.delete(socket.userId);
-        
-        // Remove from matchmaking queue
+        // Remove from matchmaking queue (always safe)
         remove(socket.id);
         
-        // Force leave any room
+        // ✅ FIX: Hanya hapus room jika BUKAN sedang aktif dimainkan
+        // game:purge dipanggil saat navigasi, jangan hancurkan game yang sedang berlangsung!
         const roomId = GameManager.getUserRoom(socket.userId);
         if (roomId) {
-          socket.leave(roomId);
-          GameManager.endRoom(roomId);
-          console.log(`[Socket] Force purged user ${socket.userId} from room ${roomId}`);
+          const room = GameManager.getRoom(roomId);
+          if (room && room.status === 'active') {
+            // Room sedang aktif — jangan hapus! Hanya remove dari busy state
+            busyUsers.delete(socket.userId);
+            console.log(`[Socket] game:purge SKIPPED for active room ${roomId} (user: ${socket.userId}) — game in progress`);
+          } else {
+            // Room tidak aktif (waiting/finished) — aman untuk dihapus
+            busyUsers.delete(socket.userId);
+            socket.leave(roomId);
+            GameManager.endRoom(roomId);
+            console.log(`[Socket] Force purged user ${socket.userId} from non-active room ${roomId}`);
+          }
+        } else {
+          busyUsers.delete(socket.userId);
+          console.log(`[Socket] game:purge: no room found for user ${socket.userId}`);
         }
       } catch (err) {
         console.error('[Socket] Purge error:', err);
@@ -696,12 +707,17 @@ export function setupSocketHandlers(io: any) {
       try {
         if (!socket.userId) return;
         const roomId = data.roomId;
+
+        // ✅ Selalu join Socket.IO room agar bisa menerima broadcast
+        // Ini diperlukan bahkan jika room sudah tidak ada di memory
+        socket.join(roomId);
+        console.log(`[Socket] Player ${socket.userId} joined Socket.IO room ${roomId} (rejoin)`);
+
         const room = GameManager.getRoom(roomId);
         if (room && (room.player1 === socket.userId || room.player2 === socket.userId)) {
-          socket.join(roomId);
-          console.log(`[Socket] Player ${socket.userId} rejoined room ${roomId}`);
+          console.log(`[Socket] Player ${socket.userId} rejoined in-memory room ${roomId}`);
 
-          // ✅ Kirim current scores SEGERA agar UI tidak stuck di skor lama
+          // Kirim current scores SEGERA agar UI tidak stuck di skor lama
           const currentScores = GameManager.getRoomScoresMap(roomId);
           socket.emit('game:state_sync', { scores: currentScores });
 
@@ -722,6 +738,29 @@ export function setupSocketHandlers(io: any) {
               { userId: room.player2 || '', username: p2Data?.username || '', level: p2Data?.level || 1 },
             ],
           });
+
+          // ✅ Juga pastikan socket player lain ada di room (untuk broadcast 2 arah)
+          const otherId = room.player1 === socket.userId ? room.player2 : room.player1;
+          if (otherId) {
+            const otherSocketId = onlineUsers.get(otherId);
+            if (otherSocketId) {
+              const otherSocket = io.sockets.sockets.get(otherSocketId);
+              if (otherSocket && !otherSocket.rooms.has(roomId)) {
+                otherSocket.join(roomId);
+                console.log(`[Socket] Also added opponent ${otherId} to room ${roomId}`);
+              }
+            }
+          }
+        } else {
+          // Room tidak ada di memory — masih join Socket.IO room agar receive broadcast
+          console.log(`[Socket] Room ${roomId} not in memory for user ${socket.userId}, but joined Socket.IO room for broadcasts`);
+          
+          // Ambil skor dari DB sebagai fallback
+          const dbScores = await GameService.getRoomScores(roomId);
+          if (Object.keys(dbScores).length > 0) {
+            socket.emit('game:state_sync', { scores: dbScores });
+            console.log(`[Socket] Sent DB fallback scores to ${socket.userId}:`, dbScores);
+          }
         }
       } catch (err) {
         console.error('[Socket] Rejoin error:', err);

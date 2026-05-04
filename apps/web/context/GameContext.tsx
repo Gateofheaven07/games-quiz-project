@@ -320,10 +320,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setPrivateRoomCode(null);
     // Kembalikan presence ke normal
     socketRef.current?.emit('toggle_presence', { busy: false });
-    // Tinggalkan room
-    socketRef.current?.emit('leave_room');
-    // Force purge on backend
-    socketRef.current?.emit('game:purge');
+    // Catatan: game:purge TIDAK dipanggil di sini agar tidak menghancurkan game yang aktif.
+    // Server sudah diproteksi untuk mengabaikan purge pada room yang sedang aktif.
   }, []);
 
   // ── Gameplay actions ───────────────────────────────────────────────────────

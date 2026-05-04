@@ -5,7 +5,7 @@ import { AnswerPayload } from '../../modules/game/game.types.js';
 
 /**
  * Event: game:submit_answer
- * 
+ *
  * Kenapa dipisah?
  * Sesuai prinsip Clean Architecture, file event ini hanya bertugas menerima
  * request dari Socket.IO dan meresponsnya, tanpa ada logic bisnis di sini.
@@ -29,7 +29,7 @@ export async function submitAnswerHandler(socket: AuthenticatedSocket, io: any, 
 
     console.log(`[submitAnswer] Processing: userId=${socket.userId}, roomId=${data.roomId}, answer=${data.answer}, questionId=${data.questionId}`);
 
-    // Panggil Orchestrator (GameService)
+    // Panggil Orchestrator (GameService) — DB update sudah terjadi di sini
     const result = await GameService.processAnswer(payload);
 
     console.log(`[submitAnswer] Result: isCorrect=${result.isCorrect}, scoreEarned=${result.scoreEarned}, newScore=${result.newScore}`);
@@ -41,9 +41,15 @@ export async function submitAnswerHandler(socket: AuthenticatedSocket, io: any, 
       scoreEarned: result.scoreEarned,
     });
 
-    // 2. Ambil FULL STATE skor dari in-memory GameManager (Single Source of Truth)
-    //    GameManager sudah di-update oleh processAnswer, lebih cepat daripada re-query DB
-    const allScores = GameManager.getRoomScoresMap(data.roomId);
+    // 2. Ambil FULL STATE skor untuk broadcast
+    //    Prioritas: in-memory (cepat) → DB (fallback jika room di-purge dari memory)
+    let allScores = GameManager.getRoomScoresMap(data.roomId);
+
+    // ✅ FIX: Jika in-memory kosong (room sudah di-purge), fallback ke DB
+    if (Object.keys(allScores).length === 0) {
+      console.warn(`[submitAnswer] In-memory scores empty for room ${data.roomId}, falling back to DB...`);
+      allScores = await GameService.getRoomScores(data.roomId);
+    }
 
     console.log(`[submitAnswer] Broadcasting game:state_sync to room ${data.roomId}:`, allScores);
 
@@ -63,7 +69,7 @@ export async function submitAnswerHandler(socket: AuthenticatedSocket, io: any, 
 
   } catch (error: any) {
     console.error('[Socket] Error submitting answer:', error.message, error.stack);
-    // Tetap emit answer_result agar UI tidak stuck (tanpa score update)
+    // Tetap emit answer_result agar UI tidak stuck
     socket.emit('game:answer_result', {
       isCorrect: false,
       correctAnswer: null,
