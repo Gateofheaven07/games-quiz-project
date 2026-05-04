@@ -297,10 +297,10 @@ export default function DashboardPage() {
             <h3 className="font-['Space_Grotesk'] font-bold text-lg text-[var(--c-on-surface)]">
               Mode Permainan
             </h3>
-            <span className="badge badge-live">3 Ruang Aktif</span>
+            <span className="badge badge-live">4 Ruang Aktif</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <GameModeCard
               icon="swords"
               title="Kuis Pertempuran"
@@ -322,6 +322,14 @@ export default function DashboardPage() {
               description="Penalaran spasial kecepatan tinggi. Susun, hapus, dan kuasai arena."
               href="/game/tetris"
               accent="#feb127"
+            />
+            <GameModeCard
+              icon="chess"
+              title="Catur"
+              description="Duel strategi papan catur 1 vs 1. Pilih durasi, tantang teman, atau uji kemampuan melawan Bot AI."
+              href="/game/chess/lobby"
+              badge="NEW"
+              accent="#4aff91"
             />
           </div>
         </div>
