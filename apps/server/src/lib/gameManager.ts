@@ -21,6 +21,8 @@ interface RoomData {
   isVsBot?:       boolean;
   botDifficulty?: BotDifficulty;
   botUserId?:     string;
+  // Idempotency: mencegah satu player menjawab soal yang sama 2x (race condition)
+  answeredQuestions: Map<string, Set<string>>; // questionId → Set<userId>
 }
 
 const rooms    = new Map<string, RoomData>();
@@ -71,6 +73,7 @@ export class GameManager {
       isPrivate:        false,
       roomCode,
       playersFinished:  new Set(),
+      answeredQuestions: new Map(),
     });
 
     userRooms.set(player1Id, roomId);
@@ -145,6 +148,7 @@ export class GameManager {
       isVsBot:          true,
       botDifficulty:    difficulty,
       botUserId,
+      answeredQuestions: new Map(),
     });
 
     userRooms.set(playerId, roomId);
@@ -211,6 +215,7 @@ export class GameManager {
       isPrivate:       true,
       roomCode,
       playersFinished: new Set(),
+      answeredQuestions: new Map(),
     });
 
     userRooms.set(hostUserId, roomId);
@@ -276,6 +281,7 @@ export class GameManager {
         isPrivate:       true,
         roomCode:        dbRoom.code,
         playersFinished: new Set(),
+        answeredQuestions: new Map(),
       };
       rooms.set(roomId, roomData);
       userRooms.set(hostPlayer.userId, roomId);
@@ -353,6 +359,7 @@ export class GameManager {
       isPrivate:       true,
       roomCode,
       playersFinished: new Set(),
+      answeredQuestions: new Map(),
     });
 
     userRooms.set(hostUserId, roomId);
@@ -416,6 +423,7 @@ export class GameManager {
           isPrivate:       true,
           roomCode:        dbRoom.code,
           playersFinished: new Set(),
+          answeredQuestions: new Map(),
         };
 
         rooms.set(roomId, roomData);
@@ -524,11 +532,32 @@ export class GameManager {
   static submitAnswer(
     roomId: string,
     userId: string,
+    questionId: string | null,  // questionId untuk idempotency check
     _answer: any,
     scoreEarned: number
   ): { p1Score: number; p2Score: number } | null {
     const roomData = rooms.get(roomId);
     if (!roomData) return null;
+
+    // Idempotency check: cegah satu player menjawab soal yang sama dua kali
+    // (melindungi dari race condition & double-submit)
+    if (questionId) {
+      if (!roomData.answeredQuestions.has(questionId)) {
+        roomData.answeredQuestions.set(questionId, new Set());
+      }
+      const answeredSet = roomData.answeredQuestions.get(questionId)!;
+      if (answeredSet.has(userId)) {
+        console.warn(`[GameManager] ⚠️ Double-answer blocked: ${userId} on question ${questionId}`);
+        // Kembalikan skor saat ini tanpa perubahan
+        const p1 = roomData.room.player1;
+        const p2 = roomData.room.player2;
+        return {
+          p1Score: roomData.playerScores.get(p1) || 0,
+          p2Score: p2 ? (roomData.playerScores.get(p2) || 0) : 0,
+        };
+      }
+      answeredSet.add(userId);
+    }
 
     const current = roomData.playerScores.get(userId) || 0;
     roomData.playerScores.set(userId, current + scoreEarned);

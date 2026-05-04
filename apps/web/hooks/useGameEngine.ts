@@ -90,15 +90,16 @@ function gameReducer(state: GameState, action: Action): GameState {
       };
 
     case 'ANSWER_SUBMITTED':
-      // Optimistic UI: Update both Visual (colors) and Data (score) instantly
-      // Transition to EVALUATING to stop the timer and show feedback
+      // Update UI visual feedback (warna jawaban benar/salah) — BUKAN skor.
+      // Skor akan diupdate oleh SYNC_SCORES yang datang dari server via game:state_sync.
+      // Transisi ke EVALUATING untuk menghentikan timer dan menampilkan feedback.
       return {
         ...state,
         status: 'EVALUATING',
         selectedAnswer: action.payload.answer,
         answerState: action.payload.isCorrect ? 'benar' : 'salah',
         revealedCorrect: action.payload.correctAnswer,
-        playerScore: state.playerScore + action.payload.scoreEarned,
+        // ❌ TIDAK menghitung skor di sini — server adalah single source of truth
       };
 
     case 'OPPONENT_ANSWERED':
@@ -282,11 +283,11 @@ export function useGameEngine({
       // but scores will be synced via handleSyncScores
     };
 
-    const handleSyncScores = (data: { scores: Record<string, number> }) => {
-      console.log('[GameEngine] 🔄 Authoritative Sync Scores:', data);
+    const handleStateSync = (data: { scores: Record<string, number>; answeredBy?: string; isCorrect?: boolean }) => {
+      console.log('[GameEngine] 🔄 Authoritative game:state_sync:', data);
       const scores = data.scores;
-      const playerScore = scores[userId] || 0;
-      const opponentScore = opponentId ? (scores[opponentId] || 0) : 0;
+      const playerScore   = scores[userId] ?? 0;
+      const opponentScore = opponentId ? (scores[opponentId] ?? 0) : 0;
 
       dispatch({
         type: 'SYNC_SCORES',
@@ -308,7 +309,7 @@ export function useGameEngine({
 
     // Register listeners
     on('game:player_answered',  handlePlayerAnswered);
-    on('sync_scores',           handleSyncScores);
+    on('game:state_sync',       handleStateSync);   // ← Ganti 'sync_scores'
     on('game:finished',         handleGameFinished);
     on('game:results',          handleGameFinished);
     on('game:surrender_result', handleGameFinished);
@@ -316,7 +317,7 @@ export function useGameEngine({
 
     return () => {
       off('game:player_answered',  handlePlayerAnswered);
-      off('sync_scores',           handleSyncScores);
+      off('game:state_sync',       handleStateSync);  // ← Ganti 'sync_scores'
       off('game:finished',         handleGameFinished);
       off('game:results',          handleGameFinished);
       off('game:surrender_result', handleGameFinished);
@@ -361,23 +362,27 @@ export function useGameEngine({
       if (state.status !== 'PLAYING' || state.answerState !== 'idle' || !gameRoom) return;
 
       const question = gameRoom.questions[state.currentQ];
-      const isCorrect = question.correctAnswer === idx;
-      const scoreEarned = isCorrect ? 10 : 0;
+      const isCorrect = question.correctAnswer === idx; // hanya untuk UI visual feedback
 
-      // 1. Instantly update UI (Optimistic UI) & Stop Timer via FSM change
+      // 1. Update UI feedback (warna jawaban) — skor TIDAK diubah di sini
+      //    Skor akan diupdate via game:state_sync dari server
       dispatch({
         type: 'ANSWER_SUBMITTED',
-        payload: { answer: idx, isCorrect, correctAnswer: question.correctAnswer, scoreEarned }
+        payload: { 
+          answer: idx, 
+          isCorrect, 
+          correctAnswer: question.correctAnswer,
+          scoreEarned: 0  // ← 0 karena skor dari server via SYNC_SCORES
+        }
       });
 
-      // 2. Send to server (Fire and forget)
-      // Provide full metadata for server lookup
+      // 2. Kirim ke server (Fire and forget)
       submitAnswer({
         answer: idx,
         questionIndex: state.currentQ,
         roomId: gameRoom.id,
-        gameId: gameRoom.gameId, // Added in GameContext.gameData
-        questionId: question.id,  // This is now the REAL UUID from DB
+        gameId: gameRoom.gameId,
+        questionId: question.id,
         timeSpentMs: totalDuration * 1000 - timeLeftRef.current * 1000
       });
 

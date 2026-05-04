@@ -50,8 +50,8 @@ export class GameService {
         data: { score: { increment: scoreEarned } },
       });
 
-      // SYNC: Update GameManager's in-memory state so finishRoom stays correct
-      GameManager.submitAnswer(roomId, userId, answer as any, scoreEarned);
+      // SYNC: Update GameManager's in-memory state (dengan idempotency check)
+      GameManager.submitAnswer(roomId, userId, questionId, answer as any, scoreEarned);
     }
 
     // 4. Ambil skor terbaru untuk sinkronisasi real-time

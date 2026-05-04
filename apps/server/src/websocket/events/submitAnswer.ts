@@ -31,29 +31,29 @@ export async function submitAnswerHandler(socket: AuthenticatedSocket, io: any, 
     // murni hanya memanggil service.
     const result = await GameService.processAnswer(payload);
 
-    // Kirim hasil spesifik ke pemain yang menjawab
+    // 1. Kirim hasil jawaban HANYA ke pemain yang menjawab (untuk UI feedback)
+    //    ⚠️ Tidak menyertakan scoreEarned — skor hanya diupdate via state_sync
     socket.emit('game:answer_result', {
       isCorrect: result.isCorrect,
-      scoreEarned: result.scoreEarned,
       correctAnswer: result.correctAnswer,
-      newScore: result.newScore
     });
 
-    // 1. Ambil state skor terbaru dari SELURUH pemain di room (Single Source of Truth)
+    // 2. Ambil FULL STATE skor dari server (Single Source of Truth)
     const allScores = await GameService.getRoomScores(data.roomId);
 
-    // 2. BROADCAST: Kirim object skor lengkap ke seluruh isi room
-    io.to(data.roomId).emit('sync_scores', { 
-      scores: allScores
+    // 3. BROADCAST full state ke SELURUH client dalam room
+    //    Semua client (termasuk pengirim) mendapat state yang identik dari server
+    io.to(data.roomId).emit('game:state_sync', {
+      scores: allScores,           // { userId1: 120, userId2: 80 }
+      answeredBy: socket.userId,   // siapa yang menjawab (untuk UI effect lawan)
+      isCorrect: result.isCorrect, // apakah jawaban benar (untuk animasi lawan)
     });
 
-    // Tetap kirim event lama jika ada listener lain yang bergantung padanya
-    io.to(data.roomId).emit('game:player_answered', {
-      userId: socket.userId,
-      isCorrect: result.isCorrect,
-      scoreEarned: result.scoreEarned,
-      scores: allScores // Opsional: tambahkan data skor ke sini juga
-    });
+    // Debug log — verifikasi bahwa broadcast dikirim ke semua client
+    if (process.env.NODE_ENV !== 'production') {
+      const roomSockets = await io.in(data.roomId).fetchSockets();
+      console.log(`[Broadcast] game:state_sync → Room: ${data.roomId} | Clients: ${roomSockets.length} | Scores:`, allScores);
+    }
 
   } catch (error: any) {
     console.error('[Socket] Error submitting answer:', error.message);
