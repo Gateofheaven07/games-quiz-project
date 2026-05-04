@@ -284,10 +284,17 @@ export function useGameEngine({
     };
 
     const handleStateSync = (data: { scores: Record<string, number>; answeredBy?: string; isCorrect?: boolean }) => {
-      console.log('[GameEngine] 🔄 Authoritative game:state_sync:', data);
+      console.log('[GameEngine] 🔄 Authoritative game:state_sync received:', data);
       const scores = data.scores;
+      
+      // ✅ FIX: Derive opponentId INSIDE handler dari gameRoom.players secara dinamis
+      //    Hindari stale closure — gameRoom bisa berubah setelah useEffect pertama kali dijalankan
+      const currentOpponentId = gameRoom?.players?.find((p: any) => p.userId !== userId)?.userId;
+      
       const playerScore   = scores[userId] ?? 0;
-      const opponentScore = opponentId ? (scores[opponentId] ?? 0) : 0;
+      const opponentScore = currentOpponentId ? (scores[currentOpponentId] ?? 0) : 0;
+
+      console.log(`[GameEngine] 📊 Score update: me(${userId})=${playerScore}, opponent(${currentOpponentId})=${opponentScore}`);
 
       dispatch({
         type: 'SYNC_SCORES',
@@ -309,7 +316,7 @@ export function useGameEngine({
 
     // Register listeners
     on('game:player_answered',  handlePlayerAnswered);
-    on('game:state_sync',       handleStateSync);   // ← Ganti 'sync_scores'
+    on('game:state_sync',       handleStateSync);   // ← Authoritative score sync
     on('game:finished',         handleGameFinished);
     on('game:results',          handleGameFinished);
     on('game:surrender_result', handleGameFinished);
@@ -317,13 +324,13 @@ export function useGameEngine({
 
     return () => {
       off('game:player_answered',  handlePlayerAnswered);
-      off('game:state_sync',       handleStateSync);  // ← Ganti 'sync_scores'
+      off('game:state_sync',       handleStateSync);
       off('game:finished',         handleGameFinished);
       off('game:results',          handleGameFinished);
       off('game:surrender_result', handleGameFinished);
       off('game:finish',           handleGameFinished);
     };
-  }, [on, off, socket, userId, myPlayerId, gameRoom, handleOpponentSurrender]);
+  }, [on, off, socket, userId, gameRoom, handleOpponentSurrender]);
 
   // ── Graceful Fallback for Results (Offline-first) ─────────────────────────
   useEffect(() => {

@@ -18,7 +18,8 @@ export class GameService {
     if (!roomId) throw new Error('roomId is required');
     if (!gameId) throw new Error('gameId is required');
     if (!questionId) throw new Error('questionId is required');
-    if (!answer) throw new Error('answer is required');
+    // ✅ FIX: Gunakan null/undefined check, bukan falsy — karena answer=0 adalah valid!
+    if (answer === null || answer === undefined) throw new Error('answer is required');
 
     // 1. Ambil data soal di dalam game ini dari DB
     const gameQuestion = await prisma.gameQuestion.findFirst({
@@ -31,40 +32,47 @@ export class GameService {
     }
 
     // 2. Panggil Game Engine untuk cek kebenaran jawaban dan hitung skor
-    const isCorrect = GameEngine.checkAnswer(gameQuestion.question.answer, answer);
-    const scoreEarned = GameEngine.calculateScore(isCorrect, timeSpentMs);
+    // ✅ FIX: Normalisasi answer menjadi string index untuk perbandingan yang benar
+    const answerAsString = String(answer);
+    const isCorrect = GameEngine.checkAnswer(gameQuestion.question.answer, answerAsString);
+    // Skor tetap 10 per jawaban benar (flat scoring)
+    const scoreEarned = isCorrect ? 10 : 0;
 
-    // 3. Update skor pemain di DB (hanya jika dapat skor)
-    if (scoreEarned > 0) {
-      // Cek dulu apakah RoomPlayer entry ada
+    console.log(`[GameService] processAnswer: userId=${userId}, answer=${answer}, correctAnswer=${gameQuestion.question.answer}, isCorrect=${isCorrect}, scoreEarned=${scoreEarned}`);
+
+    // 3. Selalu lakukan idempotency check di GameManager (terlepas dari scoreEarned)
+    //    Ini mencegah double-submit dan memastikan state in-memory sinkron
+    const scoreResult = GameManager.submitAnswer(roomId, userId, questionId, answer as any, scoreEarned);
+    
+    if (scoreResult === null) {
+      // Room tidak ditemukan di memory — skip DB update tapi tetap return result
+      console.warn(`[GameService] Room ${roomId} not found in memory, skipping DB update`);
+    } else if (scoreEarned > 0) {
+      // 3a. Cek dulu apakah RoomPlayer entry ada
       const roomPlayer = await prisma.roomPlayer.findUnique({
         where: { userId_roomId: { userId, roomId } },
       });
 
       if (!roomPlayer) {
-        throw new Error(`Player ${userId} is not in room ${roomId}`);
+        console.warn(`[GameService] RoomPlayer not found: ${userId} in room ${roomId}`);
+      } else {
+        await prisma.roomPlayer.update({
+          where: { userId_roomId: { userId, roomId } },
+          data: { score: { increment: scoreEarned } },
+        });
       }
-
-      await prisma.roomPlayer.update({
-        where: { userId_roomId: { userId, roomId } },
-        data: { score: { increment: scoreEarned } },
-      });
-
-      // SYNC: Update GameManager's in-memory state (dengan idempotency check)
-      GameManager.submitAnswer(roomId, userId, questionId, answer as any, scoreEarned);
     }
 
-    // 4. Ambil skor terbaru untuk sinkronisasi real-time
-    const updatedPlayer = await prisma.roomPlayer.findUnique({
-      where: { userId_roomId: { userId, roomId } },
-      select: { score: true },
-    });
+    // 4. Gunakan skor in-memory dari GameManager sebagai sumber kebenaran
+    //    (lebih cepat daripada re-query DB, dan sudah di-update di atas)
+    const inMemoryScores = GameManager.getRoomScoresMap(roomId);
+    const newScore = inMemoryScores[userId] ?? 0;
 
     return {
       isCorrect,
       scoreEarned,
       correctAnswer: gameQuestion.question.answer,
-      newScore: updatedPlayer?.score || 0,
+      newScore,
     };
   }
 

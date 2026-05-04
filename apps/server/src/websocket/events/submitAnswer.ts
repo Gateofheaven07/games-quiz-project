@@ -1,5 +1,6 @@
 import { AuthenticatedSocket } from '../../lib/socketHandlers.js';
 import { GameService } from '../../modules/game/game.service.js';
+import { GameManager } from '../../lib/gameManager.js';
 import { AnswerPayload } from '../../modules/game/game.types.js';
 
 /**
@@ -26,25 +27,30 @@ export async function submitAnswerHandler(socket: AuthenticatedSocket, io: any, 
       timeSpentMs: data.timeSpentMs || 0,
     };
 
+    console.log(`[submitAnswer] Processing: userId=${socket.userId}, roomId=${data.roomId}, answer=${data.answer}, questionId=${data.questionId}`);
+
     // Panggil Orchestrator (GameService)
-    // File ini tidak tahu bagaimana skor dihitung atau disimpan,
-    // murni hanya memanggil service.
     const result = await GameService.processAnswer(payload);
 
+    console.log(`[submitAnswer] Result: isCorrect=${result.isCorrect}, scoreEarned=${result.scoreEarned}, newScore=${result.newScore}`);
+
     // 1. Kirim hasil jawaban HANYA ke pemain yang menjawab (untuk UI feedback)
-    //    ⚠️ Tidak menyertakan scoreEarned — skor hanya diupdate via state_sync
     socket.emit('game:answer_result', {
       isCorrect: result.isCorrect,
       correctAnswer: result.correctAnswer,
+      scoreEarned: result.scoreEarned,
     });
 
-    // 2. Ambil FULL STATE skor dari server (Single Source of Truth)
-    const allScores = await GameService.getRoomScores(data.roomId);
+    // 2. Ambil FULL STATE skor dari in-memory GameManager (Single Source of Truth)
+    //    GameManager sudah di-update oleh processAnswer, lebih cepat daripada re-query DB
+    const allScores = GameManager.getRoomScoresMap(data.roomId);
+
+    console.log(`[submitAnswer] Broadcasting game:state_sync to room ${data.roomId}:`, allScores);
 
     // 3. BROADCAST full state ke SELURUH client dalam room
     //    Semua client (termasuk pengirim) mendapat state yang identik dari server
     io.to(data.roomId).emit('game:state_sync', {
-      scores: allScores,           // { userId1: 120, userId2: 80 }
+      scores: allScores,           // { userId1: 10, userId2: 20, ... }
       answeredBy: socket.userId,   // siapa yang menjawab (untuk UI effect lawan)
       isCorrect: result.isCorrect, // apakah jawaban benar (untuk animasi lawan)
     });
@@ -56,7 +62,13 @@ export async function submitAnswerHandler(socket: AuthenticatedSocket, io: any, 
     }
 
   } catch (error: any) {
-    console.error('[Socket] Error submitting answer:', error.message);
-    socket.emit('error', error.message || 'Failed to submit answer');
+    console.error('[Socket] Error submitting answer:', error.message, error.stack);
+    // Tetap emit answer_result agar UI tidak stuck (tanpa score update)
+    socket.emit('game:answer_result', {
+      isCorrect: false,
+      correctAnswer: null,
+      scoreEarned: 0,
+      error: error.message || 'Failed to submit answer',
+    });
   }
 }

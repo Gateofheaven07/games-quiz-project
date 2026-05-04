@@ -25,7 +25,7 @@ export interface AnswerPayload {
   roomId: string;
   gameId: string;
   questionId: string;
-  answer: string;
+  answer: string | number; // ✅ Frontend mengirim number index, di-normalize ke string di service
   timeSpentMs: number; // Waktu yang dihabiskan untuk menjawab (ms)
 }
 

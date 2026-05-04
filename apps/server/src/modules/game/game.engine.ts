@@ -20,28 +20,24 @@ export class GameEngine {
   private static BASE_SCORE = 100;
 
   /**
-   * Cek apakah jawaban pemain benar
+   * Cek apakah jawaban pemain benar.
+   * ✅ Normalisasi ke string untuk mendukung perbandingan index (e.g. "0" === "0")
    */
-  static checkAnswer(correctAnswer: string, playerAnswer: string): boolean {
-    if (!correctAnswer || !playerAnswer) return false;
-    return correctAnswer.trim().toLowerCase() === playerAnswer.trim().toLowerCase();
+  static checkAnswer(correctAnswer: string | number, playerAnswer: string | number): boolean {
+    if (correctAnswer === null || correctAnswer === undefined) return false;
+    if (playerAnswer === null || playerAnswer === undefined) return false;
+    // Normalisasi: trim whitespace dan bandingkan sebagai string lowercase
+    return String(correctAnswer).trim().toLowerCase() === String(playerAnswer).trim().toLowerCase();
   }
 
   /**
-   * Hitung skor berbasis waktu.
-   * Semakin cepat menjawab, semakin tinggi skornya.
+   * Hitung skor flat: 10 poin per jawaban benar.
+   * NOTE: Scoring di game.service.ts sudah di-override menjadi flat 10,
+   * fungsi ini tetap dipertahankan untuk backward compatibility.
    */
   static calculateScore(isCorrect: boolean, timeSpentMs: number): number {
     if (!isCorrect) return 0;
-    
-    // Jika waktu habis, skor = 0
-    if (timeSpentMs > this.MAX_ANSWER_TIME_MS) return 0;
-
-    // Bonus kecepatan: sisa waktu / max waktu
-    const timeRatio = Math.max(0, this.MAX_ANSWER_TIME_MS - timeSpentMs) / this.MAX_ANSWER_TIME_MS;
-    const timeBonus = Math.round(timeRatio * 50); // Bonus max 50 poin
-
-    return this.BASE_SCORE + timeBonus;
+    return 10; // Flat 10 poin per jawaban benar
   }
 
   /**
