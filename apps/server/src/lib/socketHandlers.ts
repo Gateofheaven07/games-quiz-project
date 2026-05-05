@@ -379,13 +379,20 @@ export function setupSocketHandlers(io: any) {
      */
     socket.on('chess:invite', (data: { receiverId: string; duration: number; mode: string }, callback?: (res: any) => void) => {
       try {
-        if (!socket.userId || !socket.username) return;
-        const { receiverId, duration = 10, mode = 'invite' } = data;
-
+        console.log(`[Chess] Invite attempt from ${socket.userId} to ${data.receiverId}`);
+        
         const sendError = (message: string) => {
+          console.log(`[Chess] Invite error: ${message}`);
           if (callback) callback({ error: message });
           else socket.emit('chess:invite_error', { message });
         };
+
+        if (!socket.userId || !socket.username) {
+          sendError('Sesi tidak valid, silakan login ulang');
+          return;
+        }
+
+        const { receiverId, duration = 10, mode = 'invite' } = data;
 
         if (!onlineUsers.has(receiverId)) { sendError('Teman sedang offline'); return; }
         if (busyUsers.has(receiverId) || !!GameManager.getUserRoom(receiverId)) { sendError('Teman sedang dalam pertandingan'); return; }
@@ -412,19 +419,39 @@ export function setupSocketHandlers(io: any) {
           timeoutId,
         });
 
-        // Notify receiver
-        io.to(`user:${receiverId}`).emit('chess:receive_invite', {
+        // Notify receiver via both specific and general events for robustness
+        const invitePayload = {
           senderId: socket.userId,
           senderUsername: socket.username,
           roomCode,
           duration,
           mode,
+          type: 'CHESS_INVITE'
+        };
+
+        console.log(`[Chess] Emitting invite to user:${receiverId}`, invitePayload);
+
+        // Specific event
+        io.to(`user:${receiverId}`).emit('chess:receive_invite', invitePayload);
+        
+        // General event (compatible with broad notification listeners)
+        io.to(`user:${receiverId}`).emit('receive_invite', {
+          id: `chess-${roomCode}`,
+          type: 'CHESS_INVITE',
+          sender: { id: socket.userId, username: socket.username },
+          senderId: socket.userId,
+          senderUsername: socket.username,
+          roomCode,
+          roomId: roomCode,
+          duration,
+          mode,
+          createdAt: new Date()
         });
 
         socket.emit('chess:invite_sent', { receiverId, roomCode, duration });
         if (callback) callback({ success: true, roomCode });
 
-        console.log(`[Chess] Invite sent from ${socket.userId} to ${receiverId} (code: ${roomCode})`);
+        console.log(`[Chess] Invite successfully processed from ${socket.userId} to ${receiverId} (code: ${roomCode})`);
       } catch (err) {
         console.error('[Chess] Invite error:', err);
         if (callback) callback({ error: 'Gagal mengirim undangan catur' });
@@ -955,6 +982,12 @@ export function setupSocketHandlers(io: any) {
           if (invite) {
             clearTimeout(invite.timeoutId);
             pendingInvites.delete(socket.userId);
+          }
+
+          const chessInvite = pendingChessInvites.get(socket.userId);
+          if (chessInvite) {
+            clearTimeout(chessInvite.timeoutId);
+            pendingChessInvites.delete(socket.userId);
           }
 
           const roomId = GameManager.getUserRoom(socket.userId);

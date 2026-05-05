@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../../hooks/useAuth'
-import { useSocket } from '../../../../hooks/useSocket'
 import { useToast } from '../../../../hooks/use-toast'
+import { getSocket } from '../../../../lib/socketSingleton'
 import axios from 'axios'
 
 const DURATIONS = [
@@ -22,8 +22,7 @@ const BOT_LEVELS = [
 
 export default function ChessLobbyPage() {
   const router = useRouter()
-  const { isAuthenticated, isLoading, user } = useAuth()
-  const { socket } = useSocket()
+  const { isAuthenticated, isLoading, user, token } = useAuth()
   const { toast } = useToast()
 
   const [tab, setTab] = useState<'random' | 'bot' | 'invite'>('random')
@@ -58,11 +57,14 @@ export default function ChessLobbyPage() {
     }
   }, [isAuthenticated, user])
 
-  // Socket listeners for Invitations
+  // Socket listeners for Invitations (using singleton directly to avoid null issues)
   useEffect(() => {
-    if (!socket) return
+    if (!isAuthenticated || !token) return
+
+    const socket = getSocket(token)
 
     const handleInviteAccepted = (data: { roomCode: string, duration: number }) => {
+      console.log('[ChessLobby] Invite accepted, navigating as host:', data)
       setInvitingId(null)
       sessionStorage.setItem('chessSettings', JSON.stringify({ 
         duration: data.duration, 
@@ -74,6 +76,7 @@ export default function ChessLobbyPage() {
     }
 
     const handleInviteDeclined = (data: { receiverUsername: string }) => {
+      console.log('[ChessLobby] Invite declined:', data)
       setInvitingId(null)
       toast({
         title: "Undangan Ditolak",
@@ -83,6 +86,7 @@ export default function ChessLobbyPage() {
     }
 
     const handleInviteTimeout = () => {
+      console.log('[ChessLobby] Invite timed out')
       setInvitingId(null)
       toast({
         title: "Undangan Kedaluwarsa",
@@ -92,6 +96,7 @@ export default function ChessLobbyPage() {
     }
 
     const handleInviteError = (data: { message: string }) => {
+      console.log('[ChessLobby] Invite error:', data)
       setInvitingId(null)
       toast({
         title: "Gagal Mengundang",
@@ -101,7 +106,8 @@ export default function ChessLobbyPage() {
     }
 
     const handleNavigate = (data: { roomCode: string, duration: number }) => {
-      // For the receiver
+      // For the receiver (in case lobby is open on receiver side)
+      console.log('[ChessLobby] Navigate to room:', data)
       sessionStorage.setItem('chessSettings', JSON.stringify({ 
         duration: data.duration, 
         mode: 'invite', 
@@ -110,6 +116,8 @@ export default function ChessLobbyPage() {
       }))
       router.push(`/game/chess/room-${data.roomCode}?duration=${data.duration}&mode=invite`)
     }
+
+    console.log('[ChessLobby] Attaching chess invite listeners, socket id:', socket.id)
 
     socket.on('chess:invite_accepted', handleInviteAccepted)
     socket.on('chess:invite_declined', handleInviteDeclined)
@@ -124,7 +132,7 @@ export default function ChessLobbyPage() {
       socket.off('chess:invite_error', handleInviteError)
       socket.off('chess:navigate_to_room', handleNavigate)
     }
-  }, [socket, router, toast])
+  }, [isAuthenticated, token, router, toast])
 
   const handleFindRandom = () => {
     setStatus('searching')
@@ -164,9 +172,20 @@ export default function ChessLobbyPage() {
   }
 
   const handleInviteFriend = (friendId: string) => {
-    if (!socket) return
+    if (!token) return
+    const socket = getSocket(token)
+    if (!socket.connected) {
+      toast({
+        title: "Tidak Terhubung",
+        description: "Socket tidak terhubung. Coba refresh halaman.",
+        variant: "destructive"
+      })
+      return
+    }
     setInvitingId(friendId)
+    console.log('[ChessLobby] Sending chess invite to:', friendId, 'duration:', duration)
     socket.emit('chess:invite', { receiverId: friendId, duration, mode: 'invite' }, (response: any) => {
+      console.log('[ChessLobby] chess:invite callback response:', response)
       if (response?.error) {
         setInvitingId(null)
         toast({
