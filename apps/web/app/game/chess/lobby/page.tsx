@@ -72,7 +72,7 @@ export default function ChessLobbyPage() {
         roomCode: data.roomCode, 
         isHost: true 
       }))
-      router.push(`/game/chess/room-${data.roomCode}?duration=${data.duration}&mode=invite`)
+      router.push(`/game/chess/room-${data.roomCode}?duration=${data.duration}&mode=invite&isHost=true`)
     }
 
     const handleInviteDeclined = (data: { receiverUsername: string }) => {

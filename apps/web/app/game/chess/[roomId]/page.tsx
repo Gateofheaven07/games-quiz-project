@@ -13,6 +13,13 @@ interface Piece { type: PieceType; color: Color }
 type Square = Piece | null
 type Board = Square[][]
 
+// Helper to flip the board for black player
+function getDisplayBoard(board: Board, playerColor: Color): Board {
+  if (playerColor === 'w') return board;
+  // Reverse rows and reverse each row's squares
+  return [...board].reverse().map(row => [...row].reverse());
+}
+
 const PIECE_UNICODE: Record<string, string> = {
   wK:'♔', wQ:'♕', wR:'♖', wB:'♗', wN:'♘', wP:'♙',
   bK:'♚', bQ:'♛', bR:'♜', bB:'♝', bN:'♞', bP:'♟',
@@ -94,18 +101,29 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
   }, [isAuthenticated, isLoading, router])
 
   useEffect(() => {
+    // Get settings from sessionStorage
     const raw = sessionStorage.getItem('chessSettings')
+    let isHost = true;
+    
     if (raw) {
       const s = JSON.parse(raw)
       setSettings(s)
       const secs = (s.duration || 10) * 60
       setTimeW(secs); setTimeB(secs)
-      
-      // Assign color: Host is white, guest is black
-      if (s.mode === 'invite') {
-        setPlayerColor(s.isHost ? 'w' : 'b')
-      }
+      isHost = s.isHost
     }
+
+    // Fallback/Override from URL params for robustness
+    const url = new URL(window.location.href)
+    const hostParam = url.searchParams.get('isHost')
+    if (hostParam !== null) {
+      isHost = hostParam === 'true'
+    }
+
+    // Final color assignment
+    const color = isHost ? 'w' : 'b'
+    console.log('[Chess] Initializing game as:', color === 'w' ? 'WHITE (Host)' : 'BLACK (Guest)')
+    setPlayerColor(color)
   }, [])
 
   // Socket sync
@@ -361,12 +379,12 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
             </div>
             <div>
               <p style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'0.9rem', color:'var(--c-on-surface)', margin:0 }}>{opponentName}</p>
-              <p style={{ fontSize:'0.7rem', color:'var(--c-outline)', margin:0 }}>Hitam</p>
+              <p style={{ fontSize:'0.7rem', color:'var(--c-outline)', margin:0 }}>{playerColor === 'w' ? 'Hitam' : 'Putih'}</p>
             </div>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <div style={{ fontSize:'0.75rem', color:'var(--c-outline)' }}>{capturedW.join(' ')}</div>
-            <div className={`timer-box${turn==='b'?' active':''}${timeB<30?' danger':''}`}>{fmt(timeB)}</div>
+            <div style={{ fontSize:'0.75rem', color:'var(--c-outline)' }}>{playerColor === 'w' ? capturedW.join(' ') : capturedB.join(' ')}</div>
+            <div className={`timer-box${turn===(playerColor==='w'?'b':'w')?' active':''}${ (playerColor==='w'?timeB:timeW) <30?' danger':''}`}>{fmt(playerColor==='w'?timeB:timeW)}</div>
           </div>
         </div>
 
@@ -378,21 +396,28 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
             {files.map(f => <div key={f} style={{ textAlign:'center', fontSize:'0.65rem', color:'var(--c-outline)', fontFamily:"'Space Grotesk',sans-serif", fontWeight:600 }}>{f}</div>)}
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'20px repeat(8,1fr)', gap:0, border:'2px solid rgba(255,255,255,0.1)', borderRadius:8, overflow:'hidden' }}>
-            {board.map((rowArr, r) => [
-              <div key={`rank-${r}`} style={{ display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.65rem', color:'var(--c-outline)', fontFamily:"'Space Grotesk',sans-serif", fontWeight:600, background:'rgba(0,0,0,0.3)' }}>{ranks[r]}</div>,
-              ...rowArr.map((piece, c) => {
-                const isLight = (r+c)%2===0
-                const isSel = selected?.[0]===r && selected?.[1]===c
-                const isLegal = legalMoves.some(([lr,lc])=>lr===r&&lc===c)
-                const isCapture = isLegal && !!board[r][c]
-                const bg = isSel ? (isLight?'#7fc97f':'#4a9b4a') : isLight?'#f0d9b5':'#b58863'
-                return (
-                  <div key={`${r}-${c}`} className={`sq${isSel?' selected':''}${isLegal?' legal':''}${isCapture?' capture':''}`} style={{ background:bg }} onClick={() => handleSquareClick(r,c)}>
-                    {piece && <span className="piece">{PIECE_UNICODE[`${piece.color}${piece.type}`]}</span>}
-                  </div>
-                )
-              })
-            ])}
+            {getDisplayBoard(board, playerColor).map((rowArr, displayR) => {
+              // Map display coordinates back to actual board coordinates
+              const r = playerColor === 'w' ? displayR : 7 - displayR;
+              const rankLabel = playerColor === 'w' ? ranks[displayR] : ranks[7-displayR];
+
+              return [
+                <div key={`rank-${r}`} style={{ display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.65rem', color:'var(--c-outline)', fontFamily:"'Space Grotesk',sans-serif", fontWeight:600, background:'rgba(0,0,0,0.3)' }}>{rankLabel}</div>,
+                ...rowArr.map((piece, displayC) => {
+                  const c = playerColor === 'w' ? displayC : 7 - displayC;
+                  const isLight = (r+c)%2===0
+                  const isSel = selected?.[0]===r && selected?.[1]===c
+                  const isLegal = legalMoves.some(([lr,lc])=>lr===r&&lc===c)
+                  const isCapture = isLegal && !!board[r][c]
+                  const bg = isSel ? (isLight?'#7fc97f':'#4a9b4a') : isLight?'#f0d9b5':'#b58863'
+                  return (
+                    <div key={`${r}-${c}`} className={`sq${isSel?' selected':''}${isLegal?' legal':''}${isCapture?' capture':''}`} style={{ background:bg }} onClick={() => handleSquareClick(r,c)}>
+                      {piece && <span className="piece">{PIECE_UNICODE[`${piece.color}${piece.type}`]}</span>}
+                    </div>
+                  )
+                })
+              ];
+            })}
           </div>
         </div>
 
@@ -404,12 +429,12 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
             </div>
             <div>
               <p style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:'0.9rem', color:'#00d1ff', margin:0 }}>{user?.username||'Kamu'} <span style={{ fontSize:'0.7rem', color:'#4aff91' }}>(Kamu)</span></p>
-              <p style={{ fontSize:'0.7rem', color:'var(--c-outline)', margin:0 }}>Putih</p>
+              <p style={{ fontSize:'0.7rem', color:'var(--c-outline)', margin:0 }}>{playerColor === 'w' ? 'Putih' : 'Hitam'}</p>
             </div>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <div style={{ fontSize:'0.75rem', color:'var(--c-outline)' }}>{capturedB.join(' ')}</div>
-            <div className={`timer-box${turn==='w'?' active':''}${timeW<30?' danger':''}`}>{fmt(timeW)}</div>
+            <div style={{ fontSize:'0.75rem', color:'var(--c-outline)' }}>{playerColor === 'w' ? capturedB.join(' ') : capturedW.join(' ')}</div>
+            <div className={`timer-box${turn===playerColor?' active':''}${ (playerColor==='w'?timeW:timeB) <30?' danger':''}`}>{fmt(playerColor==='w'?timeW:timeB)}</div>
           </div>
         </div>
 

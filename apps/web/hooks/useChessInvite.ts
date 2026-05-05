@@ -81,7 +81,7 @@ export function useChessInvite() {
         roomCode: data.roomCode, 
         isHost: false 
       }))
-      router.push(`/game/chess/room-${data.roomCode}?duration=${data.duration}&mode=invite`)
+      router.push(`/game/chess/room-${data.roomCode}?duration=${data.duration}&mode=invite&isHost=false`)
     }
 
     socket.on('chess:receive_invite', handleReceiveInvite)
