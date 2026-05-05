@@ -526,6 +526,44 @@ export function setupSocketHandlers(io: any) {
     });
 
     // ─────────────────────────────────────────────────────────────────────────
+    // CHESS GAME SYNC
+    // ─────────────────────────────────────────────────────────────────────────
+
+    socket.on('chess:join_room', (data: { roomCode: string }) => {
+      const { roomCode } = data;
+      socket.join(roomCode);
+      console.log(`[Chess] User ${socket.userId} joined room ${roomCode}`);
+      // Join as user ID room as well for targeted emits
+      if (socket.userId) socket.join(`user:${socket.userId}`);
+    });
+
+    socket.on('chess:move', (data: { 
+      roomCode: string, 
+      from: [number, number], 
+      to: [number, number], 
+      board: any,
+      turn: string,
+      capturedW: string[],
+      capturedB: string[]
+    }) => {
+      // Broadcast move to other player in the room
+      socket.to(data.roomCode).emit('chess:move', data);
+      console.log(`[Chess] Move in ${data.roomCode} from ${data.from} to ${data.to}`);
+    });
+
+    socket.on('chess:surrender', (data: { roomCode: string, winner: string }) => {
+      socket.to(data.roomCode).emit('chess:opponent_surrendered', { winner: data.winner });
+    });
+
+    socket.on('chess:offer_draw', (data: { roomCode: string, senderName: string }) => {
+      socket.to(data.roomCode).emit('chess:draw_offered', { senderName: data.senderName });
+    });
+
+    socket.on('chess:accept_draw', (data: { roomCode: string }) => {
+      socket.to(data.roomCode).emit('chess:draw_accepted');
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────
     // MATCHMAKING
     // ─────────────────────────────────────────────────────────────────────────
 

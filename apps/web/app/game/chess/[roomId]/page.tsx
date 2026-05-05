@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../../hooks/useAuth'
+import { getSocket } from '../../../../lib/socketSingleton'
+import { useToast } from '../../../../hooks/use-toast'
 
 // ── Chess Types ──────────────────────────────────────────────────────────────
 type PieceType = 'K'|'Q'|'R'|'B'|'N'|'P'
@@ -58,7 +60,8 @@ function getLegalMoves(board: Board, row: number, col: number): [number,number][
 export default function ChessGamePage({ params }: { params: Promise<{ roomId: string }> }) {
   const { roomId } = use(params)
   const router = useRouter()
-  const { isAuthenticated, isLoading, user } = useAuth()
+  const { toast } = useToast()
+  const { isAuthenticated, isLoading, user, token } = useAuth()
 
   const [board, setBoard] = useState<Board>(initBoard)
   const [selected, setSelected] = useState<[number,number]|null>(null)
@@ -74,14 +77,14 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
   const [capturedB, setCapturedB] = useState<string[]>([])
 
   // Settings from sessionStorage
-  const [settings, setSettings] = useState({ duration: 10, mode: 'bot', botLevel: 'normal' })
+  const [settings, setSettings] = useState({ duration: 10, mode: 'bot', botLevel: 'normal', isHost: true })
+  const [playerColor, setPlayerColor] = useState<Color>('w')
 
   // Timers (seconds)
   const [timeW, setTimeW] = useState(600)
   const [timeB, setTimeB] = useState(600)
   const timerRef = useRef<NodeJS.Timeout|null>(null)
 
-  const playerColor: Color = 'w'
   const opponentName = settings.mode === 'bot'
     ? `ChessBot [${settings.botLevel === 'easy' ? 'Mudah' : settings.botLevel === 'hard' ? 'Sulit' : 'Normal'}]`
     : 'Lawan'
@@ -97,8 +100,57 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
       setSettings(s)
       const secs = (s.duration || 10) * 60
       setTimeW(secs); setTimeB(secs)
+      
+      // Assign color: Host is white, guest is black
+      if (s.mode === 'invite') {
+        setPlayerColor(s.isHost ? 'w' : 'b')
+      }
     }
   }, [])
+
+  // Socket sync
+  useEffect(() => {
+    if (!isAuthenticated || !token || settings.mode !== 'invite') return
+    const socket = getSocket(token)
+
+    socket.emit('chess:join_room', { roomCode: roomId })
+
+    const handleOpponentMove = (data: any) => {
+      console.log('[Chess] Received opponent move:', data)
+      setBoard(data.board)
+      setTurn(data.turn)
+      setCapturedW(data.capturedW)
+      setCapturedB(data.capturedB)
+    }
+
+    const handleOpponentSurrender = (data: { winner: string }) => {
+      setStatus('ended')
+      setWinner(data.winner)
+      setEndReason('Lawan Menyerah')
+    }
+
+    const handleDrawOffered = (data: { senderName: string }) => {
+      setDrawOfferedBy(data.senderName)
+    }
+
+    const handleDrawAccepted = () => {
+      setStatus('ended')
+      setWinner(null)
+      setEndReason('Remis Disetujui')
+    }
+
+    socket.on('chess:move', handleOpponentMove)
+    socket.on('chess:opponent_surrendered', handleOpponentSurrender)
+    socket.on('chess:draw_offered', handleDrawOffered)
+    socket.on('chess:draw_accepted', handleDrawAccepted)
+
+    return () => {
+      socket.off('chess:move', handleOpponentMove)
+      socket.off('chess:opponent_surrendered', handleOpponentSurrender)
+      socket.off('chess:draw_offered', handleDrawOffered)
+      socket.off('chess:draw_accepted', handleDrawAccepted)
+    }
+  }, [isAuthenticated, token, roomId, settings.mode])
 
   // Timer countdown
   useEffect(() => {
@@ -158,10 +210,39 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
       const isLegal = legalMoves.some(([r,c]) => r===row && c===col)
       if (isLegal) {
         const newBoard = board.map(r => [...r])
-        if (newBoard[row][col]) setCapturedB(p => [...p, PIECE_UNICODE[`b${newBoard[row][col]!.type}`]])
+        let newCapturedW = [...capturedW]
+        let newCapturedB = [...capturedB]
+        
+        if (newBoard[row][col]) {
+          const capturedPiece = PIECE_UNICODE[`${newBoard[row][col]!.color}${newBoard[row][col]!.type}`]
+          if (turn === 'w') newCapturedB.push(capturedPiece)
+          else newCapturedW.push(capturedPiece)
+        }
+
         newBoard[row][col] = newBoard[selected[0]][selected[1]]
         newBoard[selected[0]][selected[1]] = null
-        setBoard(newBoard); setSelected(null); setLegalMoves([]); setTurn('b')
+        
+        const nextTurn = turn === 'w' ? 'b' : 'w'
+        
+        setBoard(newBoard)
+        setCapturedW(newCapturedW)
+        setCapturedB(newCapturedB)
+        setSelected(null)
+        setLegalMoves([])
+        setTurn(nextTurn)
+
+        // Sync via socket if in invite mode
+        if (settings.mode === 'invite' && token) {
+          getSocket(token).emit('chess:move', {
+            roomCode: roomId,
+            from: selected,
+            to: [row, col],
+            board: newBoard,
+            turn: nextTurn,
+            capturedW: newCapturedW,
+            capturedB: newCapturedB
+          })
+        }
         return
       }
       setSelected(null); setLegalMoves([])
@@ -175,19 +256,22 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
   const handleSurrender = () => {
     setStatus('ended'); setWinner(opponentName); setEndReason('Menyerah')
     setShowSurrenderModal(false)
+    if (settings.mode === 'invite' && token) {
+      getSocket(token).emit('chess:surrender', { roomCode: roomId, winner: opponentName })
+    }
   }
 
   const handleOfferDraw = () => {
     if (settings.mode === 'bot') {
-      // Bot rejects draw if hard, accepts if easy
       if (settings.botLevel === 'easy') {
         setStatus('ended'); setWinner(null); setEndReason('Remis Disetujui')
       } else {
         setShowDrawModal(false)
         alert('Bot menolak tawaran remis!')
       }
-    } else {
-      setDrawOfferedBy(user?.username || 'Kamu')
+    } else if (token) {
+      getSocket(token).emit('chess:offer_draw', { roomCode: roomId, senderName: user?.username || 'Lawan' })
+      toast({ title: "Tawaran Terkirim", description: "Menunggu jawaban lawan..." })
     }
     setShowDrawModal(false)
   }
@@ -195,6 +279,9 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
   const handleAcceptDraw = () => {
     setStatus('ended'); setWinner(null); setEndReason('Remis Disetujui')
     setDrawOfferedBy(null)
+    if (settings.mode === 'invite' && token) {
+      getSocket(token).emit('chess:accept_draw', { roomCode: roomId })
+    }
   }
 
   const fmt = (s: number) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`
