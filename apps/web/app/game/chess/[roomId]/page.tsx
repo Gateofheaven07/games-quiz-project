@@ -74,7 +74,7 @@ function initBoard(): Board {
   ]
 }
 
-function getLegalMoves(board: Board, row: number, col: number): [number,number][] {
+function getLegalMovesRaw(board: Board, row: number, col: number): [number,number][] {
   const piece = board[row][col]
   if (!piece) return []
   const moves: [number,number][] = []
@@ -99,6 +99,45 @@ function getLegalMoves(board: Board, row: number, col: number): [number,number][
   }
   return moves
 }
+
+function isCheck(board: Board, color: Color): boolean {
+  let kr = -1, kc = -1
+  for(let r=0; r<8; r++) for(let c=0; c<8; c++) if(board[r][c]?.type==='K' && board[r][c]?.color===color){kr=r;kc=c;break}
+  if(kr===-1) return false
+  const oppColor = color==='w'?'b':'w'
+  for(let r=0; r<8; r++) for(let c=0; c<8; c++) if(board[r][c]?.color === oppColor) {
+    if(getLegalMovesRaw(board, r, c).some(([tr,tc])=>tr===kr && tc===kc)) return true
+  }
+  return false
+}
+
+function getLegalMoves(board: Board, row: number, col: number): [number,number][] {
+  const piece = board[row][col]
+  if(!piece) return []
+  return getLegalMovesRaw(board, row, col).filter(([tr,tc]) => {
+    const nextBoard = board.map(r => [...r])
+    nextBoard[tr][tc] = nextBoard[row][col]
+    nextBoard[row][col] = null
+    return !isCheck(nextBoard, piece.color)
+  })
+}
+
+function isCheckmate(board: Board, color: Color): boolean {
+  if(!isCheck(board, color)) return false
+  for(let r=0; r<8; r++) for(let c=0; c<8; c++) if(board[r][c]?.color === color) {
+    if(getLegalMoves(board, r, c).length > 0) return false
+  }
+  return true
+}
+
+function isStalemate(board: Board, color: Color): boolean {
+  if(isCheck(board, color)) return false
+  for(let r=0; r<8; r++) for(let c=0; c<8; c++) if(board[r][c]?.color === color) {
+    if(getLegalMoves(board, r, c).length > 0) return false
+  }
+  return true
+}
+
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function ChessGamePage({ params }: { params: Promise<{ roomId: string }> }) {
@@ -175,17 +214,28 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
       setTurn(data.turn)
       setCapturedW(data.capturedW)
       setCapturedB(data.capturedB)
+
+      // Check for game end locally
+      if (isCheckmate(data.board, playerColor)) {
+        setGameState('lose')
+        setGameOverReason('Skakmat!')
+      } else if (isStalemate(data.board, playerColor)) {
+        setGameState('draw')
+        setGameOverReason('Stalemate (Remis)')
+      }
     }
 
     socket.on('chess:surrender', (data: { playerRole: string }) => {
-        // If the one who surrendered is NOT us, then we win
-        const weAreHost = settings.isHost
-        const surrenderedIsHost = data.playerRole === 'host'
-        const weWin = weAreHost !== surrenderedIsHost
-        
-        setGameState(weWin ? 'win' : 'lose')
-        setGameOverReason('Lawan Menyerah')
-      })
+      console.log('[Chess] Surrender received from:', data.playerRole)
+      // Determine if WE are the winner
+      // If we are host and guest surrenders, we win.
+      // If we are guest and host surrenders, we win.
+      const myRole = settings.isHost ? 'host' : 'guest'
+      const weWin = data.playerRole !== myRole
+
+      setGameState(weWin ? 'win' : 'lose')
+      setGameOverReason(weWin ? 'Lawan Menyerah' : 'Anda Menyerah')
+    })
 
       socket.on('chess:offer_draw', (data: { from: string }) => {
         setDrawOfferedBy(data.from)
@@ -257,10 +307,19 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
       }
       newBoard[tr2][tc2] = newBoard[fr][fc]
       newBoard[fr][fc] = null
+
+      if (isCheckmate(newBoard, 'w')) {
+        setGameState('lose')
+        setGameOverReason('Skakmat!')
+      } else if (isStalemate(newBoard, 'w')) {
+        setGameState('draw')
+        setGameOverReason('Stalemate (Remis)')
+      }
+
       return newBoard
     })
     setTurn('w')
-  }, [settings.botLevel])
+  }, [settings.botLevel, playerColor])
 
   const handleSquareClick = (row: number, col: number) => {
     if (gameState !== 'playing' || turn !== playerColor) return
@@ -282,6 +341,14 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
         newBoard[selected[0]][selected[1]] = null
         
         const nextTurn = turn === 'w' ? 'b' : 'w'
+
+        if (isCheckmate(newBoard, nextTurn)) {
+          setGameState(nextTurn === playerColor ? 'lose' : 'win')
+          setGameOverReason('Skakmat!')
+        } else if (isStalemate(newBoard, nextTurn)) {
+          setGameState('draw')
+          setGameOverReason('Stalemate (Remis)')
+        }
         
         setBoard(newBoard)
         setCapturedW(newCapturedW)
