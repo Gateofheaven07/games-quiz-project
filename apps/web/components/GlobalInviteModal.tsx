@@ -19,8 +19,9 @@ export function GlobalInviteModal() {
     declineChessInvite: declineChess
   } = useChessInvite()
 
-  const incomingInvite = battleInvite || chessInvite
-  const isChess = !!incomingInvite && !battleInvite
+  // Prioritize Chess invite if both exist (unlikely but safer)
+  const incomingInvite = chessInvite || battleInvite
+  const isChess = !!chessInvite
   const inviteTimeout = isChess ? chessTimeout : battleTimeout
 
   if (incomingInvite) {

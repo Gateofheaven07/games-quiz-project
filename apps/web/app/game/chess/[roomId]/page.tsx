@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, use } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../../../hooks/useAuth'
 import { getSocket } from '../../../../lib/socketSingleton'
 import { useToast } from '../../../../hooks/use-toast'
@@ -166,6 +167,11 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
   const [timeW, setTimeW] = useState(600)
   const [timeB, setTimeB] = useState(600)
   const timerRef = useRef<NodeJS.Timeout|null>(null)
+  const roleRef = useRef<'host'|'guest'>(settings.isHost ? 'host' : 'guest')
+
+  useEffect(() => {
+    roleRef.current = settings.isHost ? 'host' : 'guest'
+  }, [settings.isHost])
 
   const opponentName = settings.mode === 'bot'
     ? `ChessBot [${settings.botLevel === 'easy' ? 'Mudah' : settings.botLevel === 'hard' ? 'Sulit' : 'Normal'}]`
@@ -228,9 +234,7 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
     socket.on('chess:surrender', (data: { playerRole: string }) => {
       console.log('[Chess] Surrender received from:', data.playerRole)
       // Determine if WE are the winner
-      // If we are host and guest surrenders, we win.
-      // If we are guest and host surrenders, we win.
-      const myRole = settings.isHost ? 'host' : 'guest'
+      const myRole = roleRef.current
       const weWin = data.playerRole !== myRole
 
       setGameState(weWin ? 'win' : 'lose')
@@ -470,20 +474,62 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
         </div>
 
         <div style={{ width:'100%', maxWidth:520, display:'grid', gridTemplateColumns:'repeat(8,1fr)', border:'2px solid rgba(255,255,255,0.1)', borderRadius:8, overflow:'hidden' }}>
-            {getDisplayBoard(board, playerColor).map((rowArr, displayR) =>
-              rowArr.map((piece, displayC) => {
-                const r = playerColor === 'w' ? displayR : 7 - displayR;
-                const c = playerColor === 'w' ? displayC : 7 - displayC;
-                const isLight = (r+c)%2===0
-                const isSel = selected?.[0]===r && selected?.[1]===c
-                const isLegal = legalMoves.some(([lr,lc])=>lr===r&&lc===c)
+            {getDisplayBoard(board, playerColor).map((rowArr, r) => rowArr.map((piece, c) => {
+                const actualR = playerColor === 'w' ? r : 7 - r
+                const actualC = playerColor === 'w' ? c : 7 - c
+                const isSelected = selected?.[0] === actualR && selected?.[1] === actualC
+                const isLegal = legalMoves.some(([lr, lc]) => lr === actualR && lc === actualC)
+                const isKingInCheck = piece?.type === 'K' && isCheck(board, piece.color)
+
                 return (
-                    <div key={`${r}-${c}`} className={`sq${isSel?' selected':''}${isLegal?' legal':''}`} style={{ background: isSel ? '#4a9b4a' : isLight?'#f0d9b5':'#b58863' }} onClick={() => handleSquareClick(r,c)}>
-                      {piece && <PieceIcon type={piece.type} color={piece.color} size={45} />}
-                    </div>
+                  <div 
+                    key={`${r}-${c}`}
+                    onClick={() => handleSquareClick(actualR, actualC)}
+                    style={{
+                      aspectRatio: '1/1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      position: 'relative',
+                      background: isSelected ? '#ffeb3b88' : (r + c) % 2 === 0 ? '#ead9b5' : '#b58863',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {isLegal && (
+                      <div style={{ 
+                        width: piece ? '90%' : 16, 
+                        height: piece ? '90%' : 16, 
+                        borderRadius: '50%', 
+                        background: piece ? 'none' : 'rgba(0,0,0,0.1)',
+                        border: piece ? '4px solid rgba(0,0,0,0.1)' : 'none',
+                        position: 'absolute',
+                        zIndex: 1
+                      }} />
+                    )}
+
+                    {isKingInCheck && (
+                      <motion.div
+                        initial={{ scale: 0, y: 0 }}
+                        animate={{ scale: 1, y: -25 }}
+                        style={{
+                          position: 'absolute',
+                          color: '#ff4545',
+                          fontSize: '1.5rem',
+                          fontWeight: 900,
+                          zIndex: 10,
+                          textShadow: '0 0 10px rgba(255,69,69,0.5)',
+                          fontFamily: "'Space Grotesk', sans-serif"
+                        }}
+                      >
+                        !!
+                      </motion.div>
+                    )}
+
+                    {piece && <PieceIcon type={piece.type} color={piece.color} size={45} />}
+                  </div>
                 )
-              })
-            )}
+            }))}
         </div>
 
         <div style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
