@@ -17,6 +17,16 @@ const busyUsers = new Set<string>();
 // Track pending invites: receiverId → { senderId, roomId, timeoutId }
 const pendingInvites = new Map<string, { senderId: string; roomId: string; timeoutId: NodeJS.Timeout }>();
 
+// Track pending chess invites: receiverId → invite details
+const pendingChessInvites = new Map<string, {
+  senderId: string;
+  senderUsername: string;
+  roomCode: string;
+  duration: number;
+  mode: string;
+  timeoutId: NodeJS.Timeout;
+}>();
+
 export interface AuthenticatedSocket extends Socket {
   userId?: string;
   username?: string;
@@ -355,6 +365,136 @@ export function setupSocketHandlers(io: any) {
         });
       } catch (err) {
         console.error('[Socket] Battle decline error:', err);
+      }
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // CHESS INVITES
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * chess:invite
+     * Send a chess match invitation to a specific friend.
+     * Payload: { receiverId, duration, mode }
+     */
+    socket.on('chess:invite', (data: { receiverId: string; duration: number; mode: string }, callback?: (res: any) => void) => {
+      try {
+        if (!socket.userId || !socket.username) return;
+        const { receiverId, duration = 10, mode = 'invite' } = data;
+
+        const sendError = (message: string) => {
+          if (callback) callback({ error: message });
+          else socket.emit('chess:invite_error', { message });
+        };
+
+        if (!onlineUsers.has(receiverId)) { sendError('Teman sedang offline'); return; }
+        if (busyUsers.has(receiverId) || !!GameManager.getUserRoom(receiverId)) { sendError('Teman sedang dalam pertandingan'); return; }
+        if (pendingChessInvites.has(receiverId)) { sendError('Teman sudah punya undangan catur tertunda'); return; }
+
+        const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+        // 30s timeout
+        const timeoutId = setTimeout(() => {
+          const inv = pendingChessInvites.get(receiverId);
+          if (inv && inv.senderId === socket.userId) {
+            pendingChessInvites.delete(receiverId);
+            io.to(`user:${receiverId}`).emit('chess:invite_expired', { roomCode });
+            io.to(`user:${socket.userId}`).emit('chess:invite_timeout', { receiverId });
+          }
+        }, 30000);
+
+        pendingChessInvites.set(receiverId, {
+          senderId: socket.userId!,
+          senderUsername: socket.username!,
+          roomCode,
+          duration,
+          mode,
+          timeoutId,
+        });
+
+        // Notify receiver
+        io.to(`user:${receiverId}`).emit('chess:receive_invite', {
+          senderId: socket.userId,
+          senderUsername: socket.username,
+          roomCode,
+          duration,
+          mode,
+        });
+
+        socket.emit('chess:invite_sent', { receiverId, roomCode, duration });
+        if (callback) callback({ success: true, roomCode });
+
+        console.log(`[Chess] Invite sent from ${socket.userId} to ${receiverId} (code: ${roomCode})`);
+      } catch (err) {
+        console.error('[Chess] Invite error:', err);
+        if (callback) callback({ error: 'Gagal mengirim undangan catur' });
+      }
+    });
+
+    /**
+     * chess:accept
+     * Receiver accepts a chess invitation.
+     * Payload: { senderId, roomCode, duration }
+     */
+    socket.on('chess:accept', (data: { senderId: string; roomCode: string; duration: number }) => {
+      try {
+        if (!socket.userId) return;
+        const { senderId, roomCode, duration } = data;
+
+        const invite = pendingChessInvites.get(socket.userId);
+        if (!invite || invite.roomCode !== roomCode) {
+          socket.emit('chess:invite_error', { message: 'Undangan sudah kedaluwarsa atau tidak valid' });
+          return;
+        }
+
+        clearTimeout(invite.timeoutId);
+        pendingChessInvites.delete(socket.userId);
+
+        // Notify sender: accepted, both navigate to the room
+        io.to(`user:${senderId}`).emit('chess:invite_accepted', {
+          roomCode,
+          duration,
+          accepterId: socket.userId,
+          accepterUsername: socket.username,
+        });
+
+        // Also notify receiver (self) with the room to navigate to
+        socket.emit('chess:navigate_to_room', {
+          roomCode,
+          duration,
+          isHost: false,
+        });
+
+        console.log(`[Chess] Invite accepted by ${socket.userId} for room ${roomCode}`);
+      } catch (err) {
+        console.error('[Chess] Accept error:', err);
+      }
+    });
+
+    /**
+     * chess:decline
+     * Receiver declines a chess invitation.
+     * Payload: { senderId, roomCode }
+     */
+    socket.on('chess:decline', (data: { senderId: string; roomCode: string }) => {
+      try {
+        if (!socket.userId) return;
+        const { senderId, roomCode } = data;
+
+        const invite = pendingChessInvites.get(socket.userId);
+        if (invite && invite.roomCode === roomCode) {
+          clearTimeout(invite.timeoutId);
+          pendingChessInvites.delete(socket.userId);
+        }
+
+        io.to(`user:${senderId}`).emit('chess:invite_declined', {
+          receiverId: socket.userId,
+          receiverUsername: socket.username,
+        });
+
+        console.log(`[Chess] Invite declined by ${socket.userId} for room ${roomCode}`);
+      } catch (err) {
+        console.error('[Chess] Decline error:', err);
       }
     });
 

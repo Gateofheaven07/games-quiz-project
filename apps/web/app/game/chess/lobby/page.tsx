@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../../hooks/useAuth'
+import { useSocket } from '../../../../hooks/useSocket'
+import { useToast } from '../../../../hooks/use-toast'
 import axios from 'axios'
 
 const DURATIONS = [
@@ -21,6 +23,8 @@ const BOT_LEVELS = [
 export default function ChessLobbyPage() {
   const router = useRouter()
   const { isAuthenticated, isLoading, user } = useAuth()
+  const { socket } = useSocket()
+  const { toast } = useToast()
 
   const [tab, setTab] = useState<'random' | 'bot' | 'invite'>('random')
   const [duration, setDuration] = useState(10)
@@ -31,6 +35,7 @@ export default function ChessLobbyPage() {
   const [joinCode, setJoinCode] = useState('')
   const [copied, setCopied] = useState(false)
   const [status, setStatus] = useState<'idle' | 'searching' | 'found'>('idle')
+  const [invitingId, setInvitingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.push('/auth/login')
@@ -52,6 +57,74 @@ export default function ChessLobbyPage() {
       fetchFriends()
     }
   }, [isAuthenticated, user])
+
+  // Socket listeners for Invitations
+  useEffect(() => {
+    if (!socket) return
+
+    const handleInviteAccepted = (data: { roomCode: string, duration: number }) => {
+      setInvitingId(null)
+      sessionStorage.setItem('chessSettings', JSON.stringify({ 
+        duration: data.duration, 
+        mode: 'invite', 
+        roomCode: data.roomCode, 
+        isHost: true 
+      }))
+      router.push(`/game/chess/room-${data.roomCode}?duration=${data.duration}&mode=invite`)
+    }
+
+    const handleInviteDeclined = (data: { receiverUsername: string }) => {
+      setInvitingId(null)
+      toast({
+        title: "Undangan Ditolak",
+        description: `${data.receiverUsername} menolak tantanganmu.`,
+        variant: "destructive"
+      })
+    }
+
+    const handleInviteTimeout = () => {
+      setInvitingId(null)
+      toast({
+        title: "Undangan Kedaluwarsa",
+        description: "Teman tidak merespons undangan Anda.",
+        variant: "destructive"
+      })
+    }
+
+    const handleInviteError = (data: { message: string }) => {
+      setInvitingId(null)
+      toast({
+        title: "Gagal Mengundang",
+        description: data.message,
+        variant: "destructive"
+      })
+    }
+
+    const handleNavigate = (data: { roomCode: string, duration: number }) => {
+      // For the receiver
+      sessionStorage.setItem('chessSettings', JSON.stringify({ 
+        duration: data.duration, 
+        mode: 'invite', 
+        roomCode: data.roomCode, 
+        isHost: false 
+      }))
+      router.push(`/game/chess/room-${data.roomCode}?duration=${data.duration}&mode=invite`)
+    }
+
+    socket.on('chess:invite_accepted', handleInviteAccepted)
+    socket.on('chess:invite_declined', handleInviteDeclined)
+    socket.on('chess:invite_timeout', handleInviteTimeout)
+    socket.on('chess:invite_error', handleInviteError)
+    socket.on('chess:navigate_to_room', handleNavigate)
+
+    return () => {
+      socket.off('chess:invite_accepted', handleInviteAccepted)
+      socket.off('chess:invite_declined', handleInviteDeclined)
+      socket.off('chess:invite_timeout', handleInviteTimeout)
+      socket.off('chess:invite_error', handleInviteError)
+      socket.off('chess:navigate_to_room', handleNavigate)
+    }
+  }, [socket, router, toast])
 
   const handleFindRandom = () => {
     setStatus('searching')
@@ -91,9 +164,18 @@ export default function ChessLobbyPage() {
   }
 
   const handleInviteFriend = (friendId: string) => {
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase()
-    sessionStorage.setItem('chessSettings', JSON.stringify({ duration, mode: 'invite', roomCode: code, isHost: true, invitedFriend: friendId }))
-    router.push(`/game/chess/room-${code}?duration=${duration}&mode=invite`)
+    if (!socket) return
+    setInvitingId(friendId)
+    socket.emit('chess:invite', { receiverId: friendId, duration, mode: 'invite' }, (response: any) => {
+      if (response?.error) {
+        setInvitingId(null)
+        toast({
+          title: "Gagal Mengundang",
+          description: response.error,
+          variant: "destructive"
+        })
+      }
+    })
   }
 
   if (isLoading || !isAuthenticated) return null
@@ -124,6 +206,39 @@ export default function ChessLobbyPage() {
         .code-box { background:rgba(74,255,145,0.1); border:1px solid rgba(74,255,145,0.3); border-radius:10px; padding:12px 20px; font-family:'Space Grotesk',sans-serif; font-size:1.4rem; font-weight:700; letter-spacing:0.3em; color:#4aff91; text-align:center; }
         .code-input { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:12px 16px; font-family:'Space Grotesk',sans-serif; font-size:1.1rem; font-weight:700; letter-spacing:0.2em; color:var(--c-on-surface); text-align:center; width:100%; text-transform:uppercase; outline:none; }
         .code-input:focus { border-color:#4aff91; box-shadow:0 0 0 2px rgba(74,255,145,0.15); }
+        .btn-invite-premium {
+          background: linear-gradient(135deg, #00d1ff, #cf5cff);
+          border: none;
+          border-radius: 999px;
+          padding: 8px 24px;
+          color: white;
+          font-family: 'Space Grotesk', sans-serif;
+          font-weight: 700;
+          font-size: 0.85rem;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 0 4px 15px rgba(0, 209, 255, 0.3);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 110px;
+        }
+        .btn-invite-premium:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(207, 92, 255, 0.4);
+          filter: brightness(1.1);
+        }
+        .btn-invite-premium:active:not(:disabled) {
+          transform: translateY(0);
+        }
+        .btn-invite-premium:disabled {
+          background: rgba(255,255,255,0.1);
+          color: rgba(255,255,255,0.3);
+          box-shadow: none;
+          cursor: not-allowed;
+        }
       `}</style>
 
       {/* Background orbs */}
@@ -242,9 +357,10 @@ export default function ChessLobbyPage() {
                           </div>
                           <button
                             onClick={() => handleInviteFriend(friend.id)}
-                            style={{ background: 'rgba(74,255,145,0.15)', border: '1px solid rgba(74,255,145,0.3)', borderRadius: 8, padding: '6px 14px', color: '#4aff91', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
+                            disabled={invitingId !== null}
+                            className="btn-invite-premium"
                           >
-                            Undang
+                            {invitingId === friend.id ? '...' : '+ INVITE'}
                           </button>
                         </div>
                       ))}

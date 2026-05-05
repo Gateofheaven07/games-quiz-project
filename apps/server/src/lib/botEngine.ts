@@ -86,7 +86,8 @@ function scheduleBotAnswer(opts: {
   }
 
   // Update skor Bot di GameManager (memanfaatkan method yang sama dgn human)
-  GameManager.submitAnswer(roomId, botUserId, chosenAnswer, scoreEarned);
+  // null = no questionId needed for bot (no idempotency check required)
+  GameManager.submitAnswer(roomId, botUserId, null, chosenAnswer, scoreEarned);
 
   // Single Source of Truth sync
   const allScores = GameManager.getRoomScoresMap(roomId);
