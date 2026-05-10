@@ -158,6 +158,7 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
   const [drawOfferedBy, setDrawOfferedBy] = useState<string|null>(null)
   const [capturedW, setCapturedW] = useState<Piece[]>([])
   const [capturedB, setCapturedB] = useState<Piece[]>([])
+  const [showCheckmateBadges, setShowCheckmateBadges] = useState<{loser: Color, winner: Color} | null>(null)
 
   // Settings from sessionStorage
   const [settings, setSettings] = useState({ duration: 10, mode: 'bot', botLevel: 'normal', isHost: true })
@@ -223,8 +224,11 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
 
       // Check for game end locally
       if (isCheckmate(data.board, playerColor)) {
-        setGameState('lose')
-        setGameOverReason('Skakmat!')
+        setShowCheckmateBadges({ loser: playerColor, winner: playerColor === 'w' ? 'b' : 'w' })
+        setTimeout(() => {
+          setGameState('lose')
+          setGameOverReason('Skakmat!')
+        }, 3000)
       } else if (isStalemate(data.board, playerColor)) {
         setGameState('draw')
         setGameOverReason('Stalemate (Remis)')
@@ -313,8 +317,11 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
       newBoard[fr][fc] = null
 
       if (isCheckmate(newBoard, 'w')) {
-        setGameState('lose')
-        setGameOverReason('Skakmat!')
+        setShowCheckmateBadges({ loser: 'w', winner: 'b' })
+        setTimeout(() => {
+          setGameState('lose')
+          setGameOverReason('Skakmat!')
+        }, 3000)
       } else if (isStalemate(newBoard, 'w')) {
         setGameState('draw')
         setGameOverReason('Stalemate (Remis)')
@@ -347,8 +354,11 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
         const nextTurn = turn === 'w' ? 'b' : 'w'
 
         if (isCheckmate(newBoard, nextTurn)) {
-          setGameState(nextTurn === playerColor ? 'lose' : 'win')
-          setGameOverReason('Skakmat!')
+          setShowCheckmateBadges({ loser: nextTurn, winner: nextTurn === 'w' ? 'b' : 'w' })
+          setTimeout(() => {
+            setGameState(nextTurn === playerColor ? 'lose' : 'win')
+            setGameOverReason('Skakmat!')
+          }, 3000)
         } else if (isStalemate(newBoard, nextTurn)) {
           setGameState('draw')
           setGameOverReason('Stalemate (Remis)')
@@ -508,7 +518,7 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
                       }} />
                     )}
 
-                    {isKingInCheck && (
+                    {isKingInCheck && !showCheckmateBadges && (
                       <motion.div
                         initial={{ scale: 0, y: 0 }}
                         animate={{ scale: 1, y: -25 }}
@@ -523,6 +533,50 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
                         }}
                       >
                         !!
+                      </motion.div>
+                    )}
+
+                    {showCheckmateBadges && piece?.type === 'K' && piece.color === showCheckmateBadges.loser && (
+                      <motion.div
+                        initial={{ scale: 0, y: 10 }}
+                        animate={{ scale: 1, y: -30 }}
+                        style={{
+                          position: 'absolute',
+                          background: '#ff4545',
+                          padding: '4px 10px',
+                          borderRadius: 16,
+                          color: 'white',
+                          fontWeight: 800,
+                          fontSize: '0.85rem',
+                          zIndex: 20,
+                          whiteSpace: 'nowrap',
+                          boxShadow: '0 4px 12px rgba(255,69,69,0.4)',
+                          fontFamily: "'Space Grotesk', sans-serif"
+                        }}
+                      >
+                        Checkmate
+                      </motion.div>
+                    )}
+
+                    {showCheckmateBadges && piece?.type === 'K' && piece.color === showCheckmateBadges.winner && (
+                      <motion.div
+                        initial={{ scale: 0, y: 10 }}
+                        animate={{ scale: 1, y: -30 }}
+                        style={{
+                          position: 'absolute',
+                          background: '#4aff91',
+                          padding: '4px 10px',
+                          borderRadius: 16,
+                          color: '#003543',
+                          fontWeight: 800,
+                          fontSize: '0.85rem',
+                          zIndex: 20,
+                          whiteSpace: 'nowrap',
+                          boxShadow: '0 4px 12px rgba(74,255,145,0.4)',
+                          fontFamily: "'Space Grotesk', sans-serif"
+                        }}
+                      >
+                        Winner
                       </motion.div>
                     )}
 

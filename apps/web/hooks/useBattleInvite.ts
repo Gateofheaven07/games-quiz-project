@@ -69,6 +69,7 @@ export function useBattleInvite() {
 
     // --- Incoming Events ---
     const handleReceiveInvite = (notification: any) => {
+      if (notification.type === 'CHESS_INVITE') return;
       setIncomingInvite(notification)
       setInviteTimeout(30)
     }
