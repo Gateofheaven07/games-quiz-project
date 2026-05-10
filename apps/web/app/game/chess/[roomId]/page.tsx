@@ -618,6 +618,8 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
                     const socket = getSocket(token)
                     socket.emit('chess:accept_draw', { roomId })
                   }
+                  setGameState('draw')
+                  setGameOverReason('Remis Disetujui')
                   setShowDrawModal(false)
                 }}
                 style={{ padding: '0.75rem 2rem', background:'#4aff91', border:'none', borderRadius:8, cursor:'pointer' }}

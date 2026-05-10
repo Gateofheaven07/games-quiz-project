@@ -551,16 +551,16 @@ export function setupSocketHandlers(io: any) {
       console.log(`[Chess] Move in ${data.roomCode} from ${data.from} to ${data.to}`);
     });
 
-    socket.on('chess:surrender', (data: { roomCode: string, winner: string }) => {
-      socket.to(data.roomCode).emit('chess:opponent_surrendered', { winner: data.winner });
+    socket.on('chess:surrender', (data: { roomId: string, playerRole: string }) => {
+      socket.to(data.roomId).emit('chess:surrender', { playerRole: data.playerRole });
     });
 
-    socket.on('chess:offer_draw', (data: { roomCode: string, senderName: string }) => {
-      socket.to(data.roomCode).emit('chess:draw_offered', { senderName: data.senderName });
+    socket.on('chess:offer_draw', (data: { roomId: string, from: string }) => {
+      socket.to(data.roomId).emit('chess:offer_draw', { from: data.from });
     });
 
-    socket.on('chess:accept_draw', (data: { roomCode: string }) => {
-      socket.to(data.roomCode).emit('chess:draw_accepted');
+    socket.on('chess:accept_draw', (data: { roomId: string }) => {
+      socket.to(data.roomId).emit('chess:accept_draw');
     });
 
     // ─────────────────────────────────────────────────────────────────────────
