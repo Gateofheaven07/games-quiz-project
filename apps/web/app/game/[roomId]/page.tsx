@@ -494,6 +494,24 @@ export default function QuizBattleRoomPage({ params }: { params: Promise<{ roomI
   if (isLoading || !isAuthenticated) return null
 
   // ── Final Results Screen ───────────────────────────────────────────────────
+  // ── Waiting for Opponent Screen ──────────────────────────────────────────
+  if (status === 'WAITING_FOR_OPPONENT') {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--c-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+        <div className="bg-orb bg-orb-blue" style={{ top: -200, left: -100 }} />
+        <div className="bg-orb bg-orb-purple" style={{ bottom: -100, right: -100 }} />
+        <div className="glass-panel" style={{ padding: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, maxWidth: 500, textAlign: 'center' }}>
+          <div style={{ width: 48, height: 48, border: '4px solid rgba(254,177,39,0.2)', borderTopColor: '#feb127', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", color: 'var(--c-on-surface)' }}>Menunggu Lawan...</h2>
+          <p style={{ color: 'var(--c-outline)' }}>
+            Kamu sudah menyelesaikan semua pertanyaan! Menunggu {opponentPlayer.name} menyelesaikan pertandingannya.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   // ── Calculating / Syncing Screen ──────────────────────────────────────────
   if (status === 'CALCULATING_FINAL_SCORE' || (status === 'GAME_OVER' && !gameResults)) {
     return (

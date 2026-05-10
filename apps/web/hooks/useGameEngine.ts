@@ -32,7 +32,7 @@ interface UseGameEngineProps {
   socket?:          any;
 }
 
-export type GameStatus = 'IDLE' | 'INITIALIZING_BOARD' | 'PLAYING' | 'EVALUATING' | 'CALCULATING_FINAL_SCORE' | 'GAME_OVER';
+export type GameStatus = 'IDLE' | 'INITIALIZING_BOARD' | 'PLAYING' | 'EVALUATING' | 'WAITING_FOR_OPPONENT' | 'CALCULATING_FINAL_SCORE' | 'GAME_OVER';
 
 export interface GameEngineReturn {
   currentQ:        number;
@@ -65,6 +65,7 @@ type GameState = {
   status: GameStatus;
   gameResults: any | null;
   revealedCorrect: number;
+  opponentFinished: boolean;
 };
 
 type Action =
@@ -75,6 +76,8 @@ type Action =
   | { type: 'NEXT_QUESTION'; payload: { totalRounds: number } }
   | { type: 'UPDATE_SCORE'; payload: { isMe: boolean; newScore: number } }
   | { type: 'CALCULATE_FINAL_SCORE' }
+  | { type: 'WAITING_FOR_OPPONENT' }
+  | { type: 'OPPONENT_FINISHED' }
   | { type: 'GAME_OVER'; payload?: any };
 
 function gameReducer(state: GameState, action: Action): GameState {
@@ -133,6 +136,19 @@ function gameReducer(state: GameState, action: Action): GameState {
         status: 'CALCULATING_FINAL_SCORE',
       };
 
+    case 'WAITING_FOR_OPPONENT':
+      if (state.status === 'GAME_OVER') return state;
+      return {
+        ...state,
+        status: 'WAITING_FOR_OPPONENT',
+      };
+
+    case 'OPPONENT_FINISHED':
+      return {
+        ...state,
+        opponentFinished: true,
+      };
+
     case 'GAME_OVER':
       // Force game over regardless of current state
       return {
@@ -156,6 +172,7 @@ const initialState: GameState = {
   status: 'INITIALIZING_BOARD',
   gameResults: null,
   revealedCorrect: -1,
+  opponentFinished: false,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -302,6 +319,13 @@ export function useGameEngine({
       });
     };
 
+    const handlePlayerFinished = (data: { userId: string; username: string }) => {
+      if (data.userId !== userId) {
+        console.log('[GameEngine] 🏁 Opponent finished:', data);
+        dispatch({ type: 'OPPONENT_FINISHED' });
+      }
+    };
+
     const handleGameFinished = (data: any) => {
       console.log('[GameEngine] Received game termination from server:', data);
       
@@ -317,6 +341,7 @@ export function useGameEngine({
     // Register listeners
     on('game:player_answered',  handlePlayerAnswered);
     on('game:state_sync',       handleStateSync);   // ← Authoritative score sync
+    on('game:player_finished',  handlePlayerFinished);
     on('game:finished',         handleGameFinished);
     on('game:results',          handleGameFinished);
     on('game:surrender_result', handleGameFinished);
@@ -325,6 +350,7 @@ export function useGameEngine({
     return () => {
       off('game:player_answered',  handlePlayerAnswered);
       off('game:state_sync',       handleStateSync);
+      off('game:player_finished',  handlePlayerFinished);
       off('game:finished',         handleGameFinished);
       off('game:results',          handleGameFinished);
       off('game:surrender_result', handleGameFinished);
@@ -406,7 +432,11 @@ export function useGameEngine({
           // Clear any remaining timer visuals
           updateTimerDOM(0);
           
-          dispatch({ type: 'CALCULATE_FINAL_SCORE' });
+          if (!isVsBot && !state.opponentFinished) {
+            dispatch({ type: 'WAITING_FOR_OPPONENT' });
+          } else {
+            dispatch({ type: 'CALCULATE_FINAL_SCORE' });
+          }
           finishGame();
           return;
         }
@@ -419,7 +449,7 @@ export function useGameEngine({
         dispatch({ type: 'NEXT_QUESTION', payload: { totalRounds } });
       }, 1500);
     },
-    [state.status, state.answerState, state.currentQ, gameRoom, submitAnswer, finishGame, totalRounds, totalDuration, updateTimerDOM]
+    [state.status, state.answerState, state.currentQ, state.opponentFinished, isVsBot, gameRoom, submitAnswer, finishGame, totalRounds, totalDuration, updateTimerDOM]
   );
 
   return {
