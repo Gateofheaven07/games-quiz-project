@@ -467,7 +467,7 @@ export default function ChessGamePage({ params }: { params: Promise<{ roomId: st
           ♟️ Chess Arena
         </span>
         <div style={{ display:'flex', gap:8 }}>
-          <button onClick={() => setShowDrawModal(true)} style={{ background:'rgba(254,177,39,0.15)', border:'1px solid rgba(254,177,39,0.3)', borderRadius:8, padding:'6px 14px', color:'#feb127', fontWeight:600, fontSize:'0.8rem', cursor:'pointer', fontFamily:"'Inter',sans-serif" }}>
+          <button onClick={handleOfferDraw} style={{ background:'rgba(254,177,39,0.15)', border:'1px solid rgba(254,177,39,0.3)', borderRadius:8, padding:'6px 14px', color:'#feb127', fontWeight:600, fontSize:'0.8rem', cursor:'pointer', fontFamily:"'Inter',sans-serif" }}>
             🤝 Remis
           </button>
           <button onClick={() => setShowSurrenderModal(true)} style={{ background:'rgba(255,69,69,0.15)', border:'1px solid rgba(255,69,69,0.3)', borderRadius:8, padding:'6px 14px', color:'#ff4545', fontWeight:600, fontSize:'0.8rem', cursor:'pointer', fontFamily:"'Inter',sans-serif" }}>
