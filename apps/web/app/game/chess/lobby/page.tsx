@@ -30,11 +30,9 @@ export default function ChessLobbyPage() {
   const [botLevel, setBotLevel] = useState('normal')
   const [friends, setFriends] = useState<any[]>([])
   const [loadingFriends, setLoadingFriends] = useState(false)
-  const [roomCode, setRoomCode] = useState('')
-  const [joinCode, setJoinCode] = useState('')
-  const [copied, setCopied] = useState(false)
   const [status, setStatus] = useState<'idle' | 'searching' | 'found'>('idle')
   const [invitingId, setInvitingId] = useState<string | null>(null)
+  const [onlineFriendIds, setOnlineFriendIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.push('/auth/login')
@@ -56,6 +54,36 @@ export default function ChessLobbyPage() {
       fetchFriends()
     }
   }, [isAuthenticated, user])
+
+  // Presence Socket Listener
+  useEffect(() => {
+    if (!token || friends.length === 0) return
+    
+    const socket = getSocket(token)
+    
+    const handleOnlineList = (onlineIds: string[]) => {
+      setOnlineFriendIds(new Set(onlineIds))
+    }
+    
+    const handlePresenceUpdate = (data: { userId: string, isOnline: boolean }) => {
+      setOnlineFriendIds(prev => {
+        const next = new Set(prev)
+        if (data.isOnline) next.add(data.userId)
+        else next.delete(data.userId)
+        return next
+      })
+    }
+
+    socket.on('presence:online_list', handleOnlineList)
+    socket.on('presence:update', handlePresenceUpdate)
+
+    socket.emit('presence:get_online', friends.map(f => f.id))
+
+    return () => {
+      socket.off('presence:online_list', handleOnlineList)
+      socket.off('presence:update', handlePresenceUpdate)
+    }
+  }, [token, friends])
 
   // Socket listeners for Invitations (using singleton directly to avoid null issues)
   useEffect(() => {
@@ -153,23 +181,7 @@ export default function ChessLobbyPage() {
     }, 800)
   }
 
-  const handleCreateRoom = () => {
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase()
-    setRoomCode(code)
-    sessionStorage.setItem('chessSettings', JSON.stringify({ duration, mode: 'invite', roomCode: code, isHost: true }))
-  }
-
-  const handleCopyCode = () => {
-    navigator.clipboard.writeText(roomCode)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  const handleJoinRoom = () => {
-    if (joinCode.trim().length < 6) return
-    sessionStorage.setItem('chessSettings', JSON.stringify({ duration, mode: 'invite', roomCode: joinCode.trim().toUpperCase(), isHost: false }))
-    router.push(`/game/chess/room-${joinCode.trim().toUpperCase()}?duration=${duration}&mode=invite`)
-  }
+  const onlineFriends = friends.filter(f => onlineFriendIds.has(f.id))
 
   const handleInviteFriend = (friendId: string) => {
     if (!token) return
@@ -220,11 +232,6 @@ export default function ChessLobbyPage() {
         .btn-chess { background:linear-gradient(135deg,#4aff91,#00d1ff); border:none; border-radius:12px; padding:14px 32px; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1rem; color:#003543; cursor:pointer; transition:all 0.2s; width:100%; }
         .btn-chess:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 24px rgba(74,255,145,0.4); }
         .btn-chess:disabled { opacity:0.5; cursor:not-allowed; }
-        .btn-secondary { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:14px 32px; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:0.9rem; color:var(--c-on-surface); cursor:pointer; transition:all 0.2s; width:100%; }
-        .btn-secondary:hover { background:rgba(255,255,255,0.1); }
-        .code-box { background:rgba(74,255,145,0.1); border:1px solid rgba(74,255,145,0.3); border-radius:10px; padding:12px 20px; font-family:'Space Grotesk',sans-serif; font-size:1.4rem; font-weight:700; letter-spacing:0.3em; color:#4aff91; text-align:center; }
-        .code-input { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:12px 16px; font-family:'Space Grotesk',sans-serif; font-size:1.1rem; font-weight:700; letter-spacing:0.2em; color:var(--c-on-surface); text-align:center; width:100%; text-transform:uppercase; outline:none; }
-        .code-input:focus { border-color:#4aff91; box-shadow:0 0 0 2px rgba(74,255,145,0.15); }
         .btn-invite-premium {
           background: linear-gradient(135deg, #00d1ff, #cf5cff);
           border: none;
@@ -362,11 +369,11 @@ export default function ChessLobbyPage() {
             {tab === 'invite' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {/* Online friends */}
-                {friends.length > 0 && (
+                {onlineFriends.length > 0 ? (
                   <div>
                     <p style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: '0.8rem', color: 'var(--c-outline)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Teman Online</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {friends.slice(0, 4).map(friend => (
+                      {onlineFriends.slice(0, 4).map(friend => (
                         <div key={friend.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#4aff91,#00d1ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#003543', fontSize: '0.9rem' }}>
@@ -384,45 +391,12 @@ export default function ChessLobbyPage() {
                         </div>
                       ))}
                     </div>
-                    <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '16px 0' }} />
+                  </div>
+                ) : (
+                  <div style={{ padding: '24px', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 12 }}>
+                    <p style={{ color: 'var(--c-outline)', fontFamily: "'Inter',sans-serif" }}>Tidak ada teman yang sedang online saat ini.</p>
                   </div>
                 )}
-
-                {/* Room code */}
-                <div>
-                  <p style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: '0.8rem', color: 'var(--c-outline)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Buat Ruangan</p>
-                  {roomCode ? (
-                    <div style={{ display: 'flex', gap: 10 }}>
-                      <div className="code-box" style={{ flex: 1 }}>{roomCode}</div>
-                      <button onClick={handleCopyCode} style={{ background: 'rgba(74,255,145,0.15)', border: '1px solid rgba(74,255,145,0.3)', borderRadius: 10, padding: '0 16px', color: '#4aff91', cursor: 'pointer', fontSize: '1.2rem' }}>
-                        {copied ? '✓' : '📋'}
-                      </button>
-                      <button
-                        onClick={() => router.push(`/game/chess/room-${roomCode}?duration=${duration}&mode=invite`)}
-                        className="btn-chess" style={{ width: 'auto', padding: '0 20px' }}
-                      >
-                        Masuk
-                      </button>
-                    </div>
-                  ) : (
-                    <button className="btn-secondary" onClick={handleCreateRoom}>+ Buat Kode Ruangan</button>
-                  )}
-                </div>
-
-                <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
-
-                <div>
-                  <p style={{ fontFamily: "'Inter',sans-serif", fontWeight: 600, fontSize: '0.8rem', color: 'var(--c-outline)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Gabung Kode</p>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input
-                      className="code-input"
-                      placeholder="XXXXXX"
-                      value={joinCode}
-                      onChange={e => setJoinCode(e.target.value.toUpperCase().slice(0, 6))}
-                    />
-                    <button onClick={handleJoinRoom} className="btn-chess" style={{ width: 'auto', padding: '0 20px' }}>Masuk</button>
-                  </div>
-                </div>
               </div>
             )}
           </div>
